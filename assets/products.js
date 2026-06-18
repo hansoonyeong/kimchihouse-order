@@ -99,9 +99,9 @@ window.KH_PRODUCTS = {
         title: "전통 장류 4종",
         items: [
           { id: "b11", name: "항아골 생청국장 (120g)", tiers: [[4, 25], [8, 45]], image: "assets/images/products/b11.png?v=2" },
-          { id: "b12", name: "순정원 전통된장 (1Kg)", price: 38, image: "assets/images/products/b12.png" },
-          { id: "b13", name: "순정원 전통고추장 (1Kg)", price: 38, image: "assets/images/products/b13.png" },
-          { id: "b14", name: "순정원 쌈장 (1Kg)", price: 25, sale: true, image: "assets/images/products/b14.png" },
+          { id: "b12", name: "순정원 전통된장 (1Kg)", price: 38, image: "assets/images/products/b12.png?v=2" },
+          { id: "b13", name: "순정원 전통고추장 (1Kg)", price: 38, image: "assets/images/products/b13.png?v=2" },
+          { id: "b14", name: "순정원 쌈장 (1Kg)", price: 25, sale: true, image: "assets/images/products/b14.png?v=2" },
         ],
       },
     ],
