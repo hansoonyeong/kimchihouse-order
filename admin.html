@@ -52,11 +52,15 @@
     </div>
 
     <div class="order-list" id="order-list"></div>
+    <div class="admin-toast" id="admin-toast" role="status" aria-live="polite"></div>
     <a class="back-link" href="index.html">← 홈으로</a>
   </div>
 
+  <script src="assets/products.js"></script>
   <script>
     const API = "/api/orders";
+    const KAKAO_CHANNEL = "http://pf.kakao.com/_alkDxb";
+    const SENT_KEY = "kh_kakao_sent";
     let adminKey = sessionStorage.getItem("kh_admin_key") || "";
     let orders = [];
     let filter = "all";
@@ -94,6 +98,124 @@
       return `${parts} = $${o.total}`;
     }
 
+    function getSentIds() {
+      try {
+        return new Set(JSON.parse(localStorage.getItem(SENT_KEY) || "[]"));
+      } catch {
+        return new Set();
+      }
+    }
+
+    function markSent(orderId) {
+      const sent = getSentIds();
+      sent.add(orderId);
+      localStorage.setItem(SENT_KEY, JSON.stringify([...sent]));
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("admin-toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => toast.classList.remove("show"), 4200);
+    }
+
+    function buildKakaoMessage(o) {
+      const cfg = window.KH_CONFIG || {};
+      const bank = cfg.bank || {};
+      const products = window.KH_PRODUCTS || {};
+      const lines = (o.items || []).map((i) => `· ${i.name} × ${i.qty} — $${i.price}`);
+      const deliveryLines = [];
+
+      if (orderHasCategory(o, "frozen") && products.frozen?.delivery) {
+        deliveryLines.push(`· 냉동 반찬: ${products.frozen.delivery}`);
+      }
+      if (orderHasCategory(o, "kimchi") && products.kimchi?.delivery) {
+        deliveryLines.push(`· 김치·장류: ${products.kimchi.delivery}`);
+      }
+
+      const paymentLabel = o.payment === "cash" ? "현금 결제" : "계좌이체";
+      let paymentBlock = `■ 결제 방법: ${paymentLabel}`;
+
+      if (o.payment !== "cash" && bank.bank) {
+        paymentBlock += `
+
+은행 ${bank.bank}
+BSB ${bank.bsb}
+계좌 ${bank.account}
+예금주 ${bank.holder}
+입금자명: ${o.customer.name}
+입금 금액: $${o.total}`;
+      }
+
+      const kakaoHint = o.customer.kakao
+        ? `\n(카톡 이름: ${o.customer.kakao})`
+        : "";
+
+      return `[김치하우스 Kimchi House AU]
+주문 확인 안내
+
+${o.customer.name}님, 안녕하세요!
+6~7월 3차 사전예약 주문이 접수되었습니다.${kakaoHint}
+
+■ 주문번호: ${o.id}
+■ 연락처: ${o.customer.phone}
+■ 배송지: ${o.customer.address}${o.customer.suburb ? `, ${o.customer.suburb}` : ""}
+
+■ 주문 내역
+${lines.join("\n")}
+
+■ 결제 금액
+${shippingSummary(o)}
+
+${paymentBlock}
+
+■ 배송 안내
+${deliveryLines.length ? deliveryLines.join("\n") : "· 배송 일정은 품목별 안내에 따릅니다."}
+
+입금 확인 후 순차적으로 배송 안내 드리겠습니다.
+문의는 이 채널로 편하게 남겨 주세요.
+감사합니다!`;
+    }
+
+    async function copyText(text) {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+
+    async function sendKakaoConfirm(orderId) {
+      const order = orders.find((o) => o.id === orderId);
+      if (!order) return;
+
+      const message = buildKakaoMessage(order);
+
+      try {
+        await copyText(message);
+      } catch {
+        alert("메시지 복사에 실패했습니다. 브라우저 권한을 확인해 주세요.");
+        return;
+      }
+
+      window.open(KAKAO_CHANNEL, "_blank", "noopener,noreferrer");
+      markSent(orderId);
+      renderOrders();
+
+      const hint = order.customer.kakao
+        ? `「${order.customer.kakao}」님 대화창에 붙여넣기(Cmd+V) 후 전송해 주세요.`
+        : "고객 대화창에 붙여넣기(Cmd+V) 후 전송해 주세요.";
+      showToast(`확인 메시지가 복사되었습니다. ${hint}`);
+    }
+
     async function fetchOrders() {
       const res = await fetch(API, {
         headers: { Authorization: `Bearer ${adminKey}` },
@@ -120,6 +242,7 @@
         return;
       }
 
+      const sentIds = getSentIds();
       root.innerHTML = list.map((o) => `
         <article class="order-item">
           <div class="head">
@@ -135,6 +258,11 @@
           <div class="lines">${(o.items || []).map((i) => `· ${i.name} × ${i.qty} — $${i.price}`).join("<br>")}</div>
           ${o.note ? `<div class="meta" style="margin-top:8px">요청: ${o.note}</div>` : ""}
           <div class="total">${shippingSummary(o)}</div>
+          <div class="order-item-actions">
+            <button type="button" class="btn btn-kakao${sentIds.has(o.id) ? " sent" : ""}" data-kakao-send="${o.id}">
+              ${sentIds.has(o.id) ? "카톡 확인 메시지 (재전송)" : "카톡 확인 메시지 보내기"}
+            </button>
+          </div>
         </article>
       `).join("");
     }
@@ -217,6 +345,12 @@
         filter = tab.dataset.filter;
         renderOrders();
       });
+    });
+
+    document.getElementById("order-list").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-kakao-send]");
+      if (!btn) return;
+      sendKakaoConfirm(btn.dataset.kakaoSend);
     });
 
     if (adminKey) {

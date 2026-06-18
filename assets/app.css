@@ -1087,6 +1087,61 @@ footer.site a {
   color: var(--brand);
 }
 
+.order-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.order-item-actions .btn {
+  font-size: 13px;
+  padding: 10px 14px;
+}
+
+.order-item-actions .btn-kakao {
+  background: #fee500;
+  border-color: #fee500;
+  color: #191919;
+  font-weight: 700;
+}
+
+.order-item-actions .btn-kakao:hover {
+  background: #f5dc00;
+  border-color: #f5dc00;
+}
+
+.order-item-actions .btn-kakao.sent {
+  background: #fff;
+  border-color: var(--line);
+  color: var(--ink2);
+  font-weight: 500;
+}
+
+.admin-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(120%);
+  z-index: 1000;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(19, 48, 34, 0.96);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  transition: transform 0.25s ease;
+}
+
+.admin-toast.show {
+  transform: translateX(-50%) translateY(0);
+}
+
 .filter-tabs {
   display: flex;
   gap: 8px;
