@@ -4,10 +4,10 @@ window.KH_CONFIG = {
   freeShippingThreshold: 100,
   shippingFee: 10,
   bank: {
-    bank: "Commonwealth Bank",
-    bsb: "062-000",
-    account: "1234 5678",
-    holder: "Kimchi House AU",
+    bank: "ANZ",
+    bsb: "012 266",
+    account: "4397 12186",
+    holder: "Eastern Food Line Pty Ltd",
   },
 };
 

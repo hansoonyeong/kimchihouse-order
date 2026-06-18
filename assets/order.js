@@ -434,8 +434,10 @@
 
       const bank = cfg.bank;
       document.getElementById("bank-info").innerHTML = `
-        은행 <strong>${bank.bank}</strong> · BSB <strong>${bank.bsb}</strong><br>
-        계좌 <strong>${bank.account}</strong> · 예금주 <strong>${bank.holder}</strong><br>
+        은행 <strong>${bank.bank}</strong><br>
+        BSB <strong>${bank.bsb}</strong><br>
+        계좌번호 <strong>${bank.account}</strong><br>
+        예금주 <strong>${bank.holder}</strong><br>
         ※ 입금자명을 <strong>주문자 성함과 동일하게</strong> 해주세요.`;
     }
 

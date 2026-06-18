@@ -1151,6 +1151,18 @@ footer.site a {
   font-weight: 500;
 }
 
+.order-item-actions .btn-delete {
+  background: #fff;
+  border-color: #e57373;
+  color: #c62828;
+  font-weight: 700;
+}
+
+.order-item-actions .btn-delete:hover {
+  background: #ffebee;
+  border-color: #c62828;
+}
+
 .admin-toast {
   position: fixed;
   left: 50%;

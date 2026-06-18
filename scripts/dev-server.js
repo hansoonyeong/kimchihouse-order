@@ -71,7 +71,7 @@ async function handleOrders(req, res) {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Key",
     });
     return res.end();
@@ -129,6 +129,26 @@ async function handleOrders(req, res) {
     orders.unshift(order);
     writeOrders(orders);
     return sendJson(res, 201, { ok: true, orderId: order.id });
+  }
+
+  if (req.method === "DELETE") {
+    if (getAdminKey(req) !== ADMIN_PASSWORD) {
+      return sendJson(res, 401, { ok: false, error: "관리자 인증이 필요합니다." });
+    }
+
+    const orderId = new URL(req.url, "http://127.0.0.1").searchParams.get("orderId")?.trim();
+    if (!orderId) {
+      return sendJson(res, 400, { ok: false, error: "주문번호가 필요합니다." });
+    }
+
+    const orders = readOrders();
+    const nextOrders = orders.filter((o) => o.id !== orderId);
+    if (nextOrders.length === orders.length) {
+      return sendJson(res, 404, { ok: false, error: "주문을 찾을 수 없습니다." });
+    }
+
+    writeOrders(nextOrders);
+    return sendJson(res, 200, { ok: true, orderId });
   }
 
   return sendJson(res, 405, { ok: false, error: "Method not allowed" });

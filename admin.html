@@ -228,6 +228,7 @@ ${customerName}님, 주문이 접수되었습니다.
             <button type="button" class="btn btn-kakao${sentIds.has(o.id) ? " sent" : ""}" data-kakao-send="${o.id}">
               ${sentIds.has(o.id) ? "카톡 확인 메시지 (재전송)" : "카톡 확인 메시지 보내기"}
             </button>
+            <button type="button" class="btn btn-delete" data-order-delete="${o.id}">주문 삭제</button>
           </div>
         </article>
       `).join("");
@@ -257,6 +258,37 @@ ${customerName}님, 주문이 접수되었습니다.
         renderOrders();
       } catch (err) {
         alert(err.message || "새로고침 실패");
+      }
+    }
+
+    async function deleteOrder(orderId) {
+      const order = orders.find((o) => o.id === orderId);
+      if (!order) return;
+
+      const label = `${order.id} · ${order.customer.name}`;
+      if (!confirm(`다음 주문을 삭제할까요?\n\n${label}\n\n삭제 후에는 복구할 수 없습니다.`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}?orderId=${encodeURIComponent(orderId)}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${adminKey}` },
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "삭제 실패");
+
+        const sent = getSentIds();
+        if (sent.has(orderId)) {
+          sent.delete(orderId);
+          localStorage.setItem(SENT_KEY, JSON.stringify([...sent]));
+        }
+
+        await fetchOrders();
+        renderOrders();
+        showToast("주문이 삭제되었습니다.");
+      } catch (err) {
+        alert(err.message || "주문 삭제 중 오류가 발생했습니다.");
       }
     }
 
@@ -314,9 +346,16 @@ ${customerName}님, 주문이 접수되었습니다.
     });
 
     document.getElementById("order-list").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-kakao-send]");
-      if (!btn) return;
-      sendKakaoConfirm(btn.dataset.kakaoSend);
+      const kakaoBtn = e.target.closest("[data-kakao-send]");
+      if (kakaoBtn) {
+        sendKakaoConfirm(kakaoBtn.dataset.kakaoSend);
+        return;
+      }
+
+      const deleteBtn = e.target.closest("[data-order-delete]");
+      if (deleteBtn) {
+        deleteOrder(deleteBtn.dataset.orderDelete);
+      }
     });
 
     if (adminKey) {

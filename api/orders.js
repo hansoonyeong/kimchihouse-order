@@ -89,3 +89,31 @@ export async function POST(request) {
     return json({ ok: false, error: err.message || "Server error" }, 500);
   }
 }
+
+export async function DELETE(request) {
+  try {
+    const env = requireEnv();
+    if (!env.ok) return env.response;
+
+    if (getAdminKey(request) !== env.adminPassword) {
+      return json({ ok: false, error: "관리자 인증이 필요합니다." }, 401);
+    }
+
+    const orderId = new URL(request.url).searchParams.get("orderId")?.trim();
+    if (!orderId) {
+      return json({ ok: false, error: "주문번호가 필요합니다." }, 400);
+    }
+
+    const orders = await readOrders();
+    const nextOrders = orders.filter((o) => o.id !== orderId);
+    if (nextOrders.length === orders.length) {
+      return json({ ok: false, error: "주문을 찾을 수 없습니다." }, 404);
+    }
+
+    await writeOrders(nextOrders);
+    return json({ ok: true, orderId });
+  } catch (err) {
+    console.error("orders DELETE error:", err);
+    return json({ ok: false, error: err.message || "Server error" }, 500);
+  }
+}
