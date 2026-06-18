@@ -109,6 +109,17 @@
 
   <script src="assets/products.js"></script>
   <script src="assets/order.js"></script>
-  <script>initOrderPage("combined");</script>
+  <script>
+    (async () => {
+      try {
+        const res = await fetch("/api/config");
+        const data = await res.json();
+        if (data.ok && data.orderSecret) {
+          window.KH_CONFIG.orderSecret = data.orderSecret;
+        }
+      } catch (_) {}
+      initOrderPage("combined");
+    })();
+  </script>
 </body>
 </html>

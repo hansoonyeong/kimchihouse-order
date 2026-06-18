@@ -149,7 +149,9 @@ function serveStatic(req, res) {
 }
 
 const server = http.createServer(async (req, res) => {
-  if (req.url.startsWith("/api/orders")) {
+  const urlPath = req.url.split("?")[0];
+
+  if (urlPath.startsWith("/api/orders")) {
     try {
       await handleOrders(req, res);
     } catch (err) {
@@ -157,6 +159,20 @@ const server = http.createServer(async (req, res) => {
     }
     return;
   }
+
+  if (urlPath === "/api/config" && req.method === "GET") {
+    return sendJson(res, 200, { ok: true, orderSecret: ORDER_SECRET });
+  }
+
+  if (urlPath === "/api/config" && req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    });
+    return res.end();
+  }
+
   serveStatic(req, res);
 });
 

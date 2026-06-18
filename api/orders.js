@@ -1,67 +1,41 @@
-import { kv } from "@vercel/kv";
+import { getAdminKey, json, optionsResponse, requireEnv } from "./_lib/http.js";
+import { readOrders, writeOrders } from "./_lib/orders-store.js";
 
-const ORDERS_KEY = "kimchi-house:orders";
-
-function cors(res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Admin-Key");
+export async function OPTIONS() {
+  return optionsResponse();
 }
 
-function unauthorized(res, message = "Unauthorized") {
-  return res.status(401).json({ ok: false, error: message });
-}
-
-function getAdminKey(req) {
-  const header = req.headers.authorization || "";
-  if (header.startsWith("Bearer ")) return header.slice(7);
-  return req.headers["x-admin-key"] || "";
-}
-
-async function readOrders() {
+export async function GET(request) {
   try {
-    const orders = await kv.get(ORDERS_KEY);
-    return Array.isArray(orders) ? orders : [];
-  } catch {
-    return [];
-  }
-}
+    const env = requireEnv();
+    if (!env.ok) return env.response;
 
-async function writeOrders(orders) {
-  await kv.set(ORDERS_KEY, orders);
-}
-
-export default async function handler(req, res) {
-  cors(res);
-
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
-
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  const orderSecret = process.env.ORDER_SECRET;
-
-  if (!adminPassword || !orderSecret) {
-    return res.status(500).json({
-      ok: false,
-      error: "서버 환경변수(ADMIN_PASSWORD, ORDER_SECRET)가 설정되지 않았습니다.",
-    });
-  }
-
-  if (req.method === "GET") {
-    if (getAdminKey(req) !== adminPassword) {
-      return unauthorized(res, "관리자 인증이 필요합니다.");
+    if (getAdminKey(request) !== env.adminPassword) {
+      return json({ ok: false, error: "관리자 인증이 필요합니다." }, 401);
     }
 
     const orders = await readOrders();
-    return res.status(200).json({ ok: true, orders });
+    return json({ ok: true, orders });
+  } catch (err) {
+    console.error("orders GET error:", err);
+    return json({ ok: false, error: err.message || "Server error" }, 500);
   }
+}
 
-  if (req.method === "POST") {
-    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+export async function POST(request) {
+  try {
+    const env = requireEnv();
+    if (!env.ok) return env.response;
 
-    if (!body || body.secret !== orderSecret) {
-      return unauthorized(res, "주문 요청이 유효하지 않습니다.");
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ ok: false, error: "잘못된 요청입니다." }, 400);
+    }
+
+    if (!body || body.secret !== env.orderSecret) {
+      return json({ ok: false, error: "주문 요청이 유효하지 않습니다." }, 401);
     }
 
     const {
@@ -77,11 +51,11 @@ export default async function handler(req, res) {
     } = body;
 
     if (!type || !customer?.name || !customer?.phone || !customer?.address) {
-      return res.status(400).json({ ok: false, error: "필수 주문 정보가 누락되었습니다." });
+      return json({ ok: false, error: "필수 주문 정보가 누락되었습니다." }, 400);
     }
 
     if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ ok: false, error: "주문 품목을 1개 이상 선택해 주세요." });
+      return json({ ok: false, error: "주문 품목을 1개 이상 선택해 주세요." }, 400);
     }
 
     const order = {
@@ -103,8 +77,9 @@ export default async function handler(req, res) {
     orders.unshift(order);
     await writeOrders(orders);
 
-    return res.status(201).json({ ok: true, orderId: order.id });
+    return json({ ok: true, orderId: order.id }, 201);
+  } catch (err) {
+    console.error("orders POST error:", err);
+    return json({ ok: false, error: err.message || "Server error" }, 500);
   }
-
-  return res.status(405).json({ ok: false, error: "Method not allowed" });
 }
