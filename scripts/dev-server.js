@@ -104,8 +104,14 @@ async function handleOrders(req, res) {
       return sendJson(res, 400, { ok: false, error: "주문 품목을 1개 이상 선택해 주세요." });
     }
 
+    const date = new Date();
+    const y = String(date.getFullYear()).slice(-2);
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    const orderId = `KH${y}${m}${d}-` + Math.floor(1000 + Math.random() * 9000);
+
     const order = {
-      id: `KH-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+      id: orderId,
       type,
       customer,
       items,
