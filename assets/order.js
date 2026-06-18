@@ -32,7 +32,7 @@
   }
 
   function createOrderApp(type) {
-    const state = { cart: {}, variants: {}, payment: "transfer" };
+    const state = { cart: {}, payment: "transfer" };
 
     function qty(id) {
       return state.cart[id] || 0;
@@ -74,17 +74,23 @@
       return itemPrice(item);
     }
 
-    function itemPrice(item) {
-      const count = qty(item.id);
-      if (count <= 0 || item.soldOut) return 0;
+    function itemSubtotal(item) {
+      if (item.soldOut) return 0;
       if (item.group === "special" || item.group === "pa") return 0;
       if (item.variants) {
-        const key = state.variants[item.id] || item.variants[0].key;
-        const variant = item.variants.find((v) => v.key === key);
-        return count * (variant ? variant.price : 0);
+        return item.variants.reduce((sum, v) => {
+          const count = qty(`${item.id}:${v.key}`);
+          return sum + count * v.price;
+        }, 0);
       }
+      const count = qty(item.id);
+      if (count <= 0) return 0;
       if (item.tiers) return calcTierTotal(count, item.tiers);
       return count * item.price;
+    }
+
+    function itemPrice(item) {
+      return itemSubtotal(item);
     }
 
     function subtotalFor(cat) {
@@ -133,17 +139,25 @@
     function buildLineItemsFor(cat) {
       const lines = [];
       for (const item of getAllItems(cat)) {
+        if (item.variants) {
+          for (const v of item.variants) {
+            const count = qty(`${item.id}:${v.key}`);
+            if (count <= 0) continue;
+            lines.push({
+              name: `${item.name} (${v.label})`,
+              qty: count,
+              price: count * v.price,
+              category: cat,
+            });
+          }
+          continue;
+        }
+
         const count = qty(item.id);
         if (count <= 0) continue;
         if (item.group === "special" || item.group === "pa") continue;
 
-        let name = item.name;
-        if (item.variants) {
-          const key = state.variants[item.id] || item.variants[0].key;
-          const variant = item.variants.find((v) => v.key === key);
-          name += ` (${variant.label})`;
-        }
-        lines.push({ name, qty: count, price: itemPrice(item), category: cat });
+        lines.push({ name: item.name, qty: count, price: itemPrice(item), category: cat });
       }
 
       if (cat === "kimchi") {
@@ -183,16 +197,26 @@
     function buildBarLinesFor(cat) {
       const lines = [];
       for (const item of getAllItems(cat)) {
+        if (item.variants) {
+          for (const v of item.variants) {
+            const key = `${item.id}:${v.key}`;
+            const count = qty(key);
+            if (count <= 0) continue;
+            lines.push({
+              id: key,
+              name: `${item.name} (${v.label})`,
+              qty: count,
+              price: count * v.price,
+              category: cat,
+            });
+          }
+          continue;
+        }
+
         const count = qty(item.id);
         if (count <= 0) continue;
 
         let name = item.name;
-        if (item.variants) {
-          const key = state.variants[item.id] || item.variants[0].key;
-          const variant = item.variants.find((v) => v.key === key);
-          name += ` (${variant.label})`;
-        }
-
         let price = barPriceFor(item);
 
         lines.push({ id: item.id, name, qty: count, price, category: cat });
@@ -262,8 +286,20 @@
         ];
         extra = wrapTierTags(tags.join(""), tags.length);
       } else if (item.variants) {
-        const key = state.variants[item.id] || item.variants[0].key;
-        extra = `<div class="variant-btns">${item.variants.map((v) => `<button type="button" class="variant-btn ${key === v.key ? "selected" : ""}" data-variant="${item.id}:${v.key}">${v.label} ${money(v.price)}</button>`).join("")}</div>`;
+        extra = `<div class="variant-rows">${item.variants
+          .map((v) => {
+            const key = `${item.id}:${v.key}`;
+            const vQty = qty(key);
+            return `<div class="variant-row">
+              <span class="variant-label">${v.label} <strong>${money(v.price)}</strong></span>
+              <div class="qty-step">
+                <button type="button" data-dec="${key}" ${vQty <= 0 ? "disabled" : ""}>−</button>
+                <span>${vQty}</span>
+                <button type="button" data-inc="${key}">+</button>
+              </div>
+            </div>`;
+          })
+          .join("")}</div>`;
       }
 
       const sale = item.sale
@@ -272,6 +308,13 @@
       const callout = item.saleNote ? `<div class="sale-callout">${item.saleNote}</div>` : "";
       const price = item.price ? `<div class="price-text">${money(item.price)}</div>` : "";
       const rowClass = item.saleLabel ? "product-card sale-featured" : "product-card";
+      const qtyControl = item.variants
+        ? ""
+        : `<div class="qty-step">
+            <button type="button" data-dec="${item.id}" ${count <= 0 ? "disabled" : ""}>−</button>
+            <span>${count}</span>
+            <button type="button" data-inc="${item.id}">+</button>
+          </div>`;
 
       return `<div class="${rowClass}">
         ${thumb}
@@ -280,11 +323,7 @@
           ${callout}
           ${extra}
           ${price}
-          <div class="qty-step">
-            <button type="button" data-dec="${item.id}" ${count <= 0 ? "disabled" : ""}>−</button>
-            <span>${count}</span>
-            <button type="button" data-inc="${item.id}">+</button>
-          </div>
+          ${qtyControl}
         </div>
       </div>`;
     }
@@ -469,14 +508,8 @@
     document.getElementById("product-root").addEventListener("click", (e) => {
       const inc = e.target.getAttribute("data-inc");
       const dec = e.target.getAttribute("data-dec");
-      const variant = e.target.getAttribute("data-variant");
       if (inc) setQty(inc, qty(inc) + 1);
       if (dec) setQty(dec, Math.max(0, qty(dec) - 1));
-      if (variant) {
-        const [id, key] = variant.split(":");
-        state.variants[id] = key;
-        render();
-      }
     });
 
     document.querySelectorAll(".pay-opt").forEach((el) => {

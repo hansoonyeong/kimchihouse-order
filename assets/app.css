@@ -649,6 +649,30 @@ header.top.compact {
   font-weight: 700;
 }
 
+.variant-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.variant-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.variant-label {
+  font-size: 14px;
+  color: var(--ink2);
+}
+
+.variant-label strong {
+  color: var(--brand);
+}
+
 .qty-step {
   display: flex;
   align-items: center;
@@ -687,6 +711,13 @@ header.top.compact {
 }
 
 .field label .req { color: var(--brand-mid); }
+
+.field-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink2);
+}
 
 input[type="text"],
 input[type="tel"],
