@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 360" role="img" aria-label="@XX°¤ Kimchi House AU">
+  <rect width="320" height="360" rx="24" fill="#133022"/>
+  <path d="M40 130 L160 40 L280 130 V310 H40 Z" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M230 130 V95 H250 V130" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+  <text x="160" y="175" text-anchor="middle" fill="#FFFFFF" font-family="'Noto Sans KR', sans-serif" font-size="34" font-weight="800">@X</text>
+  <text x="160" y="215" text-anchor="middle" fill="#FFFFFF" font-family="'Noto Sans KR', sans-serif" font-size="34" font-weight="800">X°¤</text>
+  <text x="160" y="265" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="1">Kimchi House AU</text>
+</svg>

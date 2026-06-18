@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>관리자 | 김치하우스 주문</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/app.css" />
+</head>
+<body>
+  <div class="admin-login" id="login-screen">
+    <header class="site-header">
+      <img src="assets/logo.jpg" alt="김치하우스 Kimchi House AU" class="site-logo" />
+      <div class="round-line">관리자 전용</div>
+    </header>
+    <section class="sec">
+      <p class="sec-note">관리자만 주문 데이터를 조회할 수 있습니다.</p>
+      <div class="field">
+        <label for="admin-password">관리자 비밀번호</label>
+        <input type="password" id="admin-password" placeholder="비밀번호 입력" />
+      </div>
+      <button type="button" class="btn btn-primary" id="login-btn">로그인</button>
+      <a class="back-link" href="index.html">← 홈으로</a>
+    </section>
+  </div>
+
+  <div class="wrap admin-panel" id="admin-panel">
+    <header class="site-header">
+      <img src="assets/logo.jpg" alt="김치하우스 Kimchi House AU" class="site-logo" />
+      <div class="round-line">주문 관리</div>
+    </header>
+
+    <div class="stats">
+      <div class="stat"><div class="num" id="stat-all">0</div><div class="lbl">전체</div></div>
+      <div class="stat"><div class="num" id="stat-frozen">0</div><div class="lbl">냉동</div></div>
+      <div class="stat"><div class="num" id="stat-kimchi">0</div><div class="lbl">김치</div></div>
+    </div>
+
+    <div class="admin-toolbar">
+      <div class="filter-tabs">
+        <button type="button" class="filter-tab active" data-filter="all">전체</button>
+        <button type="button" class="filter-tab" data-filter="frozen">냉동 반찬</button>
+        <button type="button" class="filter-tab" data-filter="kimchi">김치·장류</button>
+      </div>
+      <button type="button" class="btn btn-secondary" id="refresh-btn">새로고침</button>
+      <button type="button" class="btn btn-secondary" id="export-btn">CSV 내보내기</button>
+      <button type="button" class="btn btn-secondary" id="logout-btn">로그아웃</button>
+    </div>
+
+    <div class="order-list" id="order-list"></div>
+    <a class="back-link" href="index.html">← 홈으로</a>
+  </div>
+
+  <script>
+    const API = "/api/orders";
+    let adminKey = sessionStorage.getItem("kh_admin_key") || "";
+    let orders = [];
+    let filter = "all";
+
+    function formatDate(iso) {
+      return new Date(iso).toLocaleString("ko-KR", { hour12: false });
+    }
+
+    function typeLabel(type) {
+      if (type === "combined") return "통합 주문";
+      return type === "frozen" ? "냉동 반찬" : "김치·장류";
+    }
+
+    function orderHasCategory(o, cat) {
+      if (o.type === cat) return true;
+      if (o.type !== "combined") return false;
+      const sub = o.shippingBreakdown?.[cat]?.subtotal;
+      if (sub > 0) return true;
+      return (o.items || []).some((item) => item.category === cat);
+    }
+
+    function shippingSummary(o) {
+      if (o.type !== "combined" || !o.shippingBreakdown) {
+        return `소계 $${o.subtotal} + 배송 $${o.shippingFee} = $${o.total}`;
+      }
+      const parts = ["frozen", "kimchi"]
+        .map((cat) => {
+          const block = o.shippingBreakdown[cat];
+          if (!block || block.subtotal <= 0) return "";
+          const ship = block.shippingFee === 0 ? "무료" : `$${block.shippingFee}`;
+          return `${typeLabel(cat)} $${block.subtotal} + 배송 ${ship}`;
+        })
+        .filter(Boolean)
+        .join(" · ");
+      return `${parts} = $${o.total}`;
+    }
+
+    async function fetchOrders() {
+      const res = await fetch(API, {
+        headers: { Authorization: `Bearer ${adminKey}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "조회 실패");
+      orders = data.orders || [];
+    }
+
+    function filteredOrders() {
+      if (filter === "all") return orders;
+      return orders.filter((o) => orderHasCategory(o, filter));
+    }
+
+    function renderOrders() {
+      const list = filteredOrders();
+      document.getElementById("stat-all").textContent = orders.length;
+      document.getElementById("stat-frozen").textContent = orders.filter((o) => orderHasCategory(o, "frozen")).length;
+      document.getElementById("stat-kimchi").textContent = orders.filter((o) => orderHasCategory(o, "kimchi")).length;
+
+      const root = document.getElementById("order-list");
+      if (!list.length) {
+        root.innerHTML = '<p style="color:var(--ink2);text-align:center;padding:40px 0">주문 내역이 없습니다.</p>';
+        return;
+      }
+
+      root.innerHTML = list.map((o) => `
+        <article class="order-item">
+          <div class="head">
+            <div>
+              <div class="id">${o.id}</div>
+              <div class="meta">${typeLabel(o.type)} · ${formatDate(o.createdAt)}</div>
+            </div>
+            <div class="meta">${o.payment === "cash" ? "현금" : "계좌이체"}</div>
+          </div>
+          <div><strong>${o.customer.name}</strong> · ${o.customer.phone}</div>
+          <div class="meta">${o.customer.address}, ${o.customer.suburb || ""}</div>
+          ${o.customer.kakao ? `<div class="meta">카톡: ${o.customer.kakao}</div>` : ""}
+          <div class="lines">${(o.items || []).map((i) => `· ${i.name} × ${i.qty} — $${i.price}`).join("<br>")}</div>
+          ${o.note ? `<div class="meta" style="margin-top:8px">요청: ${o.note}</div>` : ""}
+          <div class="total">${shippingSummary(o)}</div>
+        </article>
+      `).join("");
+    }
+
+    function showPanel() {
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("admin-panel").classList.add("show");
+    }
+
+    async function login() {
+      adminKey = document.getElementById("admin-password").value.trim();
+      if (!adminKey) return alert("비밀번호를 입력해 주세요.");
+      try {
+        await fetchOrders();
+        sessionStorage.setItem("kh_admin_key", adminKey);
+        showPanel();
+        renderOrders();
+      } catch (err) {
+        alert(err.message || "로그인 실패");
+      }
+    }
+
+    async function refresh() {
+      try {
+        await fetchOrders();
+        renderOrders();
+      } catch (err) {
+        alert(err.message || "새로고침 실패");
+      }
+    }
+
+    function exportCsv() {
+      const list = filteredOrders();
+      if (!list.length) return alert("내보낼 주문이 없습니다.");
+      const rows = [
+        ["주문번호", "유형", "일시", "성함", "연락처", "주소", "Suburb", "카톡", "품목", "소계", "배송비", "합계", "결제", "요청"],
+      ];
+      for (const o of list) {
+        rows.push([
+          o.id,
+          typeLabel(o.type),
+          o.createdAt,
+          o.customer.name,
+          o.customer.phone,
+          o.customer.address,
+          o.customer.suburb || "",
+          o.customer.kakao || "",
+          (o.items || []).map((i) => `${i.name}x${i.qty}`).join(" / "),
+          o.subtotal,
+          o.shippingFee,
+          o.total,
+          o.payment,
+          o.note || "",
+        ]);
+      }
+      const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `kimchi-house-orders-${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById("login-btn").addEventListener("click", login);
+    document.getElementById("admin-password").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") login();
+    });
+    document.getElementById("refresh-btn").addEventListener("click", refresh);
+    document.getElementById("export-btn").addEventListener("click", exportCsv);
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      sessionStorage.removeItem("kh_admin_key");
+      location.reload();
+    });
+    document.querySelectorAll(".filter-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".filter-tab").forEach((t) => t.classList.remove("active"));
+        tab.classList.add("active");
+        filter = tab.dataset.filter;
+        renderOrders();
+      });
+    });
+
+    if (adminKey) {
+      fetchOrders().then(() => { showPanel(); renderOrders(); }).catch(() => {
+        sessionStorage.removeItem("kh_admin_key");
+      });
+    }
+  </script>
+</body>
+</html>

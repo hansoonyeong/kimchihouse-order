@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>주문하기 | 김치하우스</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/app.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="site-header">
+      <img src="assets/logo.jpg" alt="김치하우스 Kimchi House AU" class="site-logo" />
+      <div class="round-line">6~7월 3차 사전 예약 · 통합 주문</div>
+    </header>
+
+    <div id="order-form-wrap">
+      <section class="sec">
+        <div class="sec-eyebrow">Order</div>
+        <h2 class="sec-title">품목 선택</h2>
+        <p class="sec-note">냉동 반찬과 김치·장류를 한 번에 담을 수 있습니다. 배송만 회차별로 나뉩니다.</p>
+        <div id="product-root"></div>
+      </section>
+
+      <section class="sec">
+        <div class="sec-eyebrow">Delivery</div>
+        <h2 class="sec-title">배송 정보</h2>
+        <div class="field">
+          <label for="customer-address">배송 주소 <span class="req">*</span></label>
+          <input type="text" id="customer-address" placeholder="Street address" required />
+        </div>
+        <div class="field">
+          <label for="customer-suburb">지역 (Suburb) <span class="req">*</span></label>
+          <input type="text" id="customer-suburb" placeholder="Suburb" required />
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="sec-eyebrow">Payment</div>
+        <h2 class="sec-title">결제 방법</h2>
+        <div class="pay-options">
+          <div class="pay-opt" data-pay="cash">
+            <strong>현장 결제</strong>
+            <span>수령 시 현금</span>
+          </div>
+          <div class="pay-opt sel" data-pay="transfer">
+            <strong>계좌이체</strong>
+            <span>주문 후 선입금</span>
+          </div>
+        </div>
+        <div class="bank-box" id="bank-box">
+          <div id="bank-info"></div>
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="sec-eyebrow">Contact</div>
+        <h2 class="sec-title">주문자 정보</h2>
+        <div class="row2">
+          <div class="field">
+            <label for="customer-name">성함 <span class="req">*</span></label>
+            <input type="text" id="customer-name" required />
+          </div>
+          <div class="field">
+            <label for="customer-phone">연락처 <span class="req">*</span></label>
+            <input type="tel" id="customer-phone" required />
+          </div>
+        </div>
+        <div class="field">
+          <label for="customer-kakao">카카오톡 이름</label>
+          <input type="text" id="customer-kakao" />
+        </div>
+        <div class="field">
+          <label for="customer-note">요청사항</label>
+          <textarea id="customer-note"></textarea>
+        </div>
+        <button type="button" class="btn btn-primary" id="submit-btn">주문 접수하기</button>
+        <a class="back-link" href="index.html">← 공지사항으로 돌아가기</a>
+      </section>
+    </div>
+
+    <div class="success-screen" id="success-screen">
+      <div class="check">✓</div>
+      <h2>주문이 접수되었습니다</h2>
+      <p>주문번호: <strong id="order-id"></strong></p>
+      <p style="margin-top:10px;color:var(--ink2)">곧 카카오톡으로 확인 연락을 드리겠습니다.</p>
+      <a class="btn btn-primary" style="margin-top:20px" href="https://pf.kakao.com/_kimchihouseau" target="_blank" rel="noopener">카카오톡 채널 바로가기</a>
+      <br>
+      <a class="back-link" href="index.html">홈으로 돌아가기</a>
+    </div>
+  </div>
+
+  <div class="sumbar" id="sumbar">
+    <div class="in">
+      <div class="sumbar-main">
+        <div class="s1" id="bar-title">주문 내역</div>
+        <ul class="bar-items" id="bar-items">
+          <li class="bar-empty">품목을 선택해 주세요</li>
+        </ul>
+      </div>
+      <div class="sumbar-total">
+        <div class="bar-meta" id="bar-meta"></div>
+        <div class="price" id="bar-total">$0</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/products.js"></script>
+  <script src="assets/order.js"></script>
+  <script>initOrderPage("combined");</script>
+</body>
+</html>
