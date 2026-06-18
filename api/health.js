@@ -1,4 +1,4 @@
-import { hasKvEnv, json, optionsResponse, requireEnv } from "./_lib/http.js";
+import { hasRedisEnv, json, optionsResponse, requireEnv } from "./_lib/http.js";
 
 export async function OPTIONS() {
   return optionsResponse();
@@ -9,6 +9,6 @@ export async function GET() {
   return json({
     ok: true,
     envReady: env.ok,
-    kvReady: hasKvEnv(),
+    redisReady: hasRedisEnv(),
   });
 }

@@ -4,8 +4,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(__dirname, "..");
 const PORT = process.env.PORT || 3456;
-const ORDERS_FILE = path.join(__dirname, "data", "orders.json");
+const ORDERS_FILE = path.join(ROOT, "data", "orders.json");
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin1234";
 const ORDER_SECRET = process.env.ORDER_SECRET || "CHANGE_ME_ORDER_SECRET";
 
@@ -131,9 +132,9 @@ function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split("?")[0]);
   if (urlPath === "/") urlPath = "/index.html";
 
-  const filePath = path.join(__dirname, urlPath);
+  const filePath = path.join(ROOT, urlPath);
 
-  if (!filePath.startsWith(__dirname)) {
+  if (!filePath.startsWith(ROOT)) {
     res.writeHead(403);
     return res.end("Forbidden");
   }

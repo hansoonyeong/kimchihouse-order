@@ -1,3 +1,5 @@
+import { hasRedisEnv } from "./orders-store.js";
+
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -36,6 +38,4 @@ export function requireEnv() {
   return { ok: true, adminPassword, orderSecret };
 }
 
-export function hasKvEnv() {
-  return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-}
+export { hasRedisEnv };
