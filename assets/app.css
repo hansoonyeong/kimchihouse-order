@@ -1507,6 +1507,20 @@ footer.site a {
     display: flex;
     flex-direction: column;
     gap: 28px;
+    position: sticky;
+    top: 20px;
+    align-self: start;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  #order-form-wrap .checkout-stack:has(.sumbar.has-items) .sumbar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    flex-shrink: 0;
   }
 
   #order-form-wrap .checkout-stack > .sec {
