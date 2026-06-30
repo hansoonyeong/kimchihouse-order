@@ -32,7 +32,18 @@
   }
 
   function createOrderApp(type) {
-    const state = { cart: {}, payment: "transfer" };
+    const state = { cart: {}, payment: "transfer", sectionFilters: {} };
+
+    function sectionFilterFor(cat) {
+      return state.sectionFilters[cat] || "all";
+    }
+
+    function visibleSections(cat) {
+      const filter = sectionFilterFor(cat);
+      const sections = KH_PRODUCTS[cat].sections;
+      if (filter === "all") return sections;
+      return sections.filter((section) => section.id === filter);
+    }
 
     function qty(id) {
       return state.cart[id] || 0;
@@ -334,25 +345,46 @@
       return `<p class="${cls}">${section.note}</p>`;
     }
 
-    function renderCatalog() {
-      if (type === "combined") {
-        return catalogTypes(type)
-          .map((cat) => {
-            const catalog = KH_PRODUCTS[cat];
-            const sections = catalog.sections.map((section) => renderSection(section)).join("");
-            return `<div class="catalog-block">
-              <div class="catalog-head">
-                <h2 class="catalog-title">${catalog.label}</h2>
-                <span class="catalog-delivery">${catalog.delivery}</span>
-              </div>
-              ${sections}
-            </div>`;
-          })
-          .join("");
+    function renderCategoryTabs(cat) {
+      const sections = KH_PRODUCTS[cat].sections;
+      const active = sectionFilterFor(cat);
+      const allCount = sections.reduce((sum, section) => sum + section.items.length, 0);
+      const tabs = [
+        `<button type="button" class="catalog-tab${active === "all" ? " active" : ""}" data-cat-filter="${cat}" data-section="all">전체 <span class="tab-count">${allCount}</span></button>`,
+      ];
+
+      for (const section of sections) {
+        tabs.push(
+          `<button type="button" class="catalog-tab${active === section.id ? " active" : ""}" data-cat-filter="${cat}" data-section="${section.id}">${section.tab} <span class="tab-count">${section.items.length}</span></button>`
+        );
       }
 
-      const catalog = KH_PRODUCTS[type];
-      return catalog.sections.map((section) => renderSection(section)).join("");
+      return `<div class="catalog-tabs">${tabs.join("")}</div>`;
+    }
+
+    function renderCatalogBlock(cat) {
+      const catalog = KH_PRODUCTS[cat];
+      const sections = visibleSections(cat);
+      const sectionsHtml = sections.length
+        ? sections.map((section) => renderSection(section)).join("")
+        : '<p class="catalog-empty">해당 카테고리에 상품이 없습니다.</p>';
+
+      return `<div class="catalog-block">
+        <div class="catalog-head">
+          <h2 class="catalog-title">${catalog.label}</h2>
+          <span class="catalog-delivery">${catalog.delivery}</span>
+        </div>
+        ${renderCategoryTabs(cat)}
+        ${sectionsHtml}
+      </div>`;
+    }
+
+    function renderCatalog() {
+      if (type === "combined") {
+        return catalogTypes(type).map((cat) => renderCatalogBlock(cat)).join("");
+      }
+
+      return renderCatalogBlock(type);
     }
 
     function shipLabel(fee) {
@@ -508,6 +540,13 @@
     });
 
     document.getElementById("product-root").addEventListener("click", (e) => {
+      const tab = e.target.closest(".catalog-tab[data-cat-filter][data-section]");
+      if (tab) {
+        state.sectionFilters[tab.dataset.catFilter] = tab.dataset.section;
+        render();
+        return;
+      }
+
       const inc = e.target.getAttribute("data-inc");
       const dec = e.target.getAttribute("data-dec");
       if (inc) setQty(inc, qty(inc) + 1);

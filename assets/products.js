@@ -17,6 +17,8 @@ window.KH_PRODUCTS = {
     delivery: "6/26 ~ 6/29 배송",
     sections: [
       {
+        id: "mandu",
+        tab: "만두",
         title: "최고급 만두 2종",
         note: "한국 파르팜 비건 인증 · 학교급식 전용",
         items: [
@@ -26,6 +28,8 @@ window.KH_PRODUCTS = {
         ],
       },
       {
+        id: "kimbap",
+        tab: "김밥·간편식",
         title: "충무김밥 파티 팩 (3~5인분)",
         note: "전자레인지 해동으로 간편하게",
         items: [
@@ -33,6 +37,8 @@ window.KH_PRODUCTS = {
         ],
       },
       {
+        id: "fish",
+        tab: "생선",
         title: "완벽 손질 생선 3종",
         note: "해동 후 바로 조리 가능",
         items: [
@@ -43,6 +49,8 @@ window.KH_PRODUCTS = {
         ],
       },
       {
+        id: "jeotgal",
+        tab: "젓갈",
         title: "최고급 젓갈류",
         items: [
           { id: "a9", name: "간장게장 (650g)", tiers: [[1, 25], [3, 70], [5, 110], [10, 220]], image: "assets/images/products/a9.png" },
@@ -52,6 +60,8 @@ window.KH_PRODUCTS = {
         ],
       },
       {
+        id: "namul",
+        tab: "나물·반찬",
         title: "100% 국산 나물 & 반찬",
         note: "급속 냉동으로 풍미 유지",
         items: [
@@ -70,6 +80,8 @@ window.KH_PRODUCTS = {
     delivery: "7/5일부터 배송 시작",
     sections: [
       {
+        id: "pogi",
+        tab: "포기김치",
         title: "새벽 3차 포기김치 3종",
         items: [
           { id: "b1", name: "서울식 포기김치", variants: [{ key: "7kg", label: "7Kg", price: 85 }, { key: "3.5kg", label: "3.5Kg", price: 45 }], image: "assets/images/products/b1.png" },
@@ -78,6 +90,8 @@ window.KH_PRODUCTS = {
         ],
       },
       {
+        id: "special",
+        tab: "특수김치",
         title: "특수 김치 (1KG)",
         note: "총각김치 30% 빅세일 · 열무·갓김치 합산 할인 · 쪽파김치 별도",
         items: [
@@ -88,6 +102,8 @@ window.KH_PRODUCTS = {
         ],
       },
       {
+        id: "best",
+        tab: "베스트셀러",
         title: "베스트셀러",
         items: [
           { id: "b8", name: "올리브유 도시락김 — 대용량 (72봉)", price: 33, image: "assets/images/products/b8.png" },
@@ -96,6 +112,8 @@ window.KH_PRODUCTS = {
         ],
       },
       {
+        id: "jang",
+        tab: "장류",
         title: "전통 장류 4종",
         items: [
           { id: "b11", name: "항아골 생청국장 (120g)", tiers: [[4, 25], [8, 45]], image: "assets/images/products/b11.png?v=2" },
