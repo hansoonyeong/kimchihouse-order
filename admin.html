@@ -40,6 +40,12 @@
       <div class="stat"><div class="num" id="stat-kimchi">0</div><div class="lbl">김치</div></div>
     </div>
 
+    <div class="admin-search-wrap">
+      <label class="admin-search-label" for="order-search">주문자 검색</label>
+      <input type="search" id="order-search" class="admin-search" placeholder="이름, 연락처, 카톡, 주문번호, 주소..." autocomplete="off" />
+      <p class="admin-search-meta" id="search-meta"></p>
+    </div>
+
     <div class="admin-toolbar">
       <div class="filter-tabs">
         <button type="button" class="filter-tab active" data-filter="all">전체</button>
@@ -64,6 +70,25 @@
     let adminKey = sessionStorage.getItem("kh_admin_key") || "";
     let orders = [];
     let filter = "all";
+    let searchQuery = "";
+
+    function orderSearchText(o) {
+      const c = o.customer || {};
+      return [
+        o.id,
+        c.name,
+        c.phone,
+        c.kakao,
+        c.address,
+        c.suburb,
+        o.note,
+      ].filter(Boolean).join(" ").toLowerCase();
+    }
+
+    function orderMatchesSearch(o, query) {
+      if (!query) return true;
+      return orderSearchText(o).includes(query);
+    }
 
     function formatDate(iso) {
       return new Date(iso).toLocaleString("ko-KR", { hour12: false });
@@ -192,8 +217,23 @@ ${customerName}님, 주문이 접수되었습니다.
     }
 
     function filteredOrders() {
-      if (filter === "all") return orders;
-      return orders.filter((o) => orderHasCategory(o, filter));
+      const query = searchQuery.trim().toLowerCase();
+      return orders.filter((o) => {
+        if (filter !== "all" && !orderHasCategory(o, filter)) return false;
+        return orderMatchesSearch(o, query);
+      });
+    }
+
+    function updateSearchMeta(count) {
+      const meta = document.getElementById("search-meta");
+      const query = searchQuery.trim();
+      if (!query) {
+        meta.textContent = "";
+        return;
+      }
+      meta.textContent = count
+        ? `「${query}」 검색 결과 ${count}건`
+        : `「${query}」에 해당하는 주문이 없습니다.`;
     }
 
     function renderOrders() {
@@ -201,10 +241,15 @@ ${customerName}님, 주문이 접수되었습니다.
       document.getElementById("stat-all").textContent = orders.length;
       document.getElementById("stat-frozen").textContent = orders.filter((o) => orderHasCategory(o, "frozen")).length;
       document.getElementById("stat-kimchi").textContent = orders.filter((o) => orderHasCategory(o, "kimchi")).length;
+      updateSearchMeta(list.length);
 
       const root = document.getElementById("order-list");
       if (!list.length) {
-        root.innerHTML = '<p style="color:var(--ink2);text-align:center;padding:40px 0">주문 내역이 없습니다.</p>';
+        const query = searchQuery.trim();
+        const msg = query
+          ? `「${query}」에 해당하는 주문이 없습니다.`
+          : "주문 내역이 없습니다.";
+        root.innerHTML = `<p style="color:var(--ink2);text-align:center;padding:40px 0">${msg}</p>`;
         return;
       }
 
@@ -343,6 +388,11 @@ ${customerName}님, 주문이 접수되었습니다.
         filter = tab.dataset.filter;
         renderOrders();
       });
+    });
+
+    document.getElementById("order-search").addEventListener("input", (e) => {
+      searchQuery = e.target.value;
+      renderOrders();
     });
 
     document.getElementById("order-list").addEventListener("click", (e) => {
