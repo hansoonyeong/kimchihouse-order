@@ -32,13 +32,7 @@
   }
 
   function createOrderApp(type) {
-    const cats = catalogTypes(type);
-    const state = {
-      cart: {},
-      payment: "transfer",
-      sectionFilters: {},
-      activeCatalog: cats.includes("frozen") ? "frozen" : cats[0],
-    };
+    const state = { cart: {}, payment: "transfer", sectionFilters: {} };
 
     function sectionFilterFor(cat) {
       return state.sectionFilters[cat] || "all";
@@ -346,71 +340,27 @@
       </div>`;
     }
 
-    function iterCatalogEntries(callback) {
-      for (const cat of catalogTypes(type)) {
-        for (const section of KH_PRODUCTS[cat].sections) {
-          for (const item of section.items) {
-            callback(item, cat, section);
-          }
-        }
-      }
-    }
-
-    function collectSaleItems() {
-      const items = [];
-      iterCatalogEntries((item, cat, section) => {
-        if (item.soldOut) return;
-        if (item.sale || item.saleLabel) items.push({ item, cat, section });
-      });
-      return items;
-    }
-
-    function collectBestItems() {
-      const items = [];
-      iterCatalogEntries((item, cat, section) => {
-        if (item.soldOut) return;
-        if (section.id === "best") items.push({ item, cat, section });
-      });
-      return items;
-    }
-
     function sectionNoteHtml(section) {
       if (!section.note) return "";
       const cls = section.items.some((i) => i.saleLabel) ? "section-note sale-note" : "section-note";
       return `<p class="${cls}">${section.note}</p>`;
     }
 
-    function renderFeaturedStrip(title, subtitle, entries, modifier) {
-      if (!entries.length) return "";
-      return `<section class="featured-strip featured-${modifier}">
-        <div class="featured-head">
-          <h3 class="featured-title">${title}</h3>
-          ${subtitle ? `<p class="featured-sub">${subtitle}</p>` : ""}
-        </div>
-        <div class="featured-scroll">${entries.map((entry) => `<div class="featured-item">${renderProduct(entry.item)}</div>`).join("")}</div>
-      </section>`;
-    }
+    function renderCategoryTabs(cat) {
+      const sections = KH_PRODUCTS[cat].sections;
+      const active = sectionFilterFor(cat);
+      const allCount = sections.reduce((sum, section) => sum + section.items.length, 0);
+      const tabs = [
+        `<button type="button" class="catalog-tab${active === "all" ? " active" : ""}" data-cat-filter="${cat}" data-section="all">전체 <span class="tab-count">${allCount}</span></button>`,
+      ];
 
-    function renderCategoryNav() {
-      return catalogTypes(type)
-        .map((cat) => {
-          const catalog = KH_PRODUCTS[cat];
-          const activeFilter = sectionFilterFor(cat);
-          const isActiveGroup = state.activeCatalog === cat;
-          const links = [
-            `<button type="button" class="category-nav-item${isActiveGroup && activeFilter === "all" ? " active" : ""}" data-nav-catalog="${cat}" data-nav-section="all">전체</button>`,
-            ...catalog.sections.map(
-              (section) =>
-                `<button type="button" class="category-nav-item${isActiveGroup && activeFilter === section.id ? " active" : ""}" data-nav-catalog="${cat}" data-nav-section="${section.id}">${section.tab}</button>`
-            ),
-          ].join("");
+      for (const section of sections) {
+        tabs.push(
+          `<button type="button" class="catalog-tab${active === section.id ? " active" : ""}" data-cat-filter="${cat}" data-section="${section.id}">${section.tab} <span class="tab-count">${section.items.length}</span></button>`
+        );
+      }
 
-          return `<div class="category-nav-group">
-            <div class="category-nav-label">${catalog.label}<span>${catalog.delivery}</span></div>
-            ${links}
-          </div>`;
-        })
-        .join("");
+      return `<div class="catalog-tabs">${tabs.join("")}</div>`;
     }
 
     function renderCatalogBlock(cat) {
@@ -420,33 +370,22 @@
         ? sections.map((section) => renderSection(section)).join("")
         : '<p class="catalog-empty">해당 카테고리에 상품이 없습니다.</p>';
 
-      return `<div class="catalog-block" data-catalog="${cat}">
+      return `<div class="catalog-block">
         <div class="catalog-head">
           <h2 class="catalog-title">${catalog.label}</h2>
           <span class="catalog-delivery">${catalog.delivery}</span>
         </div>
+        ${renderCategoryTabs(cat)}
         ${sectionsHtml}
       </div>`;
     }
 
-    function renderShopLayout() {
-      const saleItems = collectSaleItems();
-      const bestItems = collectBestItems();
-
-      return `<div class="shop-shell">
-        <div class="shop-featured">
-          ${renderFeaturedStrip("세일", "이번 회차 특가 상품", saleItems, "sale")}
-          ${renderFeaturedStrip("베스트", "많이 찾는 인기 상품", bestItems, "best")}
-        </div>
-        <div class="shop-body">
-          <nav class="category-nav" aria-label="카테고리">${renderCategoryNav()}</nav>
-          <div class="shop-main">${renderCatalogBlock(state.activeCatalog)}</div>
-        </div>
-      </div>`;
-    }
-
     function renderCatalog() {
-      return renderShopLayout();
+      if (type === "combined") {
+        return catalogTypes(type).map((cat) => renderCatalogBlock(cat)).join("");
+      }
+
+      return renderCatalogBlock(type);
     }
 
     function shipLabel(fee) {
@@ -526,11 +465,6 @@
       }
       barTotal.textContent = money(total());
 
-      const headerCart = document.getElementById("header-cart");
-      const headerCartTotal = document.getElementById("header-cart-total");
-      if (headerCartTotal) headerCartTotal.textContent = money(total());
-      if (headerCart) headerCart.classList.toggle("has-items", lines.length > 0);
-
       const bank = cfg.bank;
       document.getElementById("bank-info").innerHTML = `
         은행 <strong>${bank.bank}</strong><br>
@@ -607,10 +541,9 @@
     });
 
     document.getElementById("product-root").addEventListener("click", (e) => {
-      const navBtn = e.target.closest("[data-nav-catalog][data-nav-section]");
-      if (navBtn) {
-        state.activeCatalog = navBtn.dataset.navCatalog;
-        state.sectionFilters[state.activeCatalog] = navBtn.dataset.navSection;
+      const tab = e.target.closest(".catalog-tab[data-cat-filter][data-section]");
+      if (tab) {
+        state.sectionFilters[tab.dataset.catFilter] = tab.dataset.section;
         render();
         return;
       }

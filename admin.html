@@ -11,25 +11,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/app.css" />
 </head>
-<body class="page-admin">
-  <header class="site-header site-header-admin">
-    <div class="site-header-in">
-      <a href="index.html" class="site-brand">
-        <img src="assets/logo.jpg" alt="김치하우스 Kimchi House AU" class="site-logo" />
-        <span class="site-brand-text">
-          <strong>김치하우스</strong>
-          <span>Kimchi House AU</span>
-        </span>
-      </a>
-      <p class="site-tagline" id="admin-header-tagline">관리자</p>
-      <nav class="site-nav" aria-label="주요 메뉴">
-        <a href="index.html" class="site-nav-link">홈</a>
-        <a href="order.html" class="site-nav-link">주문 페이지</a>
-      </nav>
-    </div>
-  </header>
-
+<body>
   <div class="admin-login" id="login-screen">
+    <header class="site-header">
+      <img src="assets/logo.jpg" alt="김치하우스 Kimchi House AU" class="site-logo" />
+      <div class="round-line">관리자 전용</div>
+    </header>
     <section class="sec">
       <p class="sec-note">관리자만 주문 데이터를 조회할 수 있습니다.</p>
       <div class="field">
@@ -42,6 +29,10 @@
   </div>
 
   <div class="wrap admin-panel" id="admin-panel">
+    <header class="site-header">
+      <img src="assets/logo.jpg" alt="김치하우스 Kimchi House AU" class="site-logo" />
+      <div class="round-line">주문 관리</div>
+    </header>
 
     <div class="stats">
       <div class="stat"><div class="num" id="stat-all">0</div><div class="lbl">전체</div></div>
@@ -291,8 +282,6 @@ ${customerName}님, 주문이 접수되었습니다.
     function showPanel() {
       document.getElementById("login-screen").style.display = "none";
       document.getElementById("admin-panel").classList.add("show");
-      const tagline = document.getElementById("admin-header-tagline");
-      if (tagline) tagline.textContent = "주문 관리";
     }
 
     async function login() {
