@@ -453,11 +453,6 @@
       const barMeta = document.getElementById("bar-meta");
       const barTotal = document.getElementById("bar-total");
       const sumbar = document.getElementById("sumbar");
-      const formWrap = document.getElementById("order-form-wrap");
-
-      if (formWrap) {
-        formWrap.classList.toggle("has-cart-items", lines.length > 0);
-      }
 
       if (!lines.length) {
         barItems.innerHTML = '<li class="bar-empty">품목을 선택해 주세요</li>';
