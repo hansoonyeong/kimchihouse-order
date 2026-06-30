@@ -261,7 +261,8 @@
     }
 
     function renderSection(section) {
-      return `<h3 class="section-title">${section.title}</h3>${sectionNoteHtml(section)}<div class="${sectionGridClass(section.items.length)}">${section.items.map(renderProduct).join("")}</div>`;
+      const count = section.items.length;
+      return `<h3 class="section-title">${section.title}</h3>${sectionNoteHtml(section)}<div class="${sectionGridClass(count)}" data-count="${count}">${section.items.map(renderProduct).join("")}</div>`;
     }
 
     function renderProduct(item) {
@@ -452,6 +453,11 @@
       const barMeta = document.getElementById("bar-meta");
       const barTotal = document.getElementById("bar-total");
       const sumbar = document.getElementById("sumbar");
+      const formWrap = document.getElementById("order-form-wrap");
+
+      if (formWrap) {
+        formWrap.classList.toggle("has-cart-items", lines.length > 0);
+      }
 
       if (!lines.length) {
         barItems.innerHTML = '<li class="bar-empty">품목을 선택해 주세요</li>';
