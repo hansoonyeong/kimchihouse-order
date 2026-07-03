@@ -67,6 +67,13 @@
     const API = "/api/orders";
     const KAKAO_CHANNEL = "http://pf.kakao.com/_alkDxb";
     const SENT_KEY = "kh_kakao_sent";
+    const DELIVERY_STATUSES = [
+      "예약 접수",
+      "주문 확인 완료",
+      "배송 준비 중",
+      "배송 안내 완료",
+      "배송 완료",
+    ];
     let adminKey = sessionStorage.getItem("kh_admin_key") || "";
     let orders = [];
     let filter = "all";
@@ -88,6 +95,16 @@
     function orderMatchesSearch(o, query) {
       if (!query) return true;
       return orderSearchText(o).includes(query);
+    }
+
+    function orderStatus(o) {
+      return DELIVERY_STATUSES.includes(o.status) ? o.status : "예약 접수";
+    }
+
+    function statusOptions(current) {
+      return DELIVERY_STATUSES.map(
+        (status) => `<option value="${status}"${status === current ? " selected" : ""}>${status}</option>`
+      ).join("");
     }
 
     function formatDate(iso) {
@@ -269,6 +286,12 @@ ${customerName}님, 주문이 접수되었습니다.
           <div class="lines">${(o.items || []).map((i) => `· ${i.name} × ${i.qty} — $${i.price}`).join("<br>")}</div>
           ${o.note ? `<div class="meta" style="margin-top:8px">요청: ${o.note}</div>` : ""}
           <div class="total">${shippingSummary(o)}</div>
+          <div class="order-status-row">
+            <label for="status-${o.id}">배송 상태</label>
+            <select id="status-${o.id}" class="order-status-select" data-order-status="${o.id}">
+              ${statusOptions(orderStatus(o))}
+            </select>
+          </div>
           <div class="order-item-actions">
             <button type="button" class="btn btn-kakao${sentIds.has(o.id) ? " sent" : ""}" data-kakao-send="${o.id}">
               ${sentIds.has(o.id) ? "카톡 확인 메시지 (재전송)" : "카톡 확인 메시지 보내기"}
@@ -303,6 +326,28 @@ ${customerName}님, 주문이 접수되었습니다.
         renderOrders();
       } catch (err) {
         alert(err.message || "새로고침 실패");
+      }
+    }
+
+    async function updateOrderStatus(orderId, status) {
+      try {
+        const res = await fetch(API, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${adminKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ orderId, status }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "상태 변경 실패");
+
+        const order = orders.find((o) => o.id === orderId);
+        if (order) order.status = status;
+        showToast(`배송 상태가 「${status}」(으)로 변경되었습니다.`);
+      } catch (err) {
+        alert(err.message || "배송 상태 변경 중 오류가 발생했습니다.");
+        renderOrders();
       }
     }
 
@@ -341,7 +386,7 @@ ${customerName}님, 주문이 접수되었습니다.
       const list = filteredOrders();
       if (!list.length) return alert("내보낼 주문이 없습니다.");
       const rows = [
-        ["주문번호", "유형", "일시", "성함", "연락처", "주소", "Suburb", "카톡", "품목", "소계", "배송비", "합계", "결제", "요청"],
+        ["주문번호", "유형", "일시", "성함", "연락처", "주소", "Suburb", "카톡", "품목", "소계", "배송비", "합계", "결제", "배송상태", "요청"],
       ];
       for (const o of list) {
         rows.push([
@@ -358,6 +403,7 @@ ${customerName}님, 주문이 접수되었습니다.
           o.shippingFee,
           o.total,
           o.payment,
+          orderStatus(o),
           o.note || "",
         ]);
       }
@@ -406,6 +452,12 @@ ${customerName}님, 주문이 접수되었습니다.
       if (deleteBtn) {
         deleteOrder(deleteBtn.dataset.orderDelete);
       }
+    });
+
+    document.getElementById("order-list").addEventListener("change", (e) => {
+      const select = e.target.closest("[data-order-status]");
+      if (!select) return;
+      updateOrderStatus(select.dataset.orderStatus, select.value);
     });
 
     if (adminKey) {

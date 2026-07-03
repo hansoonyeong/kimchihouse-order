@@ -1,4 +1,5 @@
 import { getAdminKey, json, optionsResponse, requireEnv } from "./_lib/http.js";
+import { DEFAULT_DELIVERY_STATUS, DELIVERY_STATUSES } from "./_lib/order-utils.js";
 import { readOrders, writeOrders } from "./_lib/orders-store.js";
 
 export async function OPTIONS() {
@@ -75,6 +76,7 @@ export async function POST(request) {
       payment: payment || "transfer",
       note: note || "",
       createdAt: new Date().toISOString(),
+      status: DEFAULT_DELIVERY_STATUS,
     };
 
     if (shippingBreakdown) order.shippingBreakdown = shippingBreakdown;
@@ -86,6 +88,49 @@ export async function POST(request) {
     return json({ ok: true, orderId: order.id }, 201);
   } catch (err) {
     console.error("orders POST error:", err);
+    return json({ ok: false, error: err.message || "Server error" }, 500);
+  }
+}
+
+export async function PATCH(request) {
+  try {
+    const env = requireEnv();
+    if (!env.ok) return env.response;
+
+    if (getAdminKey(request) !== env.adminPassword) {
+      return json({ ok: false, error: "관리자 인증이 필요합니다." }, 401);
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ ok: false, error: "잘못된 요청입니다." }, 400);
+    }
+
+    const orderId = String(body?.orderId || "").trim();
+    const status = String(body?.status || "").trim();
+
+    if (!orderId) {
+      return json({ ok: false, error: "주문번호가 필요합니다." }, 400);
+    }
+
+    if (!DELIVERY_STATUSES.includes(status)) {
+      return json({ ok: false, error: "유효하지 않은 배송 상태입니다." }, 400);
+    }
+
+    const orders = await readOrders();
+    const index = orders.findIndex((o) => o.id === orderId);
+    if (index === -1) {
+      return json({ ok: false, error: "주문을 찾을 수 없습니다." }, 404);
+    }
+
+    orders[index] = { ...orders[index], status };
+    await writeOrders(orders);
+
+    return json({ ok: true, orderId, status });
+  } catch (err) {
+    console.error("orders PATCH error:", err);
     return json({ ok: false, error: err.message || "Server error" }, 500);
   }
 }

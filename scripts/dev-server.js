@@ -2,6 +2,12 @@ import http from "http";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import {
+  DEFAULT_DELIVERY_STATUS,
+  DELIVERY_STATUSES,
+  phonesMatch,
+  publicOrderView,
+} from "../api/_lib/order-utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
@@ -44,6 +50,7 @@ function sendJson(res, status, data) {
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Key",
   });
   res.end(JSON.stringify(data));
@@ -71,7 +78,7 @@ async function handleOrders(req, res) {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Key",
     });
     return res.end();
@@ -121,6 +128,7 @@ async function handleOrders(req, res) {
       payment: payment || "transfer",
       note: note || "",
       createdAt: new Date().toISOString(),
+      status: DEFAULT_DELIVERY_STATUS,
     };
 
     if (shippingBreakdown) order.shippingBreakdown = shippingBreakdown;
@@ -129,6 +137,40 @@ async function handleOrders(req, res) {
     orders.unshift(order);
     writeOrders(orders);
     return sendJson(res, 201, { ok: true, orderId: order.id });
+  }
+
+  if (req.method === "PATCH") {
+    if (getAdminKey(req) !== ADMIN_PASSWORD) {
+      return sendJson(res, 401, { ok: false, error: "관리자 인증이 필요합니다." });
+    }
+
+    let body;
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      return sendJson(res, 400, { ok: false, error: "잘못된 요청입니다." });
+    }
+
+    const orderId = String(body?.orderId || "").trim();
+    const status = String(body?.status || "").trim();
+
+    if (!orderId) {
+      return sendJson(res, 400, { ok: false, error: "주문번호가 필요합니다." });
+    }
+
+    if (!DELIVERY_STATUSES.includes(status)) {
+      return sendJson(res, 400, { ok: false, error: "유효하지 않은 배송 상태입니다." });
+    }
+
+    const orders = readOrders();
+    const index = orders.findIndex((o) => o.id === orderId);
+    if (index === -1) {
+      return sendJson(res, 404, { ok: false, error: "주문을 찾을 수 없습니다." });
+    }
+
+    orders[index] = { ...orders[index], status };
+    writeOrders(orders);
+    return sendJson(res, 200, { ok: true, orderId, status });
   }
 
   if (req.method === "DELETE") {
@@ -154,6 +196,40 @@ async function handleOrders(req, res) {
   return sendJson(res, 405, { ok: false, error: "Method not allowed" });
 }
 
+async function handleLookup(req, res) {
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    });
+    return res.end();
+  }
+
+  if (req.method !== "POST") {
+    return sendJson(res, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  let body;
+  try {
+    body = JSON.parse(await readBody(req));
+  } catch {
+    return sendJson(res, 400, { ok: false, error: "잘못된 요청입니다." });
+  }
+
+  const phone = String(body?.phone || "").trim();
+  if (!phone) {
+    return sendJson(res, 400, { ok: false, error: "연락처를 입력해 주세요." });
+  }
+
+  const orders = readOrders()
+    .filter((order) => phonesMatch(order.customer?.phone, phone))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .map(publicOrderView);
+
+  return sendJson(res, 200, { ok: true, orders });
+}
+
 function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split("?")[0]);
   if (urlPath === "/") urlPath = "/index.html";
@@ -177,6 +253,15 @@ function serveStatic(req, res) {
 
 const server = http.createServer(async (req, res) => {
   const urlPath = req.url.split("?")[0];
+
+  if (urlPath.startsWith("/api/lookup")) {
+    try {
+      await handleLookup(req, res);
+    } catch (err) {
+      sendJson(res, 500, { ok: false, error: err.message || "Server error" });
+    }
+    return;
+  }
 
   if (urlPath.startsWith("/api/orders")) {
     try {
@@ -211,6 +296,7 @@ server.listen(PORT, "127.0.0.1", () => {
   console.log("");
   console.log(`  홈:       http://127.0.0.1:${PORT}/`);
   console.log(`  주문:     http://127.0.0.1:${PORT}/order.html`);
+  console.log(`  주문확인: http://127.0.0.1:${PORT}/lookup.html`);
   console.log(`  관리자:   http://127.0.0.1:${PORT}/admin.html`);
   console.log("");
   console.log(`  관리자 비밀번호: ${ADMIN_PASSWORD}`);

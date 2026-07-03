@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="assets/logo.jpg" type="image/jpeg" />
+  <link rel="apple-touch-icon" href="assets/logo.jpg" />
+  <title>주문 확인 | 김치하우스</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/app.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="site-header">
+      <img src="assets/logo.jpg" alt="김치하우스 Kimchi House AU" class="site-logo" />
+      <div class="round-line">주문 확인</div>
+    </header>
+
+    <section class="sec">
+      <div class="sec-eyebrow">Lookup</div>
+      <h2 class="sec-title">주문 조회</h2>
+      <p class="sec-note">주문 시 입력하신 <strong>연락처</strong>로 접수된 주문 내역을 확인할 수 있습니다.</p>
+
+      <div class="lookup-form">
+        <div class="field">
+          <label for="lookup-phone">연락처 (휴대폰 번호) <span class="req">*</span></label>
+          <input type="tel" id="lookup-phone" placeholder="0433 938 909" autocomplete="tel" />
+          <p class="field-hint">예: 0433 938 909 · 주문 접수 시 입력한 번호와 동일하게 입력해 주세요.</p>
+        </div>
+        <button type="button" class="btn btn-primary" id="lookup-btn">주문 조회</button>
+      </div>
+    </section>
+
+    <section class="sec lookup-results-sec hidden" id="lookup-results-sec">
+      <div class="sec-eyebrow">Result</div>
+      <h2 class="sec-title">조회 결과</h2>
+      <div id="lookup-results"></div>
+    </section>
+
+    <a class="back-link lookup-back" href="index.html">← 공지사항으로 돌아가기</a>
+  </div>
+
+  <script src="assets/lookup.js"></script>
+</body>
+</html>
