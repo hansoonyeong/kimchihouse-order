@@ -1,6 +1,7 @@
 import { getAdminKey, json, optionsResponse, requireEnv } from "./_lib/http.js";
 import { DEFAULT_DELIVERY_STATUS, DELIVERY_STATUSES } from "./_lib/order-utils.js";
 import { readOrders, writeOrders } from "./_lib/orders-store.js";
+import { readSettings } from "./_lib/settings-store.js";
 
 export async function OPTIONS() {
   return optionsResponse();
@@ -37,6 +38,11 @@ export async function POST(request) {
 
     if (!body || body.secret !== env.orderSecret) {
       return json({ ok: false, error: "주문 요청이 유효하지 않습니다." }, 401);
+    }
+
+    const settings = await readSettings();
+    if (settings.preorderOpen === false) {
+      return json({ ok: false, error: "현재는 사전 주문 기간이 아닙니다." }, 403);
     }
 
     const {

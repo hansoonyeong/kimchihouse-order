@@ -18,13 +18,18 @@
       <div class="round-line">6~7월 3차 사전 예약</div>
     </header>
 
-    <section class="sec">
+    <section class="sec" id="order-section">
       <div class="sec-eyebrow">Order</div>
       <h2 class="sec-title">주문하기</h2>
       <p class="sec-note">냉동 반찬과 김치·장류를 <strong>한 번에 주문</strong>하실 수 있습니다. 배송만 회차별로 나뉩니다.</p>
-      <div class="home-actions">
-        <a class="btn btn-primary order-cta" href="order.html">주문하기</a>
+      <div class="home-actions" id="home-actions">
+        <a class="btn btn-primary order-cta" href="order.html" id="order-link">주문하기</a>
         <a class="btn btn-primary btn-outline order-cta" href="lookup.html">주문 확인</a>
+      </div>
+      <div class="preorder-closed hidden" id="preorder-closed">
+        <p class="preorder-closed-title">현재는 사전 주문 기간이 아닙니다.</p>
+        <p class="preorder-closed-text">다음 예약 일정은<br>카카오톡 채널에서 가장 먼저 안내드립니다.</p>
+        <a class="btn btn-kakao-channel" href="http://pf.kakao.com/_alkDxb" target="_blank" rel="noopener">카카오톡 채널 추가하기</a>
       </div>
     </section>
 
@@ -72,5 +77,17 @@
       <p style="margin-top:8px">김치하우스 · Kimchi House AU · Sydney</p>
     </footer>
   </div>
+  <script>
+    (async () => {
+      try {
+        const res = await fetch("/api/config");
+        const data = await res.json();
+        if (data.ok && data.preorderOpen === false) {
+          document.getElementById("order-link").classList.add("hidden");
+          document.getElementById("preorder-closed").classList.remove("hidden");
+        }
+      } catch (_) {}
+    })();
+  </script>
 </body>
 </html>

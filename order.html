@@ -103,6 +103,15 @@
       </div>
     </div>
 
+    <div class="preorder-closed-screen hidden" id="preorder-closed-screen">
+      <section class="sec">
+        <p class="preorder-closed-title">현재는 사전 주문 기간이 아닙니다.</p>
+        <p class="preorder-closed-text">다음 예약 일정은<br>카카오톡 채널에서 가장 먼저 안내드립니다.</p>
+        <a class="btn btn-kakao-channel" href="http://pf.kakao.com/_alkDxb" target="_blank" rel="noopener">카카오톡 채널 추가하기</a>
+        <a class="back-link" href="index.html">← 공지사항으로 돌아가기</a>
+      </section>
+    </div>
+
     <div class="success-screen" id="success-screen">
       <div class="check">✓</div>
       <h2>주문이 접수되었습니다</h2>
@@ -121,8 +130,13 @@
       try {
         const res = await fetch("/api/config");
         const data = await res.json();
-        if (data.ok && data.orderSecret) {
-          window.KH_CONFIG.orderSecret = data.orderSecret;
+        if (data.ok) {
+          if (data.orderSecret) window.KH_CONFIG.orderSecret = data.orderSecret;
+          if (data.preorderOpen === false) {
+            document.getElementById("order-form-wrap").classList.add("hidden");
+            document.getElementById("preorder-closed-screen").classList.remove("hidden");
+            return;
+          }
         }
       } catch (_) {}
       initOrderPage("combined");

@@ -1202,8 +1202,22 @@ footer.site a {
 .order-item .head {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 12px;
   margin-bottom: 10px;
+}
+
+.order-item .head-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.order-item .order-pay-label {
+  text-align: right;
+  font-weight: 600;
 }
 
 .order-item .id {
@@ -1241,25 +1255,6 @@ footer.site a {
 .order-item-actions .btn {
   font-size: 13px;
   padding: 10px 14px;
-}
-
-.order-item-actions .btn-kakao {
-  background: #fee500;
-  border-color: #fee500;
-  color: #191919;
-  font-weight: 700;
-}
-
-.order-item-actions .btn-kakao:hover {
-  background: #f5dc00;
-  border-color: #f5dc00;
-}
-
-.order-item-actions .btn-kakao.sent {
-  background: #fff;
-  border-color: var(--line);
-  color: var(--ink2);
-  font-weight: 500;
 }
 
 .order-item-actions .btn-delete {
@@ -1739,17 +1734,33 @@ footer.site a {
 }
 
 .lookup-status {
-  flex-shrink: 0;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
   font-weight: 700;
-  padding: 6px 10px;
+  padding: 8px 12px;
   border-radius: 999px;
   white-space: nowrap;
 }
 
-.lookup-status-received {
+.lookup-status-block {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
   background: var(--brand-soft);
+}
+
+.lookup-status-label {
+  font-size: 12px;
+  font-weight: 700;
   color: var(--brand);
+  margin-bottom: 8px;
+}
+
+.lookup-status-received {
+  background: #fff8e1;
+  color: #9a7b00;
 }
 
 .lookup-status-confirmed {
@@ -1757,14 +1768,19 @@ footer.site a {
   color: #1565a8;
 }
 
-.lookup-status-progress {
+.lookup-status-preparing {
+  background: #e8f5ec;
+  color: #1b6b3a;
+}
+
+.lookup-status-notified {
   background: #fff4e5;
   color: #b45309;
 }
 
 .lookup-status-done {
-  background: #e8f5ec;
-  color: #1b6b3a;
+  background: #eef7ef;
+  color: #2e7d32;
 }
 
 .lookup-details {
@@ -1824,22 +1840,20 @@ footer.site a {
 .order-status-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .order-status-row label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--brand);
+  white-space: nowrap;
 }
 
 .order-status-select {
-  flex: 1;
-  min-width: 160px;
+  min-width: 140px;
+  max-width: 100%;
   padding: 9px 12px;
   border: 1.5px solid var(--line);
   border-radius: 10px;
@@ -1847,6 +1861,149 @@ footer.site a {
   font-size: 14px;
   color: var(--ink);
   background: #fff;
+}
+
+.admin-preorder-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.admin-preorder-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand);
+  white-space: nowrap;
+}
+
+.preorder-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 74px;
+  height: 34px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.preorder-switch.on {
+  background: var(--brand);
+  color: #fff;
+}
+
+.preorder-switch.off {
+  background: #ececec;
+  color: #666;
+  justify-content: flex-start;
+}
+
+.preorder-switch-knob {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  transition: left 0.2s ease, right 0.2s ease;
+}
+
+.preorder-switch.on .preorder-switch-knob {
+  left: auto;
+  right: 4px;
+}
+
+.preorder-closed,
+.preorder-closed-screen .sec {
+  text-align: center;
+}
+
+.preorder-closed {
+  margin-top: 16px;
+  padding: 20px 16px;
+  border-radius: 14px;
+  background: var(--brand-soft);
+}
+
+.preorder-closed-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.preorder-closed-text {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink2);
+  margin-bottom: 20px;
+}
+
+.btn-kakao-channel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  background: #fee500;
+  color: #191919;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.btn-kakao-channel:hover {
+  background: #f5dc00;
+}
+
+.preorder-closed-screen .back-link {
+  display: inline-block;
+  margin-top: 20px;
+}
+
+@media (max-width: 640px) {
+  .order-item .head {
+    flex-direction: column;
+  }
+
+  .order-item .head-meta {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .order-item .order-pay-label {
+    text-align: left;
+  }
+
+  .order-status-row {
+    width: 100%;
+  }
+
+  .order-status-select {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .admin-preorder-toggle {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 
 @media (min-width: 768px) {

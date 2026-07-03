@@ -52,6 +52,13 @@
         <button type="button" class="filter-tab" data-filter="frozen">냉동 반찬</button>
         <button type="button" class="filter-tab" data-filter="kimchi">김치·장류</button>
       </div>
+      <div class="admin-preorder-toggle">
+        <span class="admin-preorder-label">사전 주문</span>
+        <button type="button" class="preorder-switch on" id="preorder-toggle" aria-pressed="true">
+          <span class="preorder-switch-knob"></span>
+          <span class="preorder-switch-text">ON</span>
+        </button>
+      </div>
       <button type="button" class="btn btn-secondary" id="refresh-btn">새로고침</button>
       <button type="button" class="btn btn-secondary" id="export-btn">CSV 내보내기</button>
       <button type="button" class="btn btn-secondary" id="logout-btn">로그아웃</button>
@@ -65,8 +72,7 @@
   <script src="assets/products.js"></script>
   <script>
     const API = "/api/orders";
-    const KAKAO_CHANNEL = "http://pf.kakao.com/_alkDxb";
-    const SENT_KEY = "kh_kakao_sent";
+    const CONFIG_API = "/api/config";
     const DELIVERY_STATUSES = [
       "예약 접수",
       "주문 확인 완료",
@@ -78,6 +84,7 @@
     let orders = [];
     let filter = "all";
     let searchQuery = "";
+    let preorderOpen = true;
 
     function orderSearchText(o) {
       const c = o.customer || {};
@@ -140,20 +147,6 @@
       return `${parts} = $${o.total}`;
     }
 
-    function getSentIds() {
-      try {
-        return new Set(JSON.parse(localStorage.getItem(SENT_KEY) || "[]"));
-      } catch {
-        return new Set();
-      }
-    }
-
-    function markSent(orderId) {
-      const sent = getSentIds();
-      sent.add(orderId);
-      localStorage.setItem(SENT_KEY, JSON.stringify([...sent]));
-    }
-
     function showToast(message) {
       const toast = document.getElementById("admin-toast");
       toast.textContent = message;
@@ -162,66 +155,43 @@
       showToast._timer = setTimeout(() => toast.classList.remove("show"), 4200);
     }
 
-    function buildKakaoMessage(o) {
-      const cfg = window.KH_CONFIG || {};
-      const bank = cfg.bank || {};
-      const customerName = o.customer.name;
-      const orderNo = o.id;
-      const itemsSummary = (o.items || []).map((i) => `${i.name} ×${i.qty}`).join(", ") || "-";
-      const total = `$${o.total}`;
-      const bankInfo = o.payment === "cash"
-        ? "현금 결제"
-        : `${bank.bank} BSB ${bank.bsb} · ${bank.account} (${bank.holder})`;
-
-      return `[김치하우스] 주문 접수 안내
-
-${customerName}님, 주문이 접수되었습니다.
-
-■ 주문번호: ${orderNo}
-■ 품목: ${itemsSummary}
-■ 합계: ${total}
-■ 입금 계좌: ${bankInfo}
-
-입금 확인 후 배송 안내 드립니다.
-문의: 카카오 채널 @Kimchi House AU`;
+    function renderPreorderToggle() {
+      const btn = document.getElementById("preorder-toggle");
+      if (!btn) return;
+      btn.classList.toggle("on", preorderOpen);
+      btn.classList.toggle("off", !preorderOpen);
+      btn.setAttribute("aria-pressed", String(preorderOpen));
+      btn.querySelector(".preorder-switch-text").textContent = preorderOpen ? "ON" : "OFF";
     }
 
-    async function copyText(text) {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-        return;
-      }
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
+    async function fetchConfig() {
+      const res = await fetch(CONFIG_API);
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "설정 조회 실패");
+      preorderOpen = data.preorderOpen !== false;
+      renderPreorderToggle();
     }
 
-    async function sendKakaoConfirm(orderId) {
-      const order = orders.find((o) => o.id === orderId);
-      if (!order) return;
-
-      const message = buildKakaoMessage(order);
-
+    async function togglePreorder() {
+      const next = !preorderOpen;
       try {
-        await copyText(message);
-      } catch {
-        alert("메시지 복사에 실패했습니다. 브라우저 권한을 확인해 주세요.");
-        return;
+        const res = await fetch(CONFIG_API, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${adminKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ preorderOpen: next }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "설정 변경 실패");
+        preorderOpen = data.preorderOpen !== false;
+        renderPreorderToggle();
+        showToast(preorderOpen ? "사전 주문이 ON으로 변경되었습니다." : "사전 주문이 OFF로 변경되었습니다.");
+      } catch (err) {
+        alert(err.message || "사전 주문 설정 변경 중 오류가 발생했습니다.");
+        renderPreorderToggle();
       }
-
-      window.open(KAKAO_CHANNEL, "_blank", "noopener,noreferrer");
-      markSent(orderId);
-      renderOrders();
-
-      const hint = order.customer.kakao
-        ? `「${order.customer.kakao}」 대화창에서 Cmd+V 붙여넣기 후 전송해 주세요.`
-        : "카카오 채널 고객 대화창에서 Cmd+V 붙여넣기 후 전송해 주세요.";
-      showToast(`메시지가 복사되었습니다. ${hint}`);
     }
 
     async function fetchOrders() {
@@ -270,7 +240,6 @@ ${customerName}님, 주문이 접수되었습니다.
         return;
       }
 
-      const sentIds = getSentIds();
       root.innerHTML = list.map((o) => `
         <article class="order-item">
           <div class="head">
@@ -278,7 +247,15 @@ ${customerName}님, 주문이 접수되었습니다.
               <div class="id">${o.id}</div>
               <div class="meta">${typeLabel(o.type)} · ${formatDate(o.createdAt)}</div>
             </div>
-            <div class="meta">${o.payment === "cash" ? "현금" : "계좌이체"}</div>
+            <div class="head-meta">
+              <div class="meta order-pay-label">${o.payment === "cash" ? "현금" : "계좌이체"}</div>
+              <div class="order-status-row">
+                <label for="status-${o.id}">배송 상태</label>
+                <select id="status-${o.id}" class="order-status-select" data-order-status="${o.id}">
+                  ${statusOptions(orderStatus(o))}
+                </select>
+              </div>
+            </div>
           </div>
           <div><strong>${o.customer.name}</strong> · ${o.customer.phone}</div>
           <div class="meta">${o.customer.address}, ${o.customer.suburb || ""}</div>
@@ -286,16 +263,7 @@ ${customerName}님, 주문이 접수되었습니다.
           <div class="lines">${(o.items || []).map((i) => `· ${i.name} × ${i.qty} — $${i.price}`).join("<br>")}</div>
           ${o.note ? `<div class="meta" style="margin-top:8px">요청: ${o.note}</div>` : ""}
           <div class="total">${shippingSummary(o)}</div>
-          <div class="order-status-row">
-            <label for="status-${o.id}">배송 상태</label>
-            <select id="status-${o.id}" class="order-status-select" data-order-status="${o.id}">
-              ${statusOptions(orderStatus(o))}
-            </select>
-          </div>
           <div class="order-item-actions">
-            <button type="button" class="btn btn-kakao${sentIds.has(o.id) ? " sent" : ""}" data-kakao-send="${o.id}">
-              ${sentIds.has(o.id) ? "카톡 확인 메시지 (재전송)" : "카톡 확인 메시지 보내기"}
-            </button>
             <button type="button" class="btn btn-delete" data-order-delete="${o.id}">주문 삭제</button>
           </div>
         </article>
@@ -312,6 +280,7 @@ ${customerName}님, 주문이 접수되었습니다.
       if (!adminKey) return alert("비밀번호를 입력해 주세요.");
       try {
         await fetchOrders();
+        await fetchConfig();
         sessionStorage.setItem("kh_admin_key", adminKey);
         showPanel();
         renderOrders();
@@ -323,6 +292,7 @@ ${customerName}님, 주문이 접수되었습니다.
     async function refresh() {
       try {
         await fetchOrders();
+        await fetchConfig();
         renderOrders();
       } catch (err) {
         alert(err.message || "새로고침 실패");
@@ -367,12 +337,6 @@ ${customerName}님, 주문이 접수되었습니다.
         });
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.error || "삭제 실패");
-
-        const sent = getSentIds();
-        if (sent.has(orderId)) {
-          sent.delete(orderId);
-          localStorage.setItem(SENT_KEY, JSON.stringify([...sent]));
-        }
 
         await fetchOrders();
         renderOrders();
@@ -422,6 +386,7 @@ ${customerName}님, 주문이 접수되었습니다.
       if (e.key === "Enter") login();
     });
     document.getElementById("refresh-btn").addEventListener("click", refresh);
+    document.getElementById("preorder-toggle").addEventListener("click", togglePreorder);
     document.getElementById("export-btn").addEventListener("click", exportCsv);
     document.getElementById("logout-btn").addEventListener("click", () => {
       sessionStorage.removeItem("kh_admin_key");
@@ -442,12 +407,6 @@ ${customerName}님, 주문이 접수되었습니다.
     });
 
     document.getElementById("order-list").addEventListener("click", (e) => {
-      const kakaoBtn = e.target.closest("[data-kakao-send]");
-      if (kakaoBtn) {
-        sendKakaoConfirm(kakaoBtn.dataset.kakaoSend);
-        return;
-      }
-
       const deleteBtn = e.target.closest("[data-order-delete]");
       if (deleteBtn) {
         deleteOrder(deleteBtn.dataset.orderDelete);
@@ -461,9 +420,11 @@ ${customerName}님, 주문이 접수되었습니다.
     });
 
     if (adminKey) {
-      fetchOrders().then(() => { showPanel(); renderOrders(); }).catch(() => {
-        sessionStorage.removeItem("kh_admin_key");
-      });
+      Promise.all([fetchOrders(), fetchConfig()])
+        .then(() => { showPanel(); renderOrders(); })
+        .catch(() => {
+          sessionStorage.removeItem("kh_admin_key");
+        });
     }
   </script>
 </body>

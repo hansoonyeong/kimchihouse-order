@@ -1,15 +1,21 @@
 (function () {
   const API = "/api/lookup";
 
+  const STATUS_META = {
+    "예약 접수": { emoji: "🟡", cls: "received" },
+    "주문 확인 완료": { emoji: "🔵", cls: "confirmed" },
+    "배송 준비 중": { emoji: "🟢", cls: "preparing" },
+    "배송 안내 완료": { emoji: "🟠", cls: "notified" },
+    "배송 완료": { emoji: "✅", cls: "done" },
+  };
+
   function money(n) {
     return "$" + Number(n || 0).toFixed(0);
   }
 
-  function statusClass(status) {
-    if (status === "배송 완료") return "done";
-    if (status === "배송 준비 중" || status === "배송 안내 완료") return "progress";
-    if (status === "주문 확인 완료") return "confirmed";
-    return "received";
+  function statusBadge(status) {
+    const meta = STATUS_META[status] || STATUS_META["예약 접수"];
+    return `<span class="lookup-status lookup-status-${meta.cls}">${meta.emoji} ${status}</span>`;
   }
 
   function renderOrderCard(order) {
@@ -24,7 +30,10 @@
           <div class="lookup-order-id">${order.id}</div>
           <div class="lookup-order-date">주문일 ${order.orderDate}</div>
         </div>
-        <span class="lookup-status lookup-status-${statusClass(order.status)}">${order.status}</span>
+      </div>
+      <div class="lookup-status-block">
+        <div class="lookup-status-label">배송 상태</div>
+        ${statusBadge(order.status)}
       </div>
       <dl class="lookup-details">
         <div class="lookup-row"><dt>주문자</dt><dd>${order.customer.name}</dd></div>

@@ -13,8 +13,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
 const PORT = process.env.PORT || 3456;
 const ORDERS_FILE = path.join(ROOT, "data", "orders.json");
+const SETTINGS_FILE = path.join(ROOT, "data", "settings.json");
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin1234";
 const ORDER_SECRET = process.env.ORDER_SECRET || "CHANGE_ME_ORDER_SECRET";
+const DEFAULT_SETTINGS = { preorderOpen: true };
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -44,6 +46,28 @@ function readOrders() {
 function writeOrders(orders) {
   ensureOrdersFile();
   fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2), "utf8");
+}
+
+function ensureSettingsFile() {
+  const dir = path.dirname(SETTINGS_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(SETTINGS_FILE)) {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2), "utf8");
+  }
+}
+
+function readSettings() {
+  ensureSettingsFile();
+  try {
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf8")) };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+function writeSettings(settings) {
+  ensureSettingsFile();
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), "utf8");
 }
 
 function sendJson(res, status, data) {
@@ -101,6 +125,10 @@ async function handleOrders(req, res) {
 
     if (body.secret !== ORDER_SECRET) {
       return sendJson(res, 401, { ok: false, error: "주문 요청이 유효하지 않습니다." });
+    }
+
+    if (readSettings().preorderOpen === false) {
+      return sendJson(res, 403, { ok: false, error: "현재는 사전 주문 기간이 아닙니다." });
     }
 
     const { type, customer, items, subtotal, shippingFee, total, payment, note, shippingBreakdown } = body;
@@ -230,6 +258,49 @@ async function handleLookup(req, res) {
   return sendJson(res, 200, { ok: true, orders });
 }
 
+async function handleConfig(req, res) {
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Key",
+    });
+    return res.end();
+  }
+
+  if (req.method === "GET") {
+    const settings = readSettings();
+    return sendJson(res, 200, {
+      ok: true,
+      orderSecret: ORDER_SECRET,
+      preorderOpen: settings.preorderOpen !== false,
+    });
+  }
+
+  if (req.method === "PATCH") {
+    if (getAdminKey(req) !== ADMIN_PASSWORD) {
+      return sendJson(res, 401, { ok: false, error: "관리자 인증이 필요합니다." });
+    }
+
+    let body;
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      return sendJson(res, 400, { ok: false, error: "잘못된 요청입니다." });
+    }
+
+    if (typeof body?.preorderOpen !== "boolean") {
+      return sendJson(res, 400, { ok: false, error: "preorderOpen 값이 필요합니다." });
+    }
+
+    const settings = { ...readSettings(), preorderOpen: body.preorderOpen };
+    writeSettings(settings);
+    return sendJson(res, 200, { ok: true, preorderOpen: settings.preorderOpen });
+  }
+
+  return sendJson(res, 405, { ok: false, error: "Method not allowed" });
+}
+
 function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split("?")[0]);
   if (urlPath === "/") urlPath = "/index.html";
@@ -272,23 +343,20 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (urlPath === "/api/config" && req.method === "GET") {
-    return sendJson(res, 200, { ok: true, orderSecret: ORDER_SECRET });
-  }
-
-  if (urlPath === "/api/config" && req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    });
-    return res.end();
+  if (urlPath.startsWith("/api/config")) {
+    try {
+      await handleConfig(req, res);
+    } catch (err) {
+      sendJson(res, 500, { ok: false, error: err.message || "Server error" });
+    }
+    return;
   }
 
   serveStatic(req, res);
 });
 
 ensureOrdersFile();
+ensureSettingsFile();
 
 server.listen(PORT, "127.0.0.1", () => {
   console.log("");
