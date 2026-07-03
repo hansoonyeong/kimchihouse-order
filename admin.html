@@ -29,42 +29,54 @@
   </div>
 
   <div class="wrap admin-panel" id="admin-panel">
-    <header class="site-header">
+    <header class="site-header admin-page-header">
       <img src="assets/logo.jpg" alt="김치하우스 Kimchi House AU" class="site-logo" />
       <div class="round-line">주문 관리</div>
+      <div class="admin-header-actions">
+        <div class="admin-preorder-toggle">
+          <span class="admin-preorder-label">사전 주문</span>
+          <button type="button" class="preorder-switch on" id="preorder-toggle" aria-pressed="true">
+            <span class="preorder-switch-knob"></span>
+            <span class="preorder-switch-text">ON</span>
+          </button>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="logout-btn">로그아웃</button>
+      </div>
     </header>
 
-    <div class="stats">
+    <div class="stats admin-stats">
       <div class="stat"><div class="num" id="stat-all">0</div><div class="lbl">전체</div></div>
       <div class="stat"><div class="num" id="stat-frozen">0</div><div class="lbl">냉동</div></div>
       <div class="stat"><div class="num" id="stat-kimchi">0</div><div class="lbl">김치</div></div>
     </div>
 
     <div class="admin-search-wrap">
-      <label class="admin-search-label" for="order-search">주문자 검색</label>
-      <input type="search" id="order-search" class="admin-search" placeholder="이름, 연락처, 카톡, 주문번호, 주소..." autocomplete="off" />
+      <input type="search" id="order-search" class="admin-search" placeholder="이름, 연락처, 카톡, 주문번호, 주소 검색..." autocomplete="off" />
       <p class="admin-search-meta" id="search-meta"></p>
     </div>
 
-    <div class="admin-toolbar">
-      <div class="filter-tabs">
+    <div class="admin-filters">
+      <div class="filter-tabs" id="filter-tabs">
         <button type="button" class="filter-tab active" data-filter="all">전체</button>
-        <button type="button" class="filter-tab" data-filter="frozen">냉동 반찬</button>
-        <button type="button" class="filter-tab" data-filter="kimchi">김치·장류</button>
+        <button type="button" class="filter-tab" data-filter="cat:frozen">냉동 반찬</button>
+        <button type="button" class="filter-tab" data-filter="cat:kimchi">김치·장류</button>
+        <button type="button" class="filter-tab" data-filter="pay:cash">현금</button>
+        <button type="button" class="filter-tab" data-filter="pay:transfer">계좌이체</button>
+        <span class="filter-divider"></span>
+        <button type="button" class="filter-tab filter-tab-status" data-filter="status:예약 접수">예약 접수</button>
+        <button type="button" class="filter-tab filter-tab-status" data-filter="status:주문 확인 완료">주문 확인 완료</button>
+        <button type="button" class="filter-tab filter-tab-status" data-filter="status:배송 준비 중">배송 준비 중</button>
+        <button type="button" class="filter-tab filter-tab-status" data-filter="status:배송 안내 완료">배송 안내 완료</button>
+        <button type="button" class="filter-tab filter-tab-status" data-filter="status:배송 완료">배송 완료</button>
       </div>
-      <div class="admin-preorder-toggle">
-        <span class="admin-preorder-label">사전 주문</span>
-        <button type="button" class="preorder-switch on" id="preorder-toggle" aria-pressed="true">
-          <span class="preorder-switch-knob"></span>
-          <span class="preorder-switch-text">ON</span>
-        </button>
-      </div>
-      <button type="button" class="btn btn-secondary" id="refresh-btn">새로고침</button>
-      <button type="button" class="btn btn-secondary" id="export-btn">CSV 내보내기</button>
-      <button type="button" class="btn btn-secondary" id="logout-btn">로그아웃</button>
     </div>
 
-    <div class="order-list" id="order-list"></div>
+    <div class="admin-toolbar">
+      <button type="button" class="btn btn-secondary btn-sm" id="refresh-btn">새로고침</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="export-btn">CSV 내보내기</button>
+    </div>
+
+    <div id="order-list"></div>
     <div class="admin-toast" id="admin-toast" role="status" aria-live="polite"></div>
     <a class="back-link" href="index.html">← 홈으로</a>
   </div>
@@ -80,23 +92,27 @@
       "배송 안내 완료",
       "배송 완료",
     ];
+    const STATUS_CLS = {
+      "예약 접수": "received",
+      "주문 확인 완료": "confirmed",
+      "배송 준비 중": "preparing",
+      "배송 안내 완료": "notified",
+      "배송 완료": "done",
+    };
+
     let adminKey = sessionStorage.getItem("kh_admin_key") || "";
     let orders = [];
     let filter = "all";
     let searchQuery = "";
     let preorderOpen = true;
+    let expandedIds = new Set();
 
     function orderSearchText(o) {
       const c = o.customer || {};
-      return [
-        o.id,
-        c.name,
-        c.phone,
-        c.kakao,
-        c.address,
-        c.suburb,
-        o.note,
-      ].filter(Boolean).join(" ").toLowerCase();
+      return [o.id, c.name, c.phone, c.kakao, c.address, c.suburb, o.note]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
     }
 
     function orderMatchesSearch(o, query) {
@@ -106,6 +122,10 @@
 
     function orderStatus(o) {
       return DELIVERY_STATUSES.includes(o.status) ? o.status : "예약 접수";
+    }
+
+    function statusCls(status) {
+      return STATUS_CLS[status] || "received";
     }
 
     function statusOptions(current) {
@@ -118,9 +138,30 @@
       return new Date(iso).toLocaleString("ko-KR", { hour12: false });
     }
 
+    function formatDateShort(iso) {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "-";
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const day = d.getDate();
+      const h = String(d.getHours()).padStart(2, "0");
+      const min = String(d.getMinutes()).padStart(2, "0");
+      return `${y}. ${m}. ${day}. ${h}:${min}`;
+    }
+
     function typeLabel(type) {
-      if (type === "combined") return "통합 주문";
+      if (type === "combined") return "통합";
       return type === "frozen" ? "냉동 반찬" : "김치·장류";
+    }
+
+    function typeBadgeClass(o) {
+      if (o.type === "frozen") return "type-frozen";
+      if (o.type === "kimchi") return "type-kimchi";
+      return "type-combined";
+    }
+
+    function payLabel(payment) {
+      return payment === "cash" ? "현금" : "계좌이체";
     }
 
     function orderHasCategory(o, cat) {
@@ -145,6 +186,123 @@
         .filter(Boolean)
         .join(" · ");
       return `${parts} = $${o.total}`;
+    }
+
+    function matchesFilter(o) {
+      if (filter === "all") return true;
+      if (filter === "cat:frozen") return orderHasCategory(o, "frozen");
+      if (filter === "cat:kimchi") return orderHasCategory(o, "kimchi");
+      if (filter === "pay:cash") return o.payment === "cash";
+      if (filter === "pay:transfer") return o.payment !== "cash";
+      if (filter.startsWith("status:")) {
+        return orderStatus(o) === filter.slice(7);
+      }
+      return true;
+    }
+
+    function filteredOrders() {
+      const query = searchQuery.trim().toLowerCase();
+      return orders.filter((o) => matchesFilter(o) && orderMatchesSearch(o, query));
+    }
+
+    function renderStatusSelect(o) {
+      const status = orderStatus(o);
+      return `<div class="admin-status-wrap admin-status-${statusCls(status)}">
+        <select id="status-${o.id}" class="admin-status-select" data-order-status="${o.id}" aria-label="배송 상태">
+          ${statusOptions(status)}
+        </select>
+      </div>`;
+    }
+
+    function renderDetailContent(o) {
+      const c = o.customer || {};
+      const address = [c.address, c.suburb].filter(Boolean).join(", ");
+      const itemsHtml = (o.items || [])
+        .map((i) => `<li>${i.name} × ${i.qty} — $${i.price}</li>`)
+        .join("");
+
+      return `<div class="admin-detail-grid">
+        <div class="admin-detail-block">
+          <div class="admin-detail-title">배송 · 연락</div>
+          <p><strong>${c.name || "-"}</strong></p>
+          <p>${c.phone || "-"}</p>
+          ${c.kakao ? `<p>카톡: ${c.kakao}</p>` : ""}
+          <p>${address || "-"}</p>
+        </div>
+        <div class="admin-detail-block">
+          <div class="admin-detail-title">주문 상품</div>
+          <ul class="admin-detail-items">${itemsHtml || "<li>-</li>"}</ul>
+          <p class="admin-detail-total">${shippingSummary(o)}</p>
+        </div>
+        <div class="admin-detail-block">
+          <div class="admin-detail-title">요청사항</div>
+          <p>${o.note || "없음"}</p>
+          <div class="admin-detail-actions">
+            <button type="button" class="btn btn-delete btn-sm" data-order-delete="${o.id}">주문 삭제</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderTableRows(list) {
+      return list.map((o) => {
+        const expanded = expandedIds.has(o.id);
+        return `<tr class="admin-table-row">
+          <td class="col-id">${o.id}</td>
+          <td class="col-date">${formatDateShort(o.createdAt)}</td>
+          <td class="col-name">${o.customer.name}</td>
+          <td class="col-phone">${o.customer.phone}</td>
+          <td class="col-type"><span class="admin-type-badge ${typeBadgeClass(o)}">${typeLabel(o.type)}</span></td>
+          <td class="col-pay">${payLabel(o.payment)}</td>
+          <td class="col-total">$${o.total}</td>
+          <td class="col-status">${renderStatusSelect(o)}</td>
+          <td class="col-action">
+            <button type="button" class="admin-detail-btn${expanded ? " open" : ""}" data-toggle-detail="${o.id}" aria-expanded="${expanded}">
+              ${expanded ? "접기" : "상세보기"}
+            </button>
+          </td>
+        </tr>
+        <tr class="admin-detail-row${expanded ? " open" : ""}" data-detail-for="${o.id}">
+          <td colspan="9">${renderDetailContent(o)}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    function renderMobileCards(list) {
+      return list.map((o) => {
+        const expanded = expandedIds.has(o.id);
+        const status = orderStatus(o);
+        return `<article class="admin-order-card${expanded ? " open" : ""}">
+          <div class="admin-card-summary">
+            <div class="admin-card-top">
+              <span class="admin-card-id">${o.id}</span>
+              <span class="admin-status-pill admin-status-${statusCls(status)}">${status}</span>
+            </div>
+            <div class="admin-card-main">
+              <strong>${o.customer.name}</strong>
+              <span>${o.customer.phone}</span>
+            </div>
+            <div class="admin-card-bottom">
+              <span class="admin-card-total">$${o.total}</span>
+              <button type="button" class="admin-detail-btn${expanded ? " open" : ""}" data-toggle-detail="${o.id}" aria-expanded="${expanded}">
+                ${expanded ? "접기" : "상세보기"}
+              </button>
+            </div>
+          </div>
+          <div class="admin-card-detail">
+            <div class="admin-card-detail-meta">
+              <span>${formatDateShort(o.createdAt)}</span>
+              <span class="admin-type-badge ${typeBadgeClass(o)}">${typeLabel(o.type)}</span>
+              <span>${payLabel(o.payment)}</span>
+            </div>
+            <div class="admin-card-status-row">
+              <span class="admin-card-status-label">배송 상태</span>
+              ${renderStatusSelect(o)}
+            </div>
+            ${renderDetailContent(o)}
+          </div>
+        </article>`;
+      }).join("");
     }
 
     function showToast(message) {
@@ -203,24 +361,23 @@
       orders = data.orders || [];
     }
 
-    function filteredOrders() {
-      const query = searchQuery.trim().toLowerCase();
-      return orders.filter((o) => {
-        if (filter !== "all" && !orderHasCategory(o, filter)) return false;
-        return orderMatchesSearch(o, query);
-      });
-    }
-
     function updateSearchMeta(count) {
       const meta = document.getElementById("search-meta");
       const query = searchQuery.trim();
-      if (!query) {
-        meta.textContent = "";
+      const filterLabel = filter === "all" ? "" : ` · 필터 적용`;
+      if (!query && filter === "all") {
+        meta.textContent = count ? `${count}건` : "";
         return;
       }
-      meta.textContent = count
-        ? `「${query}」 검색 결과 ${count}건`
-        : `「${query}」에 해당하는 주문이 없습니다.`;
+      if (!count) {
+        meta.textContent = query
+          ? `「${query}」에 해당하는 주문이 없습니다.${filterLabel}`
+          : `선택한 필터에 해당하는 주문이 없습니다.`;
+        return;
+      }
+      meta.textContent = query
+        ? `「${query}」 검색 결과 ${count}건${filterLabel}`
+        : `${count}건${filterLabel}`;
     }
 
     function renderOrders() {
@@ -233,41 +390,33 @@
       const root = document.getElementById("order-list");
       if (!list.length) {
         const query = searchQuery.trim();
-        const msg = query
-          ? `「${query}」에 해당하는 주문이 없습니다.`
+        const msg = query || filter !== "all"
+          ? "조건에 맞는 주문이 없습니다."
           : "주문 내역이 없습니다.";
-        root.innerHTML = `<p style="color:var(--ink2);text-align:center;padding:40px 0">${msg}</p>`;
+        root.innerHTML = `<p class="admin-empty">${msg}</p>`;
         return;
       }
 
-      root.innerHTML = list.map((o) => `
-        <article class="order-item">
-          <div class="head">
-            <div>
-              <div class="id">${o.id}</div>
-              <div class="meta">${typeLabel(o.type)} · ${formatDate(o.createdAt)}</div>
-            </div>
-            <div class="head-meta">
-              <div class="meta order-pay-label">${o.payment === "cash" ? "현금" : "계좌이체"}</div>
-              <div class="order-status-row">
-                <label for="status-${o.id}">배송 상태</label>
-                <select id="status-${o.id}" class="order-status-select" data-order-status="${o.id}">
-                  ${statusOptions(orderStatus(o))}
-                </select>
-              </div>
-            </div>
-          </div>
-          <div><strong>${o.customer.name}</strong> · ${o.customer.phone}</div>
-          <div class="meta">${o.customer.address}, ${o.customer.suburb || ""}</div>
-          ${o.customer.kakao ? `<div class="meta">카톡: ${o.customer.kakao}</div>` : ""}
-          <div class="lines">${(o.items || []).map((i) => `· ${i.name} × ${i.qty} — $${i.price}`).join("<br>")}</div>
-          ${o.note ? `<div class="meta" style="margin-top:8px">요청: ${o.note}</div>` : ""}
-          <div class="total">${shippingSummary(o)}</div>
-          <div class="order-item-actions">
-            <button type="button" class="btn btn-delete" data-order-delete="${o.id}">주문 삭제</button>
-          </div>
-        </article>
-      `).join("");
+      root.innerHTML = `
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>주문번호</th>
+                <th>주문일</th>
+                <th>주문자명</th>
+                <th>연락처</th>
+                <th>주문유형</th>
+                <th>결제방법</th>
+                <th>총 금액</th>
+                <th>배송상태</th>
+                <th>상세보기</th>
+              </tr>
+            </thead>
+            <tbody>${renderTableRows(list)}</tbody>
+          </table>
+        </div>
+        <div class="admin-card-list">${renderMobileCards(list)}</div>`;
     }
 
     function showPanel() {
@@ -314,6 +463,7 @@
 
         const order = orders.find((o) => o.id === orderId);
         if (order) order.status = status;
+        renderOrders();
         showToast(`배송 상태가 「${status}」(으)로 변경되었습니다.`);
       } catch (err) {
         alert(err.message || "배송 상태 변경 중 오류가 발생했습니다.");
@@ -338,6 +488,7 @@
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.error || "삭제 실패");
 
+        expandedIds.delete(orderId);
         await fetchOrders();
         renderOrders();
         showToast("주문이 삭제되었습니다.");
@@ -381,6 +532,12 @@
       URL.revokeObjectURL(url);
     }
 
+    function toggleDetail(orderId) {
+      if (expandedIds.has(orderId)) expandedIds.delete(orderId);
+      else expandedIds.add(orderId);
+      renderOrders();
+    }
+
     document.getElementById("login-btn").addEventListener("click", login);
     document.getElementById("admin-password").addEventListener("keydown", (e) => {
       if (e.key === "Enter") login();
@@ -392,13 +549,14 @@
       sessionStorage.removeItem("kh_admin_key");
       location.reload();
     });
-    document.querySelectorAll(".filter-tab").forEach((tab) => {
-      tab.addEventListener("click", () => {
-        document.querySelectorAll(".filter-tab").forEach((t) => t.classList.remove("active"));
-        tab.classList.add("active");
-        filter = tab.dataset.filter;
-        renderOrders();
-      });
+
+    document.getElementById("filter-tabs").addEventListener("click", (e) => {
+      const tab = e.target.closest(".filter-tab");
+      if (!tab) return;
+      document.querySelectorAll(".filter-tab").forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      filter = tab.dataset.filter;
+      renderOrders();
     });
 
     document.getElementById("order-search").addEventListener("input", (e) => {
@@ -407,6 +565,12 @@
     });
 
     document.getElementById("order-list").addEventListener("click", (e) => {
+      const toggleBtn = e.target.closest("[data-toggle-detail]");
+      if (toggleBtn) {
+        toggleDetail(toggleBtn.dataset.toggleDetail);
+        return;
+      }
+
       const deleteBtn = e.target.closest("[data-order-delete]");
       if (deleteBtn) {
         deleteOrder(deleteBtn.dataset.orderDelete);
