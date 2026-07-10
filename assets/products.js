@@ -24,7 +24,7 @@ window.KH_PRODUCTS = {
         items: [
           { id: "a1", name: "고기만두 (1KG)", price: 15, image: "assets/images/products/a1.png" },
           { id: "a2", name: "김치만두 (1KG)", price: 15, image: "assets/images/products/a2.png" },
-          { id: "a3", name: "[세트] 고기 1KG + 김치 1KG", price: 25, sale: true, image: "assets/images/products/a3.png" },
+          { id: "a3", name: "[세트] 고기 1KG + 김치 1KG", price: 25, wasPrice: 30, sale: true, image: "assets/images/products/a3.png" },
         ],
       },
       {
@@ -45,7 +45,7 @@ window.KH_PRODUCTS = {
           { id: "a5", name: "손질 가자미 (미국산 / 850g)", price: 15, image: "assets/images/products/a5.png" },
           { id: "a6", name: "손질 갈치 (오만산 / 850g)", price: 25, image: "assets/images/products/a6.png" },
           { id: "a7", name: "손질 고등어 (한국산 / 500g)", price: 15, image: "assets/images/products/a7.png" },
-          { id: "a8", name: "[모듬 세트] 가자미 + 갈치 + 고등어", price: 40, sale: true, image: "assets/images/products/a8.png" },
+          { id: "a8", name: "[모듬 세트] 가자미 + 갈치 + 고등어", price: 40, wasPrice: 55, sale: true, image: "assets/images/products/a8.png" },
         ],
       },
       {
@@ -95,7 +95,7 @@ window.KH_PRODUCTS = {
         title: "특수 김치 (1KG)",
         note: "총각김치 30% 빅세일 · 열무·갓김치 합산 할인 · 쪽파김치 별도",
         items: [
-          { id: "b4", name: "총각김치 (1KG)", tiers: [[1, 19], [2, 33], [3, 47]], sale: true, saleLabel: "30% 빅세일", saleNote: "이번 회차 한정 · 정가 $27 → 세일 $19", image: "assets/images/products/b4.png" },
+          { id: "b4", name: "총각김치 (1KG)", tiers: [[1, 19], [2, 33], [3, 47]], wasTiers: [[1, 27], [2, 49], [3, 71]], sale: true, saleLabel: "30% 빅세일", saleNote: "이번 회차 한정 · 정가 $27 → 세일 $19", image: "assets/images/products/b4.png" },
           { id: "b5", name: "열무김치 (1KG)", group: "special", image: "assets/images/products/b5.png" },
           { id: "b6", name: "쪽파김치 (1KG)", group: "pa", image: "assets/images/products/b6.png" },
           { id: "b7", name: "돌산 갓김치 (1KG)", group: "special", image: "assets/images/products/b7.png" },
@@ -119,7 +119,59 @@ window.KH_PRODUCTS = {
           { id: "b11", name: "항아골 생청국장 (120g)", tiers: [[4, 25], [8, 45]], image: "assets/images/products/b11.png?v=2" },
           { id: "b12", name: "순정원 전통된장 (1Kg)", price: 38, image: "assets/images/products/b12.png?v=3" },
           { id: "b13", name: "순정원 전통고추장 (1Kg)", price: 38, image: "assets/images/products/b13.png?v=3" },
-          { id: "b14", name: "순정원 쌈장 (1Kg)", price: 25, sale: true, image: "assets/images/products/b14.png?v=3" },
+          { id: "b14", name: "순정원 쌈장 (1Kg)", price: 25, wasPrice: 38, sale: true, image: "assets/images/products/b14.png?v=3" },
+        ],
+      },
+    ],
+  },
+  walkerhill: {
+    label: "워커힐 호텔 김치",
+    delivery: "7/5일부터 배송",
+    sections: [
+      {
+        id: "pogi",
+        tab: "배추김치",
+        title: "워커힐 호텔 배추김치",
+        note: "1963년부터 이어온 프리미엄 호텔 김치 · 100% 국내산",
+        items: [
+          {
+            id: "w1",
+            name: "워커힐 호텔 배추김치 (4KG)",
+            price: 75,
+            image: "assets/images/walkerhill/pogi.jpg",
+          },
+        ],
+      },
+      {
+        id: "chonggak",
+        tab: "총각김치",
+        title: "워커힐 호텔 총각김치",
+        items: [
+          {
+            id: "w2",
+            name: "워커힐 호텔 총각김치 (2KG)",
+            price: 60,
+            image: "assets/images/walkerhill/chonggak.png",
+          },
+        ],
+      },
+      {
+        id: "sets",
+        tab: "세트",
+        title: "세트 상품",
+        note: "세트 구매 시 무료배송 + 추가할인",
+        items: [
+          { id: "w_set2a", tier: "set2", name: "2 SET ①", desc: "배추김치 2개", price: 145, image: "assets/images/walkerhill/pogi.jpg" },
+          { id: "w_set2b", tier: "set2", name: "2 SET ②", desc: "배추김치 1개 + 총각김치 1개", price: 130, featured: true, image: "assets/images/walkerhill/set.jpg" },
+          { id: "w_set2c", tier: "set2", name: "2 SET ③", desc: "총각김치 2개", price: 115, image: "assets/images/walkerhill/chonggak.png" },
+          { id: "w_set3a", tier: "set3", name: "3 SET ①", desc: "배추김치 3개", price: 203, image: "assets/images/walkerhill/pogi.jpg" },
+          { id: "w_set3b", tier: "set3", name: "3 SET ②", desc: "배추김치 2개 + 총각김치 1개", price: 189, image: "assets/images/walkerhill/set.jpg" },
+          { id: "w_set3c", tier: "set3", name: "3 SET ③", desc: "배추김치 1개 + 총각김치 2개", price: 176, image: "assets/images/walkerhill/set.jpg" },
+          { id: "w_set3d", tier: "set3", name: "3 SET ④", desc: "총각김치 3개", price: 162, image: "assets/images/walkerhill/chonggak.png" },
+          { id: "w_set5a", tier: "set5", name: "5 SET ①", desc: "배추김치 5개", price: 319, image: "assets/images/walkerhill/pogi.jpg" },
+          { id: "w_set5b", tier: "set5", name: "5 SET ②", desc: "배추김치 3개 + 총각김치 2개", price: 293, image: "assets/images/walkerhill/set.jpg" },
+          { id: "w_set5c", tier: "set5", name: "5 SET ③", desc: "배추김치 2개 + 총각김치 3개", price: 280, image: "assets/images/walkerhill/set.jpg" },
+          { id: "w_set5d", tier: "set5", name: "5 SET ④", desc: "총각김치 5개", price: 255, image: "assets/images/walkerhill/chonggak.png" },
         ],
       },
     ],
@@ -128,3 +180,21 @@ window.KH_PRODUCTS = {
 
 window.KH_SPECIAL_TIERS = [[1, 27], [2, 49], [3, 71]];
 window.KH_PA_TIERS = [[1, 33], [2, 61], [3, 89]];
+
+window.getSaleOriginalPrice = function getSaleOriginalPrice(item, tierQty) {
+  if (!item || !(item.sale || item.saleLabel)) return null;
+
+  if (tierQty != null && item.wasTiers?.length) {
+    const match = item.wasTiers.find(([n]) => n === tierQty);
+    if (match) return match[1];
+  }
+
+  if (item.wasPrice != null) return item.wasPrice;
+
+  if (item.saleNote) {
+    const m = item.saleNote.match(/정가\s*\$?(\d+)/);
+    if (m) return Number(m[1]);
+  }
+
+  return null;
+};

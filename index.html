@@ -2,91 +2,451 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" href="assets/logo.jpg" type="image/jpeg" />
   <link rel="apple-touch-icon" href="assets/logo.jpg" />
-  <title>김치하우스 | 6~7월 3차 사전 예약</title>
+  <title>김치하우스 | 사전 예약 주문</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/app.css" />
+  <link rel="stylesheet" href="assets/shop.css" />
 </head>
-<body>
-  <div class="wrap">
-    <header class="site-header">
-      <img src="assets/logo.jpg" alt="김치하우스 Kimchi House AU" class="site-logo" />
-      <div class="round-line">6~7월 3차 사전 예약</div>
-    </header>
+<body class="shop-page shop-unified shop-order-page" data-brand="kimchi-house">
 
-    <section class="sec" id="order-section">
-      <div class="sec-eyebrow">Order</div>
-      <h2 class="sec-title">주문하기</h2>
-      <p class="sec-note">냉동 반찬과 김치·장류를 <strong>한 번에 주문</strong>하실 수 있습니다. 배송만 회차별로 나뉩니다.</p>
-      <div class="home-actions" id="home-actions">
-        <a class="btn btn-primary order-cta" href="order.html" id="order-link">주문하기</a>
-        <a class="btn btn-primary btn-outline order-cta" href="lookup.html">주문 확인</a>
+  <header class="shop-site-header" id="shop-site-header">
+    <div class="shop-header-row">
+      <a class="shop-logo" href="#hero">
+        <img src="assets/logo.jpg" alt="김치하우스" width="36" height="36" />
+        <span class="shop-logo-text">Kimchi House</span>
+      </a>
+      <div class="shop-brand-tabs shop-header-brands">
+        <button type="button" class="shop-brand-tab active" data-brand="kimchi-house">김치하우스</button>
+        <button type="button" class="shop-brand-tab" data-brand="walkerhill">워커힐 호텔 김치</button>
       </div>
-      <div class="preorder-closed hidden" id="preorder-closed">
-        <p class="preorder-closed-title">현재는 사전 주문 기간이 아닙니다.</p>
-        <p class="preorder-closed-text">다음 예약 일정은<br>카카오톡 채널에서 가장 먼저 안내드립니다.</p>
-        <a class="btn btn-kakao-channel" href="http://pf.kakao.com/_alkDxb" target="_blank" rel="noopener">카카오톡 채널 추가하기</a>
+      <div class="shop-header-actions">
+        <a class="shop-icon-btn" href="#popular" aria-label="검색">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
+        </a>
+        <a class="shop-icon-btn" href="lookup.html" aria-label="주문조회">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        </a>
+        <button type="button" class="shop-icon-btn" id="open-cart-sheet" aria-label="장바구니">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9H8L6 6z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M6 6L5 3H2"/></svg>
+          <span class="cart-badge hidden" id="cart-badge">0</span>
+        </button>
+        <button type="button" class="shop-icon-btn shop-menu-btn" id="menu-open" aria-label="메뉴">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
       </div>
-    </section>
+    </div>
+    <div class="shop-cat-nav-row">
+      <div class="shop-cat-icons" id="order-cat-tabs"></div>
+    </div>
+  </header>
 
-    <section class="sec">
-      <div class="sec-eyebrow">Notice</div>
-      <h2 class="sec-title">배송 안내</h2>
-      <p class="sec-note">냉동 반찬과 김치·장류는 <strong>별도 배송</strong>됩니다. (합배송 불가)</p>
-
-      <div class="notice-box">
-        <h3>필독 — 배송 분리 안내</h3>
-        <ul>
-          <li>제품 다양화로 인한 배송 혼선을 막고 신선도를 유지하기 위해 배송 회차가 나뉩니다.</li>
-          <li>배송비는 각 배송 건별 <strong>$10</strong>이며, 회차별 <strong>$100 이상</strong> 주문 시 해당 회차 무료배송입니다.</li>
-          <li>한정 수량으로 일부 제품은 조기 품절될 수 있습니다.</li>
-        </ul>
-
-        <table class="notice-table">
-          <thead>
-            <tr>
-              <th>구분</th>
-              <th>배송 예정일</th>
-              <th>무료배송</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>냉동 반찬</strong><br><small>만두, 김밥, 생선, 젓갈, 나물</small></td>
-              <td>6/26 ~ 6/29</td>
-              <td>회차별 $100 이상</td>
-            </tr>
-            <tr>
-              <td><strong>김치·장류</strong><br><small>포기김치, 특수김치, 장류</small></td>
-              <td>7/5일부터</td>
-              <td>회차별 $100 이상</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <img src="assets/images/hero.png" alt="김치하우스 냉동식품" class="hero-banner" />
-
-    <footer class="site">
-      <p>카카오톡 <a href="http://pf.kakao.com/_alkDxb" target="_blank" rel="noopener">@kimchihouseau</a> · 전화/문자 0433 938 909</p>
-      <p style="margin-top:8px">김치하우스 · Kimchi House AU · Sydney</p>
-    </footer>
+  <div class="shop-mobile-nav" id="mobile-nav">
+    <div class="shop-mobile-nav-panel">
+      <button type="button" class="shop-mobile-close" id="menu-close" aria-label="닫기">×</button>
+      <a href="#hero">예약주문</a>
+      <a href="#schedule">배송일정</a>
+      <a href="#popular">인기상품</a>
+      <a href="#events">이벤트</a>
+      <a href="#premium">워커힐 프리미엄</a>
+      <a href="#shop">전체 상품</a>
+      <a href="lookup.html">주문조회</a>
+    </div>
   </div>
+
+  <main class="shop-main" id="shop-main">
+
+    <div class="shop-server-hint hidden" id="shop-server-hint">
+      <strong>로컬 서버가 필요합니다</strong>
+      <p>HTML 파일을 직접 열면 주문 기능이 동작하지 않습니다. 터미널에서 <code>npm start</code> 실행 후 <a href="http://127.0.0.1:3456/">http://127.0.0.1:3456/</a> 로 접속해 주세요.</p>
+    </div>
+
+    <div class="shop-preorder-closed hidden" id="shop-preorder-closed">
+      <h3>현재는 사전 주문 기간이 아닙니다</h3>
+      <p>다음 예약 일정은 카카오톡 채널에서 가장 먼저 안내드립니다.</p>
+      <a class="shop-btn-kakao" href="http://pf.kakao.com/_alkDxb" target="_blank" rel="noopener">카카오톡 채널 추가하기</a>
+    </div>
+
+    <section class="shop-section shop-hero" id="hero">
+      <div class="shop-hero-slider">
+        <button type="button" class="shop-hero-arrow prev" id="hero-prev" aria-label="이전">‹</button>
+        <div class="shop-hero-track" id="hero-track">
+          <div class="shop-hero-slide brand-kimchi-house-only">
+            <div class="shop-hero-card">
+              <div class="shop-hero-visual">
+                <img src="assets/images/hero.png" alt="김치하우스 새벽김치" loading="eager" decoding="async" />
+                <div class="shop-hero-scrim"></div>
+                <div class="shop-hero-body">
+                  <p class="shop-hero-eyebrow">3차 사전예약</p>
+                  <h1 class="shop-hero-title">가장 신선할 때,<br>가장 맛있는 김치</h1>
+                  <p class="shop-hero-desc">새벽김치 3차 · 프리미엄 반찬 2차<br>$100 이상 무료배송</p>
+                  <div class="shop-hero-actions">
+                    <a class="shop-btn shop-btn-primary" href="#shop" data-order-link="primary">지금 예약하기</a>
+                    <a class="shop-btn shop-btn-outline" href="#schedule">자세히 보기</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="shop-hero-slide brand-walkerhill-only" id="premium">
+            <div class="shop-hero-card shop-hero-card-wh">
+              <div class="shop-hero-visual">
+                <img src="assets/images/walkerhill/set.jpg" alt="워커힐 호텔 김치" loading="lazy" decoding="async" />
+                <div class="shop-hero-scrim shop-hero-scrim-wh"></div>
+                <div class="shop-hero-body shop-hero-body-wh">
+                  <p class="shop-hero-eyebrow">PREMIUM LINE</p>
+                  <h1 class="shop-hero-title">워커힐 호텔 김치</h1>
+                  <p class="shop-hero-sub">WHY WALKERHILL?</p>
+                  <ul class="shop-hero-features">
+                    <li><span>🏨</span>1963년부터 이어온 호텔 김치</li>
+                    <li><span>🔬</span>호텔업계 최초 김치연구소</li>
+                    <li><span>👨‍🍳</span>워커힐 호텔 직속 셰프</li>
+                    <li><span>🇰🇷</span>100% 우리 농산물</li>
+                    <li><span>❄️</span>시원하고 깔끔한 중부식 맛</li>
+                  </ul>
+                  <div class="shop-hero-products">
+                    <div class="shop-hero-product">
+                      <img src="assets/images/walkerhill/pogi.jpg" alt="배추김치" loading="lazy" decoding="async" />
+                      <span>배추김치 4kg</span>
+                    </div>
+                    <div class="shop-hero-product">
+                      <img src="assets/images/walkerhill/chonggak.png" alt="총각김치" loading="lazy" decoding="async" />
+                      <span>총각김치 2kg</span>
+                    </div>
+                  </div>
+                  <div class="shop-hero-actions">
+                    <a class="shop-btn shop-btn-primary shop-btn-wh" href="#shop" data-order-link="primary">지금 예약하기</a>
+                    <a class="shop-btn shop-btn-outline" href="#shop">전체 상품 보기</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="shop-hero-arrow next" id="hero-next" aria-label="다음">›</button>
+      </div>
+      <div class="shop-hero-dots">
+        <button type="button" class="shop-hero-dot active" data-index="0" aria-label="배너 1"></button>
+        <button type="button" class="shop-hero-dot" data-index="1" aria-label="배너 2"></button>
+      </div>
+    </section>
+
+    <div class="shop-schedule-events-wrap">
+      <section class="shop-section shop-schedule-block" id="schedule">
+        <div class="shop-section-head">
+          <h2 class="shop-section-title">이번 차수 예약 일정</h2>
+          <a class="shop-section-more" href="#lookup">전체보기</a>
+        </div>
+        <div class="shop-schedule-grid">
+          <a class="shop-schedule-card brand-kimchi-house-only" href="order.html">
+            <img src="assets/images/products/b1.png" alt="" loading="lazy" decoding="async" />
+            <div>
+              <strong>새벽김치 3차</strong>
+              <span>7월 5일 배송</span>
+            </div>
+          </a>
+          <a class="shop-schedule-card brand-kimchi-house-only" href="order.html">
+            <img src="assets/images/products/a14.png" alt="" loading="lazy" decoding="async" />
+            <div>
+              <strong>프리미엄 반찬</strong>
+              <span>6월 26~29일 배송</span>
+            </div>
+          </a>
+          <a class="shop-schedule-card brand-walkerhill-only" href="order.html">
+            <img src="assets/images/walkerhill/pogi.jpg" alt="" loading="lazy" decoding="async" />
+            <div>
+              <strong>배추김치 4kg</strong>
+              <span>7월 5일 배송 · $75</span>
+            </div>
+          </a>
+          <a class="shop-schedule-card brand-walkerhill-only" href="order.html">
+            <img src="assets/images/walkerhill/chonggak.png" alt="" loading="lazy" decoding="async" />
+            <div>
+              <strong>총각김치 2kg</strong>
+              <span>7월 5일 배송 · $60</span>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <section class="shop-section shop-events-block" id="events">
+        <div class="shop-section-head">
+          <h2 class="shop-section-title">이번 차수 한정 혜택</h2>
+        </div>
+        <div class="shop-events">
+          <a class="shop-event-card" href="#shop">
+            <span class="shop-event-icon">🔥</span>
+            <div>
+              <strong>총각김치 30% 할인</strong>
+              <span>이번 회차 한정 빅세일</span>
+            </div>
+          </a>
+          <a class="shop-event-card" href="#shop">
+            <span class="shop-event-icon">🚚</span>
+            <div>
+              <strong>$100 이상 무료배송</strong>
+              <span>회차별 $100 이상 주문 시</span>
+            </div>
+          </a>
+          <a class="shop-event-card" href="#shop">
+            <span class="shop-event-icon">🎁</span>
+            <div>
+              <strong>수량 한정 예약</strong>
+              <span>조기 품절 시 마감</span>
+            </div>
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <section class="shop-section" id="popular">
+      <div class="shop-section-head">
+        <h2 class="shop-section-title">지금 가장 많이 찾는 상품</h2>
+        <a class="shop-section-more" href="#shop" id="popular-view-all">전체보기</a>
+      </div>
+      <div class="popular-slider" id="popular-slider">
+        <button type="button" class="popular-slider-arrow prev hidden" id="popular-prev" aria-label="이전">‹</button>
+        <div class="popular-slider-viewport">
+          <div class="popular-slider-track" id="popular-products"></div>
+        </div>
+        <button type="button" class="popular-slider-arrow next hidden" id="popular-next" aria-label="다음">›</button>
+      </div>
+    </section>
+
+    <section class="shop-section shop-catalog-section" id="shop">
+      <div id="order-form-wrap">
+        <div class="order-layout order-layout-full">
+          <main class="order-main">
+            <p class="order-delivery-note" id="order-delivery-note"></p>
+            <div id="product-root"></div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <section class="shop-section" id="strengths">
+      <div class="shop-section-head">
+        <h2 class="shop-section-title">김치하우스를 선택하는 이유</h2>
+      </div>
+      <div class="shop-strengths">
+        <div class="shop-strength">
+          <div class="shop-strength-icon">🇰🇷</div>
+          <strong>100% 한국산 재료</strong>
+        </div>
+        <div class="shop-strength">
+          <div class="shop-strength-icon">📦</div>
+          <strong>사전예약 신선배송</strong>
+        </div>
+        <div class="shop-strength">
+          <div class="shop-strength-icon">✨</div>
+          <strong>프리미엄 한식</strong>
+        </div>
+        <div class="shop-strength">
+          <div class="shop-strength-icon">❄️</div>
+          <strong>전용 냉장배송</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="shop-section" id="order-steps">
+      <div class="shop-section-head">
+        <h2 class="shop-section-title">주문 방법</h2>
+      </div>
+      <div class="shop-steps">
+        <div class="shop-step">
+          <span class="shop-step-num" aria-hidden="true">1</span>
+          <div>
+            <strong>상품 선택</strong>
+            <span>원하는 품목을 담아주세요</span>
+          </div>
+        </div>
+        <div class="shop-step">
+          <span class="shop-step-num" aria-hidden="true">2</span>
+          <div>
+            <strong>주문서 작성</strong>
+            <span>배송·결제 정보 입력</span>
+          </div>
+        </div>
+        <div class="shop-step">
+          <span class="shop-step-num" aria-hidden="true">3</span>
+          <div>
+            <strong>확인 메시지</strong>
+            <span>24시간 이내 안내</span>
+          </div>
+        </div>
+      </div>
+      <div class="shop-section-cta">
+        <a class="shop-btn shop-btn-primary" href="#shop" data-order-link="primary">온라인 주문하기</a>
+      </div>
+    </section>
+
+    <section class="shop-section shop-lookup-kakao">
+      <div class="shop-lookup-kakao-grid">
+        <div class="shop-lookup-block" id="lookup">
+          <div class="shop-section-head">
+            <h2 class="shop-section-title">주문 내역을 확인하세요</h2>
+          </div>
+          <p class="shop-lookup-desc">주문 시 입력하신 연락처로 조회할 수 있습니다.</p>
+          <div class="shop-lookup-form">
+            <input type="tel" class="shop-lookup-input" id="home-lookup-phone" placeholder="연락처 입력 (예: 0433 938 909)" autocomplete="tel" />
+            <button type="button" class="shop-btn shop-btn-primary" id="home-lookup-btn">조회하기</button>
+          </div>
+          <div class="shop-lookup-results" id="home-lookup-results"></div>
+        </div>
+        <div class="shop-kakao">
+          <p>예약일정 · 할인 · 신상품 소식을<br>가장 먼저 받아보세요.</p>
+          <a class="shop-btn-kakao" href="http://pf.kakao.com/_alkDxb" target="_blank" rel="noopener">카카오톡 채널 추가하기</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="order-mobile-cart hidden" id="order-mobile-cart">
+    <button type="button" class="order-mobile-cart-btn" id="open-cart-sheet-mobile" aria-label="장바구니 열기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9H8L6 6z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
+      <span class="cart-badge-sm hidden" id="cart-badge-mobile">0</span>
+    </button>
+    <div class="order-mobile-cart-total">
+      총액
+      <strong id="bar-total-mobile">$0</strong>
+    </div>
+    <button type="button" class="shop-btn shop-btn-primary" id="open-checkout-mobile" disabled>주문하기</button>
+  </div>
+
+  <div class="cart-sheet-overlay" id="cart-sheet-overlay">
+    <div class="cart-sheet" id="cart-sheet">
+      <div class="cart-sheet-head">
+        <h2>장바구니</h2>
+        <button type="button" class="cart-sheet-close" id="cart-sheet-close" aria-label="닫기">×</button>
+      </div>
+      <ul class="order-cart-items" id="bar-items-sheet"></ul>
+      <div class="order-cart-shipping" id="bar-meta-sheet"></div>
+      <div class="order-cart-total-row">
+        <span>총 결제금액</span>
+        <span class="price" id="bar-total-sheet">$0</span>
+      </div>
+      <button type="button" class="shop-btn shop-btn-primary shop-btn-block" id="open-checkout-sheet" disabled>주문하기</button>
+    </div>
+  </div>
+
+  <div class="product-modal-overlay" id="product-modal-overlay">
+    <div class="product-modal" id="product-modal" role="dialog" aria-modal="true"></div>
+  </div>
+
+  <div class="checkout-overlay" id="checkout-overlay">
+    <div class="checkout-panel">
+      <div class="checkout-panel-head">
+        <h2>주문자 정보</h2>
+        <button type="button" class="checkout-close" id="checkout-close" aria-label="닫기">×</button>
+      </div>
+      <div class="checkout-field">
+        <label for="customer-name">성함 <span class="req">*</span></label>
+        <input type="text" id="customer-name" required />
+      </div>
+      <div class="checkout-field">
+        <label for="customer-phone">연락처 <span class="req">*</span></label>
+        <input type="tel" id="customer-phone" placeholder="0433 938 909" required />
+        <p class="checkout-field-hint">예: 0433 938 909</p>
+      </div>
+      <div class="checkout-field">
+        <label for="customer-address">배송 주소 <span class="req">*</span></label>
+        <input type="text" id="customer-address" placeholder="Street address" required />
+      </div>
+      <div class="checkout-field">
+        <label for="customer-suburb">지역 (Suburb) <span class="req">*</span></label>
+        <input type="text" id="customer-suburb" placeholder="Suburb" required />
+      </div>
+      <div class="checkout-field">
+        <label for="customer-kakao">카카오톡 이름</label>
+        <input type="text" id="customer-kakao" placeholder="카카오톡 프로필 이름" />
+      </div>
+      <div class="checkout-field">
+        <label>결제 방법</label>
+        <div class="pay-options-shop">
+          <div class="pay-opt-shop" data-pay="cash">
+            <strong>현장 결제</strong>
+            <span>수령 시 현금</span>
+          </div>
+          <div class="pay-opt-shop sel" data-pay="transfer">
+            <strong>계좌이체</strong>
+            <span>주문 후 선입금</span>
+          </div>
+        </div>
+        <div class="bank-box-shop" id="bank-box">
+          <div id="bank-info"></div>
+        </div>
+      </div>
+      <div class="checkout-field">
+        <label for="customer-note">요청사항</label>
+        <textarea id="customer-note" placeholder="배송 시 요청사항"></textarea>
+      </div>
+      <button type="button" class="shop-btn shop-btn-primary shop-btn-block" id="submit-btn">주문 접수하기</button>
+    </div>
+  </div>
+
+  <div class="shop-success" id="success-screen">
+    <div class="check">✓</div>
+    <h2>주문이 접수되었습니다</h2>
+    <p>주문번호: <strong id="order-id"></strong></p>
+    <p class="success-note">24시간 이내 확인 메시지를 보내드립니다.</p>
+    <a class="shop-btn shop-btn-primary" href="http://pf.kakao.com/_alkDxb" target="_blank" rel="noopener">카카오톡 채널</a>
+    <br><br>
+    <a href="#hero">홈으로</a>
+  </div>
+
+  <footer class="shop-footer">
+    <div class="shop-footer-inner">
+      <img src="assets/logo.jpg" alt="김치하우스" class="shop-footer-logo" loading="lazy" />
+      <div class="shop-footer-contact">
+        <div class="shop-footer-contact-block">
+          <strong>김치하우스 문의</strong>
+          <p>카카오톡 <a href="http://pf.kakao.com/_alkDxb" target="_blank" rel="noopener">@kimchihouseau</a></p>
+          <p>전화/문자 <a href="tel:0433938909">0433 938 909</a></p>
+        </div>
+        <div class="shop-footer-contact-block wh">
+          <strong>워커힐 호텔 김치 문의</strong>
+          <p>전화/문자 <a href="tel:0486350080">0486 350 080</a></p>
+        </div>
+      </div>
+      <p class="shop-footer-note">냉동 반찬과 김치·장류는 별도 배송됩니다. 회차별 $100 이상 무료배송.</p>
+      <p class="shop-footer-copy">© Kimchi House AU · Sydney</p>
+    </div>
+  </footer>
+
+  <div class="shop-fixed-cta">
+    <a class="shop-btn shop-btn-primary" href="#shop" data-order-link="primary">주문하기</a>
+    <a class="shop-btn shop-btn-outline" href="lookup.html">주문조회</a>
+  </div>
+
+  <script src="assets/products.js"></script>
+  <script src="assets/order.js"></script>
+  <script src="assets/home.js"></script>
   <script>
     (async () => {
+      if (location.protocol === "file:") {
+        document.getElementById("shop-server-hint")?.classList.remove("hidden");
+        return;
+      }
       try {
         const res = await fetch("/api/config");
         const data = await res.json();
-        if (data.ok && data.preorderOpen === false) {
-          document.getElementById("order-link").classList.add("hidden");
-          document.getElementById("preorder-closed").classList.remove("hidden");
+        if (data.ok) {
+          if (data.orderSecret) window.KH_CONFIG.orderSecret = data.orderSecret;
+          if (data.preorderOpen === false) {
+            document.getElementById("shop-preorder-closed")?.classList.remove("hidden");
+            document.querySelectorAll("[data-order-link]").forEach((el) => el.classList.add("hidden"));
+            return;
+          }
         }
-      } catch (_) {}
+      } catch (_) {
+        document.getElementById("shop-server-hint")?.classList.remove("hidden");
+        return;
+      }
+      window.shopApi = initOrderPage("combined");
+      initHomePage();
     })();
   </script>
 </body>

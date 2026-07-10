@@ -1,6 +1,7 @@
 import http from "http";
 import fs from "fs";
 import path from "path";
+import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import {
   DEFAULT_DELIVERY_STATUS,
@@ -358,18 +359,52 @@ const server = http.createServer(async (req, res) => {
 ensureOrdersFile();
 ensureSettingsFile();
 
-server.listen(PORT, "127.0.0.1", () => {
+function openBrowser(url) {
+  if (process.env.OPEN_BROWSER === "0") return;
+  const openCmd =
+    process.platform === "win32" ? "start" : process.platform === "darwin" ? "open" : "xdg-open";
+  exec(`${openCmd} "${url}"`, (err) => {
+    if (err) {
+      console.log("");
+      console.log(`  브라우저 자동 열기 실패 — 아래 주소를 직접 열어주세요:`);
+      console.log(`  ${url}`);
+      console.log("");
+    }
+  });
+}
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    const homeUrl = `http://127.0.0.1:${PORT}/`;
+    console.error(`\n  포트 ${PORT}이(가) 이미 사용 중입니다.`);
+    console.error(`  이미 서버가 실행 중이면 브라우저에서 바로 접속하세요:`);
+    console.error(`  ${homeUrl}`);
+    console.error(`\n  서버가 없다면: PORT=3457 npm start\n`);
+    openBrowser(homeUrl);
+    process.exit(1);
+  }
+  throw err;
+});
+
+server.listen(PORT, "0.0.0.0", () => {
+  const homeUrl = `http://127.0.0.1:${PORT}/`;
   console.log("");
   console.log("  김치하우스 사전예약 — 로컬 서버 실행 중");
+  console.log(`  경로: ${ROOT}`);
   console.log("");
-  console.log(`  홈:       http://127.0.0.1:${PORT}/`);
-  console.log(`  주문:     http://127.0.0.1:${PORT}/order.html`);
-  console.log(`  주문확인: http://127.0.0.1:${PORT}/lookup.html`);
-  console.log(`  관리자:   http://127.0.0.1:${PORT}/admin.html`);
+  console.log(`  홈:       http://localhost:${PORT}/`);
+  console.log(`            http://127.0.0.1:${PORT}/`);
+  console.log(`  주문:     http://localhost:${PORT}/order.html`);
+  console.log(`  주문확인: http://localhost:${PORT}/lookup.html`);
+  console.log(`  관리자:   http://localhost:${PORT}/admin.html`);
   console.log("");
+  console.log("  ※ HTML 파일을 직접 열면 동작하지 않습니다. 위 주소로 접속하세요.");
+  console.log("  ※ 이 터미널을 닫으면 서버가 종료됩니다.");
   console.log(`  관리자 비밀번호: ${ADMIN_PASSWORD}`);
   console.log(`  주문 secret:     ${ORDER_SECRET}`);
   console.log("");
   console.log("  종료: Ctrl + C");
   console.log("");
+
+  openBrowser(homeUrl);
 });
