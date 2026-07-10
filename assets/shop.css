@@ -72,11 +72,13 @@ body[data-brand="walkerhill"].shop-page {
   flex-shrink: 0;
 }
 
-.shop-logo img {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  object-fit: cover;
+.shop-logo img,
+.shop-logo-mark {
+  width: auto;
+  height: 38px;
+  border-radius: 0;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .shop-logo-text {

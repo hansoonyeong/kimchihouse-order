@@ -1186,6 +1186,25 @@ footer.site a {
 
 .admin-filters {
   margin: 10px 0 4px;
+  display: grid;
+  gap: 12px;
+}
+
+.admin-filter-group {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-filter-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink2);
+}
+
+.filter-tab-round.active {
+  background: #eef5f0;
+  border-color: var(--brand);
+  color: var(--brand);
 }
 
 .filter-divider {
@@ -1204,9 +1223,26 @@ footer.site a {
 
 .stats.admin-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.stat-round {
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.stat-round:hover {
+  border-color: var(--brand);
+}
+
+.stat-round.active {
+  background: #eef5f0;
+  border-color: var(--brand);
 }
 
 .stat {
@@ -1329,6 +1365,42 @@ footer.site a {
 .admin-type-badge.type-combined {
   background: #f3f6f4;
   color: #3d5a48;
+}
+
+.admin-type-badge.type-walkerhill {
+  background: #f8f1e8;
+  color: #6b4a1d;
+}
+
+.admin-round-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.admin-round-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-round-badge.admin-round-frozen {
+  background: #e8f5ec;
+  color: #1b6b3a;
+}
+
+.admin-round-badge.admin-round-kimchi {
+  background: #eef7ef;
+  color: var(--brand);
+}
+
+.admin-round-badge.admin-round-walkerhill {
+  background: #f8f1e8;
+  color: #6b4a1d;
 }
 
 .admin-status-wrap {
@@ -2382,6 +2454,10 @@ footer.site a {
   .admin-preorder-toggle {
     flex: 1;
     justify-content: space-between;
+  }
+
+  .stats.admin-stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .filter-divider {
