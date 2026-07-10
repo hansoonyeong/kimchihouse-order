@@ -812,6 +812,7 @@
       if (!state.detail) {
         overlay.classList.remove("open");
         root.innerHTML = "";
+        document.body.style.overflow = "";
         return;
       }
 
@@ -887,6 +888,7 @@
               : `<button type="button" class="shop-btn shop-btn-primary shop-btn-block" data-modal-add="${addKey}">담기</button>`)}
         </div>`;
       overlay.classList.add("open");
+      document.body.style.overflow = "hidden";
     }
 
     function openProductModal(itemId) {

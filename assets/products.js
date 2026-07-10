@@ -96,9 +96,9 @@ window.KH_PRODUCTS = {
         note: "총각김치 30% 빅세일 · 열무·갓김치 합산 할인 · 쪽파김치 별도",
         items: [
           { id: "b4", name: "총각김치 (1KG)", tiers: [[1, 19], [2, 33], [3, 47]], wasTiers: [[1, 27], [2, 49], [3, 71]], sale: true, saleLabel: "30% 빅세일", saleNote: "이번 회차 한정 · 정가 $27 → 세일 $19", image: "assets/images/products/b4.png" },
-          { id: "b5", name: "열무김치 (1KG)", group: "special", image: "assets/images/products/b5.png" },
-          { id: "b6", name: "쪽파김치 (1KG)", group: "pa", image: "assets/images/products/b6.png" },
-          { id: "b7", name: "돌산 갓김치 (1KG)", group: "special", image: "assets/images/products/b7.png" },
+          { id: "b5", name: "열무김치 (1KG)", group: "special", desc: "열무 합산 할인 · 1개 $27", image: "assets/images/products/b5.png" },
+          { id: "b6", name: "쪽파김치 (1KG)", group: "pa", desc: "쪽파김치 별도 가격 · 1개 $33", image: "assets/images/products/b6.png" },
+          { id: "b7", name: "돌산 갓김치 (1KG)", group: "special", desc: "갓김치 합산 할인 · 1개 $27", image: "assets/images/products/b7.png" },
         ],
       },
       {
