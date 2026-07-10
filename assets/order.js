@@ -910,7 +910,153 @@
 
     function closeCartSheet() {
       document.getElementById("cart-sheet-overlay")?.classList.remove("open");
-      document.body.style.overflow = "";
+      if (!state.detail && !document.getElementById("product-search-overlay")?.classList.contains("open")) {
+        document.body.style.overflow = "";
+      }
+    }
+
+    function searchItemImage(item, cat) {
+      if (item.image) return item.image;
+      if (cat === "walkerhill") {
+        if (item.id === "w1") return WH_CAT_IMAGES.pogi;
+        if (item.id === "w2") return WH_CAT_IMAGES.chonggak;
+        if (item.tier?.startsWith("set")) return WH_CAT_IMAGES[item.tier] || WH_CAT_IMAGES.set2;
+      }
+      return "";
+    }
+
+    function searchItemDisplayName(item) {
+      const isSet = item.tier?.startsWith("set");
+      return isSet && item.desc ? item.desc : item.name;
+    }
+
+    function searchItemPriceLabel(item) {
+      if (item.soldOut) return "품절";
+      if (item.variants?.length) {
+        const min = Math.min(...item.variants.map((v) => v.price));
+        return `${money(min)}~`;
+      }
+      if (item.tiers?.length) {
+        return money(item.tiers[0][1]);
+      }
+      if (item.price != null) return money(item.price);
+      return "";
+    }
+
+    function getAllSearchableProducts() {
+      const results = [];
+      for (const cat of ["frozen", "kimchi", "walkerhill"]) {
+        const catalog = KH_PRODUCTS[cat];
+        if (!catalog) continue;
+        for (const section of catalog.sections) {
+          for (const item of section.items) {
+            results.push({ item, section, cat, brand: cat === "walkerhill" ? "walkerhill" : "kimchi-house" });
+          }
+        }
+      }
+      return results;
+    }
+
+    function searchProducts(query) {
+      const q = query.trim().toLowerCase();
+      if (!q) return [];
+      const terms = q.split(/\s+/).filter(Boolean);
+      return getAllSearchableProducts().filter(({ item, section, cat }) => {
+        const catalog = KH_PRODUCTS[cat];
+        const haystack = [
+          item.name,
+          item.desc,
+          item.saleNote,
+          section.tab,
+          section.title,
+          catalog.label,
+          cat === "walkerhill" ? "워커힐" : "",
+        ].filter(Boolean).join(" ").toLowerCase();
+        return terms.every((term) => haystack.includes(term));
+      });
+    }
+
+    function renderSearchResults(query) {
+      const listEl = document.getElementById("product-search-results");
+      const hintEl = document.getElementById("product-search-hint");
+      const clearBtn = document.getElementById("product-search-clear");
+      if (!listEl) return;
+
+      const trimmed = query.trim();
+      clearBtn?.classList.toggle("hidden", !trimmed);
+
+      if (!trimmed) {
+        hintEl.textContent = "김치, 만두, 워커힐 등 키워드로 검색할 수 있습니다.";
+        listEl.innerHTML = "";
+        return;
+      }
+
+      const matches = searchProducts(trimmed);
+      if (!matches.length) {
+        hintEl.textContent = "";
+        listEl.innerHTML = `<li class="product-search-empty">「${trimmed}」에 맞는 상품이 없습니다.</li>`;
+        return;
+      }
+
+      hintEl.textContent = `검색 결과 ${matches.length}건`;
+      listEl.innerHTML = matches.map(({ item, section, cat }) => {
+        const catalog = KH_PRODUCTS[cat];
+        const brandLabel = cat === "walkerhill" ? "워커힐 호텔 김치" : catalog.label;
+        const thumb = searchItemImage(item, cat);
+        const price = searchItemPriceLabel(item);
+        const priceClass = item.soldOut ? "product-search-price sold-out" : "product-search-price";
+        return `<li>
+          <button type="button" class="product-search-item" data-search-item="${item.id}">
+            <div class="product-search-thumb">${thumb ? `<img src="${thumb}" alt="" loading="lazy" decoding="async" />` : ""}</div>
+            <div class="product-search-info">
+              <div class="product-search-cat">${brandLabel} · ${section.tab}</div>
+              <div class="product-search-name">${searchItemDisplayName(item)}</div>
+            </div>
+            <span class="${priceClass}">${price}</span>
+          </button>
+        </li>`;
+      }).join("");
+    }
+
+    function openSearchOverlay() {
+      const overlay = document.getElementById("product-search-overlay");
+      if (!overlay) return;
+      overlay.classList.add("open");
+      document.body.style.overflow = "hidden";
+      const input = document.getElementById("product-search-input");
+      if (input) {
+        input.value = "";
+        renderSearchResults("");
+        requestAnimationFrame(() => input.focus());
+      }
+    }
+
+    function closeSearchOverlay() {
+      document.getElementById("product-search-overlay")?.classList.remove("open");
+      if (!state.detail && !document.getElementById("cart-sheet-overlay")?.classList.contains("open")) {
+        document.body.style.overflow = "";
+      }
+    }
+
+    function goToProductFromSearch(itemId) {
+      const found = findItemById(itemId);
+      if (!found) return;
+      const brand = found.cat === "walkerhill" ? "walkerhill" : "kimchi-house";
+      closeSearchOverlay();
+
+      if (state.brand !== brand) {
+        setBrandExternal(brand);
+      }
+
+      const cat = categoryForItemId(brand, itemId);
+      if (cat) {
+        state.activeCategory = cat;
+        render();
+        persistCart();
+      }
+
+      document.getElementById("shop")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      requestAnimationFrame(() => openProductModal(itemId));
     }
 
     function fillCartPanel(itemsEl, metaEl, totalEl, lines, totalStr, metaStr, hasItems) {
@@ -1257,6 +1403,30 @@
       if (e.target.id === "cart-sheet-overlay") closeCartSheet();
     });
 
+    document.getElementById("open-product-search")?.addEventListener("click", openSearchOverlay);
+    document.getElementById("product-search-close")?.addEventListener("click", closeSearchOverlay);
+    document.getElementById("product-search-clear")?.addEventListener("click", () => {
+      const input = document.getElementById("product-search-input");
+      if (input) {
+        input.value = "";
+        renderSearchResults("");
+        input.focus();
+      }
+    });
+    document.getElementById("product-search-input")?.addEventListener("input", (e) => {
+      renderSearchResults(e.target.value);
+    });
+    document.getElementById("product-search-results")?.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-search-item]");
+      if (btn) goToProductFromSearch(btn.dataset.searchItem);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (document.getElementById("product-search-overlay")?.classList.contains("open")) {
+        closeSearchOverlay();
+      }
+    });
+
     document.getElementById("menu-open")?.addEventListener("click", () => {
       document.getElementById("mobile-nav")?.classList.add("open");
     });
@@ -1309,6 +1479,7 @@
       setBrand: setBrandExternal,
       openModal: openProductModal,
       openCart: openCartSheet,
+      openSearch: openSearchOverlay,
       addItem(id) {
         setQty(id, qty(id) + 1);
         bumpCartSheet();

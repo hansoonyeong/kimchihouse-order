@@ -21,12 +21,15 @@
       </a>
       <div class="shop-brand-tabs shop-header-brands">
         <button type="button" class="shop-brand-tab active" data-brand="kimchi-house">김치하우스</button>
-        <button type="button" class="shop-brand-tab" data-brand="walkerhill">워커힐 호텔 김치</button>
+        <button type="button" class="shop-brand-tab" data-brand="walkerhill">
+          <span class="shop-brand-tab-long">워커힐 호텔 김치</span>
+          <span class="shop-brand-tab-short">워커힐</span>
+        </button>
       </div>
       <div class="shop-header-actions">
-        <a class="shop-icon-btn" href="#popular" aria-label="검색">
+        <button type="button" class="shop-icon-btn" id="open-product-search" aria-label="검색">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
-        </a>
+        </button>
         <a class="shop-icon-btn" href="lookup.html" aria-label="주문조회">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
         </a>
@@ -312,6 +315,23 @@
         <span class="price" id="bar-total-sheet">$0</span>
       </div>
       <button type="button" class="shop-btn shop-btn-primary shop-btn-block" id="open-checkout-sheet" disabled>주문하기</button>
+    </div>
+  </div>
+
+  <div class="product-search-overlay" id="product-search-overlay" role="dialog" aria-modal="true" aria-label="품목 검색">
+    <div class="product-search-panel">
+      <div class="product-search-head">
+        <div class="product-search-input-wrap">
+          <svg class="product-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
+          <input type="search" id="product-search-input" class="product-search-input" placeholder="상품명을 검색해 보세요" autocomplete="off" enterkeyhint="search" />
+          <button type="button" class="product-search-clear hidden" id="product-search-clear" aria-label="검색어 지우기">×</button>
+        </div>
+        <button type="button" class="product-search-close" id="product-search-close">취소</button>
+      </div>
+      <div class="product-search-body">
+        <p class="product-search-hint" id="product-search-hint">김치, 만두, 워커힐 등 키워드로 검색할 수 있습니다.</p>
+        <ul class="product-search-results" id="product-search-results"></ul>
+      </div>
     </div>
   </div>
 

@@ -20,6 +20,13 @@
   color: var(--text);
   font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+html:has(.shop-page) {
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 body[data-brand="walkerhill"].shop-page {
@@ -41,11 +48,13 @@ body[data-brand="walkerhill"].shop-page {
   z-index: 200;
   background: var(--white);
   border-bottom: 1px solid var(--border);
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 .shop-header-row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   max-width: var(--shop-max);
@@ -83,10 +92,12 @@ body[data-brand="walkerhill"].shop-page {
   max-width: 420px;
   margin: 0 auto;
   width: 100%;
+  min-width: 0;
 }
 
 .shop-brand-tab {
   flex: 1;
+  min-width: 0;
   min-height: 40px;
   padding: 8px 12px;
   border: 1px solid var(--border);
@@ -98,6 +109,8 @@ body[data-brand="walkerhill"].shop-page {
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 body[data-brand="kimchi-house"] .shop-brand-tab.active {
@@ -110,6 +123,10 @@ body[data-brand="walkerhill"] .shop-brand-tab.active {
   background: #1a1208;
   border-color: #1a1208;
   color: var(--gold);
+}
+
+.shop-brand-tab-short {
+  display: none;
 }
 
 .shop-header-actions {
@@ -659,7 +676,7 @@ body[data-brand="walkerhill"] .shop-cat-icon.active .shop-cat-icon-label {
 }
 
 .shop-product-price .now.sale {
-  color: var(--accent);
+  color: var(--text);
 }
 
 .shop-product-cta {
@@ -813,6 +830,7 @@ body[data-brand="walkerhill"] .shop-product-cta {
 .kurly-card-thumb {
   position: relative;
   display: block;
+  flex-shrink: 0;
   width: 100%;
   aspect-ratio: 1;
   margin-bottom: 12px;
@@ -821,6 +839,8 @@ body[data-brand="walkerhill"] .shop-product-cta {
   background: var(--bg-soft);
   overflow: hidden;
   cursor: pointer;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .kurly-card-thumb img {
@@ -891,13 +911,18 @@ body[data-brand="walkerhill"] .shop-product-cta {
   background: var(--white);
   font-family: inherit;
   font-size: 13px;
+  color: var(--text);
   cursor: pointer;
   text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .kurly-option.active {
   border-color: var(--primary);
   background: #f4faf7;
+  color: var(--text);
 }
 
 body[data-brand="walkerhill"] .kurly-option.active {
@@ -923,9 +948,14 @@ body[data-brand="walkerhill"] .kurly-option.active .kurly-option-radio {
   box-shadow: inset 0 0 0 3px var(--white), inset 0 0 0 8px var(--wh-accent);
 }
 
+.kurly-option.active .kurly-option-label {
+  color: var(--primary);
+}
+
 .kurly-option-label {
   flex: 1;
   font-weight: 600;
+  color: var(--text);
 }
 
 .kurly-option-price {
@@ -951,7 +981,7 @@ body[data-brand="walkerhill"] .kurly-option.active .kurly-option-radio {
 }
 
 .kurly-card-price .sale-now {
-  color: var(--accent);
+  color: var(--text);
 }
 
 .shop-server-hint {
@@ -1541,17 +1571,21 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   position: relative;
   overflow: hidden;
   border-radius: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .shop-hero-track {
   display: flex;
   align-items: stretch;
   transition: transform 0.5s ease;
+  will-change: transform;
 }
 
 .shop-hero-slide {
   flex: 0 0 100%;
-  min-width: 100%;
+  width: 100%;
+  max-width: 100%;
   display: flex;
 }
 
@@ -2365,6 +2399,195 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
   color: var(--text-muted);
 }
 
+/* Product search overlay */
+.product-search-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  background: var(--white);
+}
+
+.product-search-overlay.open {
+  display: block;
+}
+
+.product-search-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.product-search-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px var(--shop-pad) 10px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--border);
+  background: var(--white);
+}
+
+.product-search-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-soft, #f5f5f5);
+}
+
+.product-search-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.product-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text);
+  outline: none;
+  appearance: none;
+}
+
+.product-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.product-search-clear {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.12);
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.product-search-clear.hidden {
+  display: none;
+}
+
+.product-search-close {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px 4px;
+}
+
+.product-search-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px var(--shop-pad) calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.product-search-hint {
+  margin: 12px 0 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.product-search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.product-search-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.product-search-item:last-child {
+  border-bottom: none;
+}
+
+.product-search-thumb {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-soft, #f5f5f5);
+}
+
+.product-search-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-search-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-search-cat {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.product-search-name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-search-price {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.product-search-price.sold-out {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.product-search-empty {
+  padding: 32px 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
 .order-mobile-cart {
   position: fixed;
   left: 0;
@@ -2449,16 +2672,20 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 
 .product-modal-img {
   position: relative;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  width: 100%;
   aspect-ratio: 1;
-  max-height: min(52vh, 420px);
+  max-height: min(44dvh, 360px);
+  overflow: hidden;
   background: var(--bg-soft);
 }
 
 .product-modal-img img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
 }
 
 .product-modal-body {
@@ -2533,6 +2760,7 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
   font-size: 22px;
   font-weight: 800;
   margin-bottom: 16px;
+  color: var(--text);
 }
 
 .product-modal-soldout {
@@ -2877,8 +3105,12 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
   background: var(--white);
   font-family: inherit;
   font-size: 14px;
+  color: var(--text);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .kurly-tier-pick:hover,
@@ -2895,12 +3127,14 @@ body[data-brand="walkerhill"] .kurly-tier-pick:active {
 
 .kurly-tier-pick .tier-qty {
   font-weight: 600;
+  color: var(--text);
 }
 
 .kurly-tier-pick .tier-price {
   display: flex;
   align-items: baseline;
   gap: 6px;
+  color: var(--text);
 }
 
 .kurly-tier-pick .tier-was {
@@ -2911,7 +3145,7 @@ body[data-brand="walkerhill"] .kurly-tier-pick:active {
 .kurly-tier-pick strong {
   font-size: 15px;
   font-weight: 800;
-  color: var(--accent);
+  color: var(--text);
 }
 
 .price-hint {
@@ -3170,14 +3404,55 @@ button.shop-product-cta {
     --shop-pad: 14px;
   }
 
+  .shop-header-row {
+    gap: 8px;
+    padding: 8px var(--shop-pad);
+  }
+
+  .shop-icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+
   .shop-logo-text {
-    font-size: 14px;
+    display: none;
   }
 
   .shop-brand-tab {
     font-size: 11px;
     padding: 7px 8px;
     min-height: 36px;
+    text-overflow: clip;
+  }
+
+  .shop-brand-tab-long {
+    display: none;
+  }
+
+  .shop-brand-tab-short {
+    display: inline;
+  }
+
+  .shop-hero {
+    width: 100vw;
+    max-width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+  }
+
+  .shop-hero-card,
+  .shop-hero-card-wh {
+    aspect-ratio: auto;
+    min-height: 300px;
+    border-radius: 0;
+  }
+
+  .shop-hero-body {
+    padding: 24px var(--shop-pad) 24px 20px;
+  }
+
+  .shop-hero-body-wh {
+    padding: 24px var(--shop-pad);
   }
 
   .shop-header-brands {
@@ -3253,8 +3528,8 @@ button.shop-product-cta {
   }
 
   .product-modal-img {
-    aspect-ratio: 4 / 3;
-    max-height: 34vh;
+    aspect-ratio: 1;
+    max-height: min(40dvh, 300px);
   }
 
   .product-modal-overlay {
@@ -3275,10 +3550,6 @@ button.shop-product-cta {
 }
 
 @media (max-width: 380px) {
-  .shop-logo-text {
-    display: none;
-  }
-
   .shop-brand-tab {
     font-size: 10px;
     padding: 6px 6px;
