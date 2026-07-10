@@ -503,18 +503,16 @@
     });
   }
 
-  function applyPreorderState() {
-    const orderLinks = document.querySelectorAll("[data-order-link]");
-    const closed = document.getElementById("shop-preorder-closed");
-    if (preorderOpen) {
-      closed?.classList.add("hidden");
-      orderLinks.forEach((el) => el.classList.remove("hidden"));
-      return;
-    }
-    closed?.classList.remove("hidden");
-    orderLinks.forEach((el) => {
-      if (el.dataset.orderLink === "primary") el.classList.add("hidden");
+  function applyShopPreorderClosed(closed) {
+    document.body.classList.toggle("shop-preorder-off", closed);
+    document.getElementById("shop-preorder-closed")?.classList.toggle("hidden", !closed);
+    document.querySelectorAll("[data-order-link]").forEach((el) => {
+      el.classList.toggle("hidden", closed);
     });
+  }
+
+  function applyPreorderState() {
+    applyShopPreorderClosed(!preorderOpen);
   }
 
   async function fetchConfig() {
@@ -645,6 +643,7 @@
   }
 
   window.initHomePage = init;
+  window.applyShopPreorderClosed = applyShopPreorderClosed;
   if (!document.body.classList.contains("shop-unified")) {
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", init);

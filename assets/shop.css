@@ -2859,10 +2859,101 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 }
 
 .shop-preorder-closed {
-  max-width: 480px;
-  margin: 60px auto;
-  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.shop-preorder-closed-inner {
+  padding: 32px 24px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 16px;
   text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+.shop-preorder-closed-logo {
+  display: block;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.shop-preorder-closed-badge {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.shop-preorder-closed-title {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+}
+
+.shop-preorder-closed-desc {
+  margin: 0 0 24px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+.shop-preorder-closed-actions {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.shop-preorder-closed-contact {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.shop-preorder-closed-contact a {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+body.shop-preorder-off .shop-cat-nav-row,
+body.shop-preorder-off .shop-header-brands,
+body.shop-preorder-off .shop-menu-btn,
+body.shop-preorder-off #open-product-search,
+body.shop-preorder-off #open-cart-sheet,
+body.shop-preorder-off #open-cart-sheet-mobile,
+body.shop-preorder-off .shop-fixed-cta,
+body.shop-preorder-off .shop-footer,
+body.shop-preorder-off .order-mobile-cart,
+body.shop-preorder-off .shop-mobile-nav,
+body.shop-preorder-off .cart-sheet-overlay,
+body.shop-preorder-off .product-modal-overlay,
+body.shop-preorder-off .checkout-overlay,
+body.shop-preorder-off .product-search-overlay,
+body.shop-preorder-off .shop-main > :not(#shop-preorder-closed) {
+  display: none !important;
+}
+
+body.shop-preorder-off.shop-order-page {
+  padding-bottom: 0;
+}
+
+body.shop-preorder-off .shop-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - var(--header-h) - env(safe-area-inset-top, 0px));
+  padding: 24px var(--shop-pad) calc(24px + env(safe-area-inset-bottom, 0px));
 }
 
 .success-note {
