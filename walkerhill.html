@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="assets/logo.jpg" type="image/jpeg" />
+  <link rel="apple-touch-icon" href="assets/logo.jpg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>워커힐 호텔 김치 | 김치하우스</title>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      if (!params.get("brand")) params.set("brand", "walkerhill");
+      if (!params.get("category") && !params.get("cat") && !params.get("item")) {
+        params.set("category", "all");
+      }
+      var qs = params.toString();
+      location.replace("index.html?" + qs + (location.hash || "#shop"));
+    })();
+  </script>
+</head>
+<body>
+  <p><a href="index.html?brand=walkerhill&amp;category=all#shop">워커힐 호텔 김치 주문하기</a></p>
+</body>
+</html>

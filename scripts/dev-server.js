@@ -305,6 +305,7 @@ async function handleConfig(req, res) {
 function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split("?")[0]);
   if (urlPath === "/") urlPath = "/index.html";
+  if (urlPath === "/walkerhill" || urlPath === "/walkerhill/") urlPath = "/index.html";
 
   const filePath = path.join(ROOT, urlPath);
 

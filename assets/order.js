@@ -325,8 +325,7 @@
         { cat: "frozen", sid: "fish" }, { cat: "frozen", sid: "namul" },
       ]},
       { id: "jeotgal", label: "젓갈", sections: [{ cat: "frozen", sid: "jeotgal" }] },
-      { id: "jang", label: "장류", sections: [{ cat: "kimchi", sid: "jang" }] },
-      { id: "event", label: "이벤트", sections: [{ cat: "kimchi", sid: "best" }] },
+      { id: "jang", label: "장류·한국식품", sections: [{ cat: "kimchi", sid: "jang" }] },
     ];
 
 
@@ -338,11 +337,10 @@
 
     const KH_CAT_IMAGES = {
       pogi: "assets/images/products/b1.png",
-      special: "assets/images/products/b4.png",
-      banchan: "assets/images/products/a14.png",
-      jeotgal: "assets/images/products/a9.png",
-      jang: "assets/images/products/b12.png",
-      event: "assets/images/products/b8.png",
+      special: "assets/images/browse/special.png",
+      banchan: "assets/images/browse/banchan.png",
+      jeotgal: "assets/images/browse/jeotgal.png",
+      jang: "assets/images/browse/jang.png",
     };
 
     const WH_CAT_IMAGES = {
@@ -558,10 +556,63 @@
       return list.includes(cat) ? cat : null;
     }
 
+    function normalizeBrandParam(value) {
+      if (!value) return null;
+      const key = String(value).toLowerCase().replace(/_/g, "-");
+      if (key === "walkerhill") return "walkerhill";
+      if (key === "kimchi-house" || key === "kimchihouse" || key === "kimchi") return "kimchi-house";
+      return null;
+    }
+
+    function normalizeCategoryParam(brand, value) {
+      if (!value) return null;
+      const key = String(value).toLowerCase();
+      const aliasMap = {
+        kimchi: "pogi",
+        "special-kimchi": "special",
+        special: "special",
+        frozen: "banchan",
+        banchan: "banchan",
+        seafood: "jeotgal",
+        jeotgal: "jeotgal",
+        pantry: "jang",
+        jang: "jang",
+        walkerhill: brand === "walkerhill" ? "all" : "pogi",
+        pogi: "pogi",
+        chonggak: "chonggak",
+        set2: "set2",
+        set3: "set3",
+        set5: "set5",
+        all: "all",
+        event: "jang",
+        best: "jang",
+      };
+      return aliasMap[key] || null;
+    }
+
+    function isWalkerhillPath() {
+      const path = (location.pathname || "").replace(/\/+$/, "");
+      return /(^|\/)walkerhill(\.html)?$/i.test(path);
+    }
+
+    function cleanDeepLinkUrl() {
+      if (isWalkerhillPath()) {
+        history.replaceState(null, "", location.pathname);
+        return;
+      }
+      if (document.body.dataset.brand === "walkerhill") {
+        history.replaceState(null, "", location.pathname + "?brand=walkerhill");
+        return;
+      }
+      history.replaceState(null, "", location.pathname);
+    }
+
     function applyOrderParams() {
       const params = new URLSearchParams(window.location.search);
       const itemParam = params.get("item");
-      let brandParam = params.get("brand");
+      let brandParam = normalizeBrandParam(params.get("brand"));
+
+      if (isWalkerhillPath() && !brandParam) brandParam = "walkerhill";
 
       if (itemParam) {
         if (isWalkerhillItem(itemParam)) brandParam = "walkerhill";
@@ -574,25 +625,47 @@
         document.querySelectorAll(".shop-brand-tab").forEach((t) => {
           t.classList.toggle("active", t.dataset.brand === state.brand);
         });
+        if (state.brand === "walkerhill") {
+          document.title = "워커힐 호텔 김치 | 김치하우스";
+        }
       }
 
       let catParam = params.get("cat");
+      const categoryAlias = normalizeCategoryParam(state.brand, params.get("category"));
+      if (categoryAlias) catParam = categoryAlias;
+
       if (itemParam) {
         const fromItem = categoryForItemId(state.brand, itemParam);
         if (fromItem) catParam = fromItem;
       }
 
+      if (isWalkerhillPath() && !catParam && !itemParam) catParam = "all";
+
       const valid = validCategory(state.brand, catParam);
-      state.activeCategory = valid || "pogi";
+      state.activeCategory = valid || (state.brand === "walkerhill" ? "all" : "pogi");
       state.pendingScrollItem = itemParam || null;
     }
 
     function scrollToShopIfNeeded() {
       const params = new URLSearchParams(window.location.search);
-      if (location.hash === "#shop" || params.get("cat") || params.get("item")) {
+      const hasDeepLink = !!(params.get("cat") || params.get("category") || params.get("item"));
+      const hashShop = location.hash === "#shop";
+      const walkerhillLanding = isWalkerhillPath();
+
+      if (hasDeepLink || walkerhillLanding) {
         requestAnimationFrame(() => {
-          document.getElementById("shop")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          if (hasDeepLink || hashShop) {
+            document.getElementById("shop")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+          cleanDeepLinkUrl();
         });
+        return;
+      }
+
+      // leftover #shop should not keep pulling the page down on refresh
+      if (hashShop) {
+        cleanDeepLinkUrl();
+        window.scrollTo(0, 0);
       }
     }
 
@@ -1294,18 +1367,7 @@
     if (!cartOnly) {
       document.querySelectorAll(".shop-brand-tab").forEach((tab) => {
         tab.addEventListener("click", () => {
-          const nextBrand = tab.dataset.brand;
-          if (nextBrand !== state.brand) state.cart = {};
-          state.brand = nextBrand;
-          document.body.dataset.brand = state.brand;
-          document.querySelectorAll(".shop-brand-tab").forEach((t) => {
-            t.classList.toggle("active", t.dataset.brand === state.brand);
-          });
-          state.activeCategory = "pogi";
-          state.pendingScrollItem = null;
-          render();
-          persistCart();
-          notifyBrandChange(nextBrand);
+          setBrandExternal(tab.dataset.brand);
         });
       });
     }
@@ -1463,10 +1525,19 @@
     scrollToShopIfNeeded();
 
     function setBrandExternal(brand) {
+      if (brand === "kimchi-house" && isWalkerhillPath()) {
+        location.href = "index.html";
+        return;
+      }
+      if (brand === "walkerhill" && !isWalkerhillPath()) {
+        const path = location.pathname.endsWith(".html") ? "walkerhill.html" : "walkerhill";
+        location.href = path;
+        return;
+      }
       if (brand !== state.brand) state.cart = {};
       state.brand = brand;
       document.body.dataset.brand = brand;
-      if (!cartOnly) state.activeCategory = "pogi";
+      if (!cartOnly) state.activeCategory = brand === "walkerhill" ? "all" : "pogi";
       document.querySelectorAll(".shop-brand-tab").forEach((t) => {
         t.classList.toggle("active", t.dataset.brand === brand);
       });
@@ -1475,8 +1546,17 @@
       notifyBrandChange(brand);
     }
 
+    function setCategoryExternal(catId) {
+      if (!catId) return;
+      const next = normalizeCategoryParam(state.brand, catId) || catId;
+      state.activeCategory = next;
+      render();
+      persistCart();
+    }
+
     return {
       setBrand: setBrandExternal,
+      setCategory: setCategoryExternal,
       openModal: openProductModal,
       openCart: openCartSheet,
       openSearch: openSearchOverlay,

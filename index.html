@@ -20,11 +20,33 @@
         <span class="shop-logo-text">Kimchi House</span>
       </a>
       <div class="shop-brand-tabs shop-header-brands">
-        <button type="button" class="shop-brand-tab active" data-brand="kimchi-house">김치하우스</button>
-        <button type="button" class="shop-brand-tab" data-brand="walkerhill">
-          <span class="shop-brand-tab-long">워커힐 호텔 김치</span>
-          <span class="shop-brand-tab-short">워커힐</span>
-        </button>
+        <div class="shop-brand-menu" data-brand-menu="kimchi-house">
+          <button type="button" class="shop-brand-tab active" data-brand="kimchi-house" aria-expanded="false" aria-controls="kh-brand-dropdown">
+            김치하우스
+          </button>
+          <div class="shop-brand-dropdown" id="kh-brand-dropdown" hidden>
+            <a href="order.html?brand=kimchihouse&amp;category=all#shop" data-brand="kimchi-house" data-order-cat="all">ALL</a>
+            <a href="order.html?brand=kimchihouse&amp;category=kimchi#shop" data-brand="kimchi-house" data-order-cat="pogi">포기김치</a>
+            <a href="order.html?brand=kimchihouse&amp;category=special-kimchi#shop" data-brand="kimchi-house" data-order-cat="special">별미김치</a>
+            <a href="order.html?brand=kimchihouse&amp;category=frozen#shop" data-brand="kimchi-house" data-order-cat="banchan">반찬·냉동식품</a>
+            <a href="order.html?brand=kimchihouse&amp;category=seafood#shop" data-brand="kimchi-house" data-order-cat="jeotgal">젓갈·수산</a>
+            <a href="order.html?brand=kimchihouse&amp;category=pantry#shop" data-brand="kimchi-house" data-order-cat="jang">장류·한국식품</a>
+          </div>
+        </div>
+        <div class="shop-brand-menu" data-brand-menu="walkerhill">
+          <button type="button" class="shop-brand-tab" data-brand="walkerhill" aria-expanded="false" aria-controls="wh-brand-dropdown">
+            <span class="shop-brand-tab-long">워커힐 호텔 김치</span>
+            <span class="shop-brand-tab-short">워커힐</span>
+          </button>
+          <div class="shop-brand-dropdown" id="wh-brand-dropdown" hidden>
+            <a href="order.html?brand=walkerhill&amp;category=all#shop" data-brand="walkerhill" data-order-cat="all">ALL</a>
+            <a href="order.html?brand=walkerhill&amp;category=pogi#shop" data-brand="walkerhill" data-order-cat="pogi">배추김치</a>
+            <a href="order.html?brand=walkerhill&amp;category=chonggak#shop" data-brand="walkerhill" data-order-cat="chonggak">총각김치</a>
+            <a href="order.html?brand=walkerhill&amp;category=set2#shop" data-brand="walkerhill" data-order-cat="set2">2 SET</a>
+            <a href="order.html?brand=walkerhill&amp;category=set3#shop" data-brand="walkerhill" data-order-cat="set3">3 SET</a>
+            <a href="order.html?brand=walkerhill&amp;category=set5#shop" data-brand="walkerhill" data-order-cat="set5">5 SET</a>
+          </div>
+        </div>
       </div>
       <div class="shop-header-actions">
         <button type="button" class="shop-icon-btn" id="open-product-search" aria-label="검색">
@@ -42,23 +64,75 @@
         </button>
       </div>
     </div>
-    <div class="shop-cat-nav-row">
-      <div class="shop-cat-icons" id="order-cat-tabs"></div>
-    </div>
   </header>
 
   <div class="shop-mobile-nav" id="mobile-nav">
     <div class="shop-mobile-nav-panel">
-      <button type="button" class="shop-mobile-close" id="menu-close" aria-label="닫기">×</button>
-      <a href="#hero">예약주문</a>
-      <a href="#schedule">배송일정</a>
-      <a href="#popular">인기상품</a>
-      <a href="#events">이벤트</a>
-      <a href="#premium">워커힐 프리미엄</a>
-      <a href="#shop">전체 상품</a>
-      <a href="lookup.html">주문조회</a>
+      <div class="shop-mobile-nav-top">
+        <button type="button" class="shop-mobile-close" id="menu-close" aria-label="닫기">×</button>
+      </div>
+      <div class="shop-mobile-nav-shop">
+        <p class="shop-mobile-nav-label">예약주문</p>
+        <div class="shop-mobile-nav-cats" id="mobile-nav-cats">
+          <a href="order.html?brand=kimchihouse&amp;category=kimchi#shop" data-brand="kimchi-house" data-order-cat="pogi">포기김치</a>
+          <a href="order.html?brand=kimchihouse&amp;category=special-kimchi#shop" data-brand="kimchi-house" data-order-cat="special">별미김치</a>
+          <a href="order.html?brand=kimchihouse&amp;category=frozen#shop" data-brand="kimchi-house" data-order-cat="banchan">반찬·냉동식품</a>
+          <a href="order.html?brand=kimchihouse&amp;category=seafood#shop" data-brand="kimchi-house" data-order-cat="jeotgal">젓갈·수산</a>
+          <a href="order.html?brand=kimchihouse&amp;category=pantry#shop" data-brand="kimchi-house" data-order-cat="jang">장류·한국식품</a>
+          <a href="order.html?brand=walkerhill&amp;category=pogi#shop" data-brand="walkerhill" data-order-cat="pogi">워커힐 배추김치</a>
+          <a href="order.html?brand=walkerhill&amp;category=chonggak#shop" data-brand="walkerhill" data-order-cat="chonggak">워커힐 총각김치</a>
+        </div>
+      </div>
+      <div class="shop-mobile-nav-primary">
+        <a href="#schedule">배송일정</a>
+        <a href="#events">이벤트</a>
+        <a href="lookup.html">주문조회</a>
+      </div>
     </div>
   </div>
+
+  <section class="shop-section shop-hero" id="hero">
+    <div class="shop-hero-slider">
+      <button type="button" class="shop-hero-arrow prev" id="hero-prev" aria-label="이전">‹</button>
+      <div class="shop-hero-track" id="hero-track">
+        <div class="shop-hero-slide" data-hero-brand="kimchi-house">
+          <div class="shop-hero-card">
+            <div class="shop-hero-visual">
+              <img src="assets/images/hero.png" alt="김치하우스 새벽김치" loading="eager" decoding="async" />
+              <div class="shop-hero-scrim"></div>
+              <div class="shop-hero-body">
+                <p class="shop-hero-eyebrow">3차 사전예약 · 국산 김치</p>
+                <h1 class="shop-hero-title">가장 신선할 때,<br>가장 맛있는 김치</h1>
+                <div class="shop-hero-actions">
+                  <a class="shop-hero-cta" href="#shop" data-order-link="primary">지금 예약하기</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="shop-hero-slide" id="premium" data-hero-brand="walkerhill">
+          <div class="shop-hero-card">
+            <div class="shop-hero-visual">
+              <img src="assets/images/walkerhill/set.jpg" alt="워커힐 호텔 김치" loading="lazy" decoding="async" />
+              <div class="shop-hero-scrim shop-hero-scrim-wh"></div>
+              <div class="shop-hero-body">
+                <p class="shop-hero-eyebrow">PREMIUM LINE · 워커힐 호텔 김치</p>
+                <h1 class="shop-hero-title">호텔 김치가<br>집에 도착하는 순간</h1>
+                <div class="shop-hero-actions">
+                  <a class="shop-hero-cta shop-hero-cta-wh" href="#shop" data-order-link="primary">맛 보러가기</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="shop-hero-arrow next" id="hero-next" aria-label="다음">›</button>
+      <div class="shop-hero-dots">
+        <button type="button" class="shop-hero-dot active" data-index="0" aria-label="배너 1"></button>
+        <button type="button" class="shop-hero-dot" data-index="1" aria-label="배너 2"></button>
+      </div>
+    </div>
+  </section>
 
   <main class="shop-main" id="shop-main">
 
@@ -80,53 +154,6 @@
         <p class="shop-preorder-closed-contact">문의 <a href="tel:0433938909">0433 938 909</a></p>
       </div>
     </div>
-
-    <section class="shop-section shop-hero" id="hero">
-      <div class="shop-hero-slider">
-        <button type="button" class="shop-hero-arrow prev" id="hero-prev" aria-label="이전">‹</button>
-        <div class="shop-hero-track" id="hero-track">
-          <div class="shop-hero-slide brand-kimchi-house-only">
-            <div class="shop-hero-card">
-              <div class="shop-hero-visual">
-                <img src="assets/images/hero.png" alt="김치하우스 새벽김치" loading="eager" decoding="async" />
-                <div class="shop-hero-scrim"></div>
-                <div class="shop-hero-body">
-                  <p class="shop-hero-eyebrow">3차 사전예약</p>
-                  <h1 class="shop-hero-title">가장 신선할 때,<br>가장 맛있는 김치</h1>
-                  <p class="shop-hero-desc">새벽김치 3차 · 프리미엄 반찬 2차<br>$100 이상 무료배송</p>
-                  <div class="shop-hero-actions">
-                    <a class="shop-btn shop-btn-primary" href="#shop" data-order-link="primary">지금 예약하기</a>
-                    <a class="shop-btn shop-btn-outline" href="#schedule">자세히 보기</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="shop-hero-slide brand-walkerhill-only" id="premium">
-            <div class="shop-hero-card shop-hero-card-wh">
-              <div class="shop-hero-visual">
-                <img src="assets/images/walkerhill/set.jpg" alt="워커힐 호텔 김치" loading="lazy" decoding="async" />
-                <div class="shop-hero-scrim shop-hero-scrim-wh"></div>
-                <div class="shop-hero-body shop-hero-body-wh">
-                  <p class="shop-hero-eyebrow">PREMIUM LINE</p>
-                  <h1 class="shop-hero-title">워커힐 호텔 김치</h1>
-                  <p class="shop-hero-desc">1963년부터 이어온 호텔 김치 · 100% 국내산<br>배추김치 4kg · 총각김치 2kg</p>
-                  <div class="shop-hero-actions">
-                    <a class="shop-btn shop-btn-primary shop-btn-wh" href="#shop" data-order-link="primary">지금 예약하기</a>
-                    <a class="shop-btn shop-btn-outline" href="#shop">전체 상품 보기</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <button type="button" class="shop-hero-arrow next" id="hero-next" aria-label="다음">›</button>
-      </div>
-      <div class="shop-hero-dots">
-        <button type="button" class="shop-hero-dot active" data-index="0" aria-label="배너 1"></button>
-        <button type="button" class="shop-hero-dot" data-index="1" aria-label="배너 2"></button>
-      </div>
-    </section>
 
     <div class="shop-schedule-events-wrap">
       <section class="shop-section shop-schedule-block" id="schedule">
@@ -196,17 +223,18 @@
       </section>
     </div>
 
-    <section class="shop-section" id="popular">
+    <section class="shop-section browse-category-section brand-kimchi-house-only" id="browse-categories">
       <div class="shop-section-head">
-        <h2 class="shop-section-title">지금 가장 많이 찾는 상품</h2>
-        <a class="shop-section-more" href="#shop" id="popular-view-all">전체보기</a>
+        <h2 class="shop-section-title">카테고리별로 둘러보세요</h2>
+        <a class="shop-section-more" href="order.html?cat=all#shop" id="browse-view-all">전체 상품 보기 →</a>
       </div>
-      <div class="popular-slider" id="popular-slider">
-        <button type="button" class="popular-slider-arrow prev hidden" id="popular-prev" aria-label="이전">‹</button>
-        <div class="popular-slider-viewport">
-          <div class="popular-slider-track" id="popular-products"></div>
+      <div class="browse-category-rail" id="browse-category-rail" role="list"></div>
+      <div class="browse-recommend" id="browse-recommend">
+        <div class="shop-section-head browse-recommend-head">
+          <h3 class="browse-recommend-title" id="browse-recommend-title">카테고리 추천 상품</h3>
+          <a class="shop-section-more" href="order.html?brand=kimchihouse&amp;category=kimchi#shop" id="browse-recommend-more">상품 더보기 →</a>
         </div>
-        <button type="button" class="popular-slider-arrow next hidden" id="popular-next" aria-label="다음">›</button>
+        <div class="browse-product-grid" id="browse-product-grid"></div>
       </div>
     </section>
 
@@ -436,6 +464,7 @@
   <script src="assets/order.js"></script>
   <script src="assets/home.js"></script>
   <script>
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
     (async () => {
       if (location.protocol === "file:") {
         document.getElementById("shop-server-hint")?.classList.remove("hidden");

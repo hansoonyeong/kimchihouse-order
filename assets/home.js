@@ -13,15 +13,83 @@
   const POPULAR_IDS = ["b4", "b1", "a4", "b8", "a9", "b12", "a3", "b6"];
   const WALKERHILL_POPULAR_IDS = ["w1", "w2", "w_set2b", "w_set3a", "w_set5a", "w_set3b", "w_set5b", "w_set2a"];
 
+  const BROWSE_CATEGORIES = [
+    {
+      id: "pogi",
+      label: "포기김치",
+      image: "assets/images/products/b1.png",
+      brand: "kimchi-house",
+      orderCat: "pogi",
+      linkBrand: "kimchihouse",
+      linkCategory: "kimchi",
+      itemIds: ["b1", "b2", "b3"],
+      theme: "kh",
+    },
+    {
+      id: "special",
+      label: "별미김치",
+      image: "assets/images/browse/special.png",
+      brand: "kimchi-house",
+      orderCat: "special",
+      linkBrand: "kimchihouse",
+      linkCategory: "special-kimchi",
+      itemIds: ["b4", "b5", "b6", "b7"],
+      theme: "kh",
+    },
+    {
+      id: "banchan",
+      label: "반찬·냉동식품",
+      image: "assets/images/browse/banchan.png",
+      brand: "kimchi-house",
+      orderCat: "banchan",
+      linkBrand: "kimchihouse",
+      linkCategory: "frozen",
+      itemIds: ["a4", "a3", "a1", "a14"],
+      theme: "kh",
+    },
+    {
+      id: "jeotgal",
+      label: "젓갈·수산",
+      image: "assets/images/browse/jeotgal.png",
+      brand: "kimchi-house",
+      orderCat: "jeotgal",
+      linkBrand: "kimchihouse",
+      linkCategory: "seafood",
+      itemIds: ["a9", "a10", "a12", "a5"],
+      theme: "kh",
+    },
+    {
+      id: "jang",
+      label: "장류·한국식품",
+      image: "assets/images/browse/jang.png",
+      brand: "kimchi-house",
+      orderCat: "jang",
+      linkBrand: "kimchihouse",
+      linkCategory: "pantry",
+      itemIds: ["b12", "b13", "b14", "b11", "b8", "b9", "b10"],
+      theme: "kh",
+    },
+    {
+      id: "walkerhill",
+      label: "워커힐 호텔 김치",
+      image: "assets/images/walkerhill/pogi.jpg",
+      brand: "walkerhill",
+      orderCat: "all",
+      linkBrand: "walkerhill",
+      linkCategory: "walkerhill",
+      itemIds: ["w1", "w2", "w_set2b", "w_set3a"],
+      theme: "wh",
+    },
+  ];
+
   const CATEGORIES = {
     "kimchi-house": [
       { id: "all", label: "전체", href: "order.html" },
       { id: "pogi", label: "새벽김치", image: "assets/images/products/b1.png", href: "order.html", itemIds: ["b1", "b2", "b3"] },
-      { id: "special", label: "별미김치", image: "assets/images/products/b4.png", href: "order.html", itemIds: ["b4", "b5", "b6", "b7"] },
-      { id: "frozen", label: "반찬", image: "assets/images/products/a14.png", href: "order.html", itemIds: ["a1","a2","a3","a4","a5","a6","a7","a8","a14","a15","a16","a17","a18"] },
-      { id: "jeotgal", label: "젓갈", image: "assets/images/products/a9.png", href: "order.html", itemIds: ["a9","a10","a12"] },
-      { id: "jang", label: "장류", image: "assets/images/products/b12.png", href: "order.html", itemIds: ["b11","b12","b13","b14"] },
-      { id: "event", label: "이벤트", image: "assets/images/products/b4.png", href: "order.html", itemIds: ["b4","b8","b9"] },
+      { id: "special", label: "별미김치", image: "assets/images/browse/special.png", href: "order.html", itemIds: ["b4", "b5", "b6", "b7"] },
+      { id: "frozen", label: "반찬", image: "assets/images/browse/banchan.png", href: "order.html", itemIds: ["a1","a2","a3","a4","a5","a6","a7","a8","a14","a15","a16","a17","a18"] },
+      { id: "jeotgal", label: "젓갈", image: "assets/images/browse/jeotgal.png", href: "order.html", itemIds: ["a9","a10","a12"] },
+      { id: "jang", label: "장류", image: "assets/images/browse/jang.png", href: "order.html", itemIds: ["b11","b12","b13","b14","b8","b9","b10"] },
     ],
     walkerhill: [
       { id: "all", label: "전체", href: "order.html" },
@@ -33,6 +101,7 @@
 
   let currentBrand = "kimchi-house";
   let activeHomeCategory = "all";
+  let activeBrowseCategory = "pogi";
   let heroIndex = 0;
   let heroTimer = null;
   let preorderOpen = true;
@@ -154,7 +223,7 @@
     frozen: "banchan",
     jeotgal: "jeotgal",
     jang: "jang",
-    event: "event",
+    event: "jang",
     chonggak: "chonggak",
     set: "set2",
   };
@@ -175,15 +244,125 @@
     return "pogi";
   }
 
-  function buildOrderUrl({ brand = currentBrand, cat, item } = {}) {
+  function buildOrderUrl({ brand = currentBrand, cat, item, category } = {}) {
     const params = new URLSearchParams();
-    if (brand && brand !== "kimchi-house") params.set("brand", brand);
-    const resolvedCat = cat || (item ? categoryForItem(brand, item) : null);
-    if (resolvedCat) params.set("cat", resolvedCat);
-    else if (!item) params.set("cat", "all");
+    const linkBrand = brand === "walkerhill" ? "walkerhill" : brand === "kimchi-house" ? "kimchihouse" : brand;
+    if (linkBrand && linkBrand !== "kimchihouse") params.set("brand", linkBrand);
+    else if (linkBrand === "kimchihouse" && (category || cat || item)) params.set("brand", "kimchihouse");
+
+    if (category) params.set("category", category);
+    else {
+      const resolvedCat = cat || (item ? categoryForItem(brand === "kimchihouse" ? "kimchi-house" : brand, item) : null);
+      if (resolvedCat) params.set("cat", resolvedCat);
+      else if (!item) params.set("cat", "all");
+    }
     if (item) params.set("item", item);
     const qs = params.toString();
-    return qs ? `?${qs}#shop` : "?cat=all#shop";
+    return `order.html${qs ? `?${qs}` : ""}#shop`;
+  }
+
+  function browseCategoryHref(cat) {
+    const params = new URLSearchParams();
+    params.set("brand", cat.linkBrand);
+    params.set("category", cat.linkCategory);
+    return `order.html?${params.toString()}#shop`;
+  }
+
+  function browseRecommendProducts(catId) {
+    const cat = BROWSE_CATEGORIES.find((c) => c.id === catId) || BROWSE_CATEGORIES[0];
+    const all = collectProducts(cat.brand);
+    const picked = [];
+    const seen = new Set();
+
+    for (const id of cat.itemIds || []) {
+      const item = all.find((p) => p.id === id);
+      if (item && !seen.has(id)) {
+        picked.push(item);
+        seen.add(id);
+      }
+      if (picked.length >= 4) break;
+    }
+
+    if (picked.length < 4) {
+      for (const item of all) {
+        if (seen.has(item.id) || item.soldOut) continue;
+        picked.push(item);
+        seen.add(item.id);
+        if (picked.length >= 4) break;
+      }
+    }
+
+    return { cat, products: picked.slice(0, 4) };
+  }
+
+  function renderBrowseProductCard(item) {
+    const badge = item.badge
+      ? `<span class="shop-badge shop-badge-${item.badge.cls}">${item.badge.text}</span>`
+      : "";
+    const action = item.soldOut
+      ? `<button type="button" class="browse-product-cta" disabled>품절</button>`
+      : renderProductAction(item).replace("shop-product-cta", "browse-product-cta");
+
+    return `<article class="browse-product">
+      <button type="button" class="browse-product-media" data-home-modal="${item.id}">
+        <img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async" />
+        ${badge}
+      </button>
+      <div class="browse-product-body">
+        <div class="browse-product-name">${item.name}</div>
+        <div class="browse-product-desc">${item.desc}</div>
+        <div class="browse-product-price">${renderPriceHtml(item)}</div>
+        ${action}
+      </div>
+    </article>`;
+  }
+
+  function renderBrowseCategories() {
+    const rail = document.getElementById("browse-category-rail");
+    if (!rail) return;
+
+    rail.innerHTML = BROWSE_CATEGORIES.map((cat) => {
+      const active = cat.id === activeBrowseCategory ? " is-active" : "";
+      const theme = cat.theme === "wh" ? " is-wh" : "";
+      return `<a class="browse-category-item${active}${theme}" href="${browseCategoryHref(cat)}" data-browse-cat="${cat.id}" role="listitem">
+        <span class="browse-category-thumb"><img src="${cat.image}" alt="" loading="lazy" decoding="async" /></span>
+        <span class="browse-category-label">${cat.label}</span>
+      </a>`;
+    }).join("");
+  }
+
+  function renderBrowseRecommend(catId = activeBrowseCategory) {
+    activeBrowseCategory = catId;
+    const { cat, products } = browseRecommendProducts(catId);
+    const grid = document.getElementById("browse-product-grid");
+    const title = document.getElementById("browse-recommend-title");
+    const more = document.getElementById("browse-recommend-more");
+
+    if (title) title.textContent = `${cat.label} 추천 상품`;
+    if (more) more.href = browseCategoryHref(cat);
+    if (grid) grid.innerHTML = products.map(renderBrowseProductCard).join("");
+
+    document.querySelectorAll("[data-browse-cat]").forEach((el) => {
+      el.classList.toggle("is-active", el.dataset.browseCat === catId);
+    });
+  }
+
+  function bindBrowseCategories() {
+    const rail = document.getElementById("browse-category-rail");
+    if (!rail) return;
+
+    rail.addEventListener("mouseover", (e) => {
+      const item = e.target.closest("[data-browse-cat]");
+      if (!item) return;
+      if (item.dataset.browseCat !== activeBrowseCategory) {
+        renderBrowseRecommend(item.dataset.browseCat);
+      }
+    });
+
+    rail.addEventListener("focusin", (e) => {
+      const item = e.target.closest("[data-browse-cat]");
+      if (item) renderBrowseRecommend(item.dataset.browseCat);
+    });
   }
 
   function syncOrderLinks() {
@@ -204,8 +383,7 @@
     if (schedWh[0]) schedWh[0].href = urlFor("walkerhill", "pogi", "w1");
     if (schedWh[1]) schedWh[1].href = urlFor("walkerhill", "chonggak", "w2");
 
-    document.querySelector("#popular .shop-section-more")?.setAttribute("href", urlFor(currentBrand));
-    document.getElementById("popular-view-all")?.setAttribute("href", urlFor(currentBrand));
+    document.getElementById("browse-view-all")?.setAttribute("href", urlFor(currentBrand));
     document.querySelector("#order-steps .shop-btn-primary")?.setAttribute("href", urlFor(currentBrand));
     document.querySelector(".shop-fixed-cta .shop-btn-primary")?.setAttribute("href", urlFor(currentBrand));
 
@@ -213,8 +391,6 @@
     if (events[0]) events[0].href = urlFor("kimchi-house", "special", "b4");
     if (events[1]) events[1].href = urlFor(currentBrand);
     if (events[2]) events[2].href = urlFor(currentBrand);
-
-    document.querySelector('.shop-mobile-nav a[href="#shop"]')?.setAttribute("href", urlFor(currentBrand));
   }
 
   function originalPrice(item) {
@@ -378,7 +554,6 @@
     if (!BRANDS[brand]) return;
     currentBrand = brand;
     document.body.dataset.brand = brand;
-    renderPopular(brand);
     syncOrderLinks();
     if (brand === "walkerhill") goHero(1);
     else goHero(0);
@@ -394,38 +569,30 @@
   function setHomeCategory(catId) {
     activeHomeCategory = catId;
     refreshCategoryTabs();
-    renderPopular(currentBrand);
-    document.getElementById("popular")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function visibleHeroSlides() {
-    return [...document.querySelectorAll(".shop-hero-slide")].filter(
-      (slide) => getComputedStyle(slide).display !== "none"
-    );
+  function heroSlides() {
+    return [...document.querySelectorAll(".shop-hero-slide")];
   }
 
   function syncHeroDots() {
-    const slides = [...document.querySelectorAll(".shop-hero-slide")];
-    const visible = visibleHeroSlides();
+    const slides = heroSlides();
+    const multi = slides.length >= 2;
     document.querySelectorAll(".shop-hero-dot").forEach((dot, i) => {
-      const hidden = !visible.includes(slides[i]);
+      const hidden = i >= slides.length;
       dot.classList.toggle("hidden", hidden);
       dot.disabled = hidden;
     });
-    const dotsWrap = document.querySelector(".shop-hero-dots");
-    if (dotsWrap) dotsWrap.classList.toggle("hidden", visible.length < 2);
+    document.querySelector(".shop-hero-dots")?.classList.toggle("hidden", !multi);
     document.querySelectorAll(".shop-hero-arrow").forEach((btn) => {
-      btn.classList.toggle("hidden", visible.length < 2);
+      btn.classList.toggle("hidden", !multi);
     });
   }
 
   function stepHero(delta) {
-    const visible = visibleHeroSlides();
-    const slides = [...document.querySelectorAll(".shop-hero-slide")];
-    if (visible.length < 2) return;
-    const current = visible.indexOf(slides[heroIndex]);
-    const next = (current + delta + visible.length) % visible.length;
-    goHero(slides.indexOf(visible[next]));
+    const slides = heroSlides();
+    if (slides.length < 2) return;
+    goHero(heroIndex + delta);
   }
 
   function heroSlideWidth() {
@@ -435,22 +602,16 @@
   }
 
   function goHero(index) {
-    const slides = [...document.querySelectorAll(".shop-hero-slide")];
+    const slides = heroSlides();
     const dots = document.querySelectorAll(".shop-hero-dot");
     const track = document.getElementById("hero-track");
     if (!slides.length || !track) return;
 
-    const target = slides[((index % slides.length) + slides.length) % slides.length];
-    const visible = visibleHeroSlides();
-    if (!visible.length) return;
-
-    const resolved = visible.includes(target) ? target : visible[0];
-    heroIndex = slides.indexOf(resolved);
-    const visibleOffset = visible.indexOf(resolved);
+    heroIndex = ((index % slides.length) + slides.length) % slides.length;
     const slideWidth = heroSlideWidth();
 
     track.style.transform = slideWidth
-      ? `translateX(-${visibleOffset * slideWidth}px)`
+      ? `translateX(-${heroIndex * slideWidth}px)`
       : "";
     dots.forEach((dot, i) => dot.classList.toggle("active", i === heroIndex));
     syncHeroDots();
@@ -459,12 +620,8 @@
   function startHeroAutoplay() {
     clearInterval(heroTimer);
     heroTimer = setInterval(() => {
-      const visible = visibleHeroSlides();
-      if (visible.length < 2) return;
-      const slides = [...document.querySelectorAll(".shop-hero-slide")];
-      const currentVisible = visible.indexOf(slides[heroIndex]);
-      const nextVisible = (currentVisible + 1) % visible.length;
-      goHero(slides.indexOf(visible[nextVisible]));
+      if (heroSlides().length < 2) return;
+      goHero(heroIndex + 1);
     }, 5000);
   }
 
@@ -483,10 +640,123 @@
         startHeroAutoplay();
       });
     });
+
+    const slider = document.querySelector(".shop-hero-slider");
+    let touchStartX = 0;
+    slider?.addEventListener("touchstart", (e) => {
+      touchStartX = e.changedTouches[0].clientX;
+    }, { passive: true });
+    slider?.addEventListener("touchend", (e) => {
+      const diff = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(diff) < 40) return;
+      stepHero(diff < 0 ? 1 : -1);
+      startHeroAutoplay();
+    }, { passive: true });
+
     goHero(heroIndex);
     syncHeroDots();
     startHeroAutoplay();
     window.addEventListener("resize", () => goHero(heroIndex));
+  }
+
+  function syncNavCategoryLinks() {
+    /* desktop brand dropdowns are static in HTML */
+  }
+
+  function closeBrandMenus(except) {
+    document.querySelectorAll(".shop-brand-menu").forEach((menu) => {
+      if (except && menu === except) return;
+      menu.classList.remove("open");
+      const toggle = menu.querySelector(".shop-brand-tab");
+      const dropdown = menu.querySelector(".shop-brand-dropdown");
+      toggle?.setAttribute("aria-expanded", "false");
+      if (dropdown) dropdown.hidden = true;
+    });
+  }
+
+  function openBrandMenu(menu) {
+    if (!menu) return;
+    closeBrandMenus(menu);
+    menu.classList.add("open");
+    const toggle = menu.querySelector(".shop-brand-tab");
+    const dropdown = menu.querySelector(".shop-brand-dropdown");
+    toggle?.setAttribute("aria-expanded", "true");
+    if (dropdown) dropdown.hidden = false;
+  }
+
+  function goToBrandCategory(brand, catId) {
+    const onWhPath = /walkerhill(\.html)?$/i.test((location.pathname || "").replace(/\/+$/, ""));
+    const category = catId || "all";
+
+    if (brand === "walkerhill" && !onWhPath) {
+      const params = new URLSearchParams({ brand: "walkerhill", category });
+      const target = location.pathname.endsWith(".html") ? "walkerhill.html" : "walkerhill";
+      location.href = `${target}?${params.toString()}#shop`;
+      return;
+    }
+
+    if (brand === "kimchi-house" && onWhPath) {
+      const params = new URLSearchParams({ brand: "kimchihouse", category });
+      location.href = `index.html?${params.toString()}#shop`;
+      return;
+    }
+
+    if (brand && window.shopApi?.setBrand) {
+      window.shopApi.setBrand(brand);
+    } else if (brand) {
+      setBrand(brand);
+    }
+    if (category && window.shopApi?.setCategory) {
+      window.shopApi.setCategory(category);
+    }
+    const shop = document.getElementById("shop");
+    if (shop) shop.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function bindBrandMenus() {
+    document.querySelectorAll(".shop-brand-menu").forEach((menu) => {
+      const toggle = menu.querySelector(".shop-brand-tab");
+      const dropdown = menu.querySelector(".shop-brand-dropdown");
+      if (!toggle || !dropdown) return;
+
+      let hoverTimer = null;
+      const canHover = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+      menu.addEventListener("mouseenter", () => {
+        if (!canHover()) return;
+        clearTimeout(hoverTimer);
+        openBrandMenu(menu);
+      });
+      menu.addEventListener("mouseleave", () => {
+        if (!canHover()) return;
+        clearTimeout(hoverTimer);
+        hoverTimer = setTimeout(() => closeBrandMenus(), 140);
+      });
+
+      toggle.addEventListener("click", () => {
+        if (canHover()) openBrandMenu(menu);
+        else closeBrandMenus();
+      });
+
+      dropdown.querySelectorAll("a[data-order-cat]").forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          closeBrandMenus();
+          goToBrandCategory(link.dataset.brand, link.dataset.orderCat);
+        });
+      });
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".shop-brand-menu")) closeBrandMenus();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeBrandMenus();
+    });
+  }
+
+  function bindMainNav() {
+    bindBrandMenus();
   }
 
   function bindMobileNav() {
@@ -499,7 +769,13 @@
       if (e.target === nav) nav.classList.remove("open");
     });
     nav?.querySelectorAll("a").forEach((a) => {
-      a.addEventListener("click", () => nav.classList.remove("open"));
+      a.addEventListener("click", (e) => {
+        nav.classList.remove("open");
+        if (a.dataset.orderCat) {
+          e.preventDefault();
+          goToBrandCategory(a.dataset.brand, a.dataset.orderCat);
+        }
+      });
     });
   }
 
@@ -598,10 +874,13 @@
     if (!unified) {
       refreshCategoryTabs();
     }
-    renderPopular(currentBrand);
+    renderBrowseCategories();
+    renderBrowseRecommend(activeBrowseCategory);
+    bindBrowseCategories();
+    syncNavCategoryLinks();
     syncOrderLinks();
     bindHero();
-    bindPopularSlider();
+    bindMainNav();
     bindMobileNav();
     fetchConfig();
 
@@ -633,10 +912,17 @@
         if (!href || href.length < 2) return;
         const hash = href.split("?")[0];
         const id = hash.slice(1);
+        if (id === "hero" || id === "top") {
+          e.preventDefault();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          history.replaceState(null, "", location.pathname + location.search);
+          return;
+        }
         const el = document.getElementById(id);
         if (el) {
           e.preventDefault();
           el.scrollIntoView({ behavior: "smooth", block: "start" });
+          history.replaceState(null, "", location.pathname + location.search);
         }
       });
     });

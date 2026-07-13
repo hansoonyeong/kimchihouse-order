@@ -3,6 +3,10 @@
   "framework": null,
   "buildCommand": null,
   "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/walkerhill", "destination": "/index.html" },
+    { "source": "/walkerhill/", "destination": "/index.html" }
+  ],
   "functions": {
     "api/**/*.js": {
       "maxDuration": 10
