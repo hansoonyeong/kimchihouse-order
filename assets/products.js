@@ -147,9 +147,20 @@ window.KH_PRODUCTS = {
         title: "장류·한국식품",
         items: [
           { id: "b11", name: "항아골 생청국장 (120g)", tiers: [[4, 25], [8, 45]], image: "assets/images/products/b11.png?v=2", detailImage: "assets/images/products/detail-cheonggukjang/01.jpg" },
-          { id: "b12", name: "순정원 전통된장 (1Kg)", price: 38, image: "assets/images/products/b12.png?v=3" },
-          { id: "b13", name: "순정원 전통고추장 (1Kg)", price: 38, image: "assets/images/products/b13.png?v=3" },
-          { id: "b14", name: "순정원 쌈장 (1Kg)", price: 25, wasPrice: 38, sale: true, image: "assets/images/products/b14.png?v=3" },
+          { id: "b12", name: "순정원 전통된장 (1Kg)", price: 38, image: "assets/images/products/b12.jpg", detailImages: [
+            "assets/images/products/detail-doenjang/01.jpg",
+            "assets/images/products/detail-doenjang/02.jpg",
+            "assets/images/products/detail-doenjang/03.jpg",
+          ] },
+          { id: "b13", name: "순정원 전통고추장 (1Kg)", price: 38, image: "assets/images/products/b13.jpg", detailImages: [
+            "assets/images/products/detail-gochujang/01.jpg",
+            "assets/images/products/detail-gochujang/02.jpg",
+            "assets/images/products/detail-gochujang/03.jpg",
+          ] },
+          { id: "b14", name: "순정원 쌈장 (1Kg)", price: 25, wasPrice: 38, sale: true, image: "assets/images/products/b14.jpg", detailImages: [
+            "assets/images/products/detail-ssamjang/01.jpg",
+            "assets/images/products/detail-ssamjang/02.jpg",
+          ] },
           { id: "b8", name: "올리브유 도시락김 — 대용량 (72봉)", price: 33, image: "assets/images/products/b8.png" },
           { id: "b9", name: "올리브유 도시락김 — 실속형 (36봉)", price: 18, image: "assets/images/products/b9.png" },
           { id: "b10", name: "조미 진미채 (200g × 3봉)", price: 40, image: "assets/images/products/b10.jpg", detailImage: "assets/images/products/detail-jinmichae/01.jpg" },
