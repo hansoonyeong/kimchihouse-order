@@ -2559,6 +2559,22 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   line-height: 1.4;
 }
 
+.why-walkerhill {
+  margin-left: calc(var(--shop-pad) * -1);
+  margin-right: calc(var(--shop-pad) * -1);
+  padding: 0;
+  border-bottom: none;
+  overflow: hidden;
+  background: transparent;
+}
+
+.why-wh-banner {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: top;
+}
+
 .shop-steps {
   display: flex;
   flex-direction: column;
