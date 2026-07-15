@@ -2415,12 +2415,19 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 .shop-events-points .shop-event-title {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .shop-events-points .shop-event-title strong {
+  flex: 1;
+  min-width: 0;
   margin: 0;
+}
+
+.shop-events-points .shop-event-tag {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .shop-event-tag {
