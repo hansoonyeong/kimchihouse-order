@@ -3290,6 +3290,18 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
   margin-top: 4px;
 }
 
+.product-modal-detail {
+  margin: 24px -20px calc(-20px - env(safe-area-inset-bottom, 0px));
+  background: #fff;
+}
+
+.product-modal-detail img {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: top;
+}
+
 /* Walkerhill premium blocks */
 .wh-why {
   display: grid;

@@ -941,6 +941,15 @@
         item.desc && `<li>${item.desc}</li>`,
       ].filter(Boolean).join("");
 
+      const detailSrcs = Array.isArray(item.detailImages) && item.detailImages.length
+        ? item.detailImages
+        : (item.detailImage ? [item.detailImage] : []);
+      const detailHtml = detailSrcs.length
+        ? `<div class="product-modal-detail">${detailSrcs.map((src, i) =>
+            `<img src="${src}" alt="${item.name} 상세 안내 ${i + 1}" loading="lazy" decoding="async" />`
+          ).join("")}</div>`
+        : "";
+
       root.innerHTML = `
         <button type="button" class="product-modal-close" id="product-modal-close" aria-label="닫기">×</button>
         <div class="product-modal-img">
@@ -959,6 +968,7 @@
             : (hasTierPricing(item)
               ? ""
               : `<button type="button" class="shop-btn shop-btn-primary shop-btn-block" data-modal-add="${addKey}">담기</button>`)}
+          ${detailHtml}
         </div>`;
       overlay.classList.add("open");
       document.body.style.overflow = "hidden";
