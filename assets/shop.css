@@ -2824,6 +2824,26 @@ body[data-brand="walkerhill"] .shop-step-num {
   border-top: 1px solid var(--border);
 }
 
+.kakao-talk-fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  z-index: 190;
+  line-height: 0;
+  pointer-events: none;
+}
+
+.kakao-talk-fab > * {
+  pointer-events: auto;
+}
+
+.kakao-talk-fab iframe,
+.kakao-talk-fab a,
+.kakao-talk-fab img {
+  display: block;
+  max-width: 100%;
+}
+
 body[data-brand="walkerhill"] .brand-kimchi-house-only {
   display: none !important;
 }
@@ -3474,6 +3494,11 @@ body.shop-preorder-off .shop-main {
 
   .shop-fixed-cta {
     display: none;
+  }
+
+  .kakao-talk-fab {
+    right: 24px;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   }
 
   .shop-order-page {
