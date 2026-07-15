@@ -44,6 +44,45 @@
       detail: null,
     };
 
+    let lockedScrollY = 0;
+
+    function isAnyOverlayOpen() {
+      return Boolean(
+        state.detail ||
+        document.getElementById("cart-sheet-overlay")?.classList.contains("open") ||
+        document.getElementById("product-search-overlay")?.classList.contains("open") ||
+        document.getElementById("checkout-overlay")?.classList.contains("open") ||
+        document.getElementById("mobile-nav")?.classList.contains("open")
+      );
+    }
+
+    function onScrollLockTouchMove(e) {
+      if (e.target.closest?.(".product-modal-overlay, .product-modal, .cart-sheet, .checkout-panel, .product-search-panel, .shop-mobile-nav-panel, .product-search-results, .order-cart-items")) {
+        return;
+      }
+      e.preventDefault();
+    }
+
+    function lockPageScroll() {
+      if (document.body.classList.contains("shop-scroll-lock")) return;
+      lockedScrollY = window.scrollY || window.pageYOffset || 0;
+      document.documentElement.classList.add("shop-scroll-lock");
+      document.body.classList.add("shop-scroll-lock");
+      document.body.style.top = `-${lockedScrollY}px`;
+      document.addEventListener("touchmove", onScrollLockTouchMove, { passive: false });
+    }
+
+    function unlockPageScroll() {
+      if (isAnyOverlayOpen()) return;
+      if (!document.body.classList.contains("shop-scroll-lock")) return;
+      document.removeEventListener("touchmove", onScrollLockTouchMove);
+      document.documentElement.classList.remove("shop-scroll-lock");
+      document.body.classList.remove("shop-scroll-lock");
+      document.body.style.top = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, lockedScrollY);
+    }
+
     function sectionFilterFor(cat) {
       return state.sectionFilters[cat] || "all";
     }
@@ -192,12 +231,38 @@
       return sub >= cfg.freeShippingThreshold ? 0 : cfg.shippingFee;
     }
 
+    function catalogHasCartItems(cat) {
+      if (!KH_PRODUCTS[cat]) return false;
+      return getAllItems(cat).some((item) => {
+        if (item.variants?.length) {
+          return item.variants.some((v) => qty(`${item.id}:${v.key}`) > 0);
+        }
+        return qty(item.id) > 0;
+      });
+    }
+
+    function isUnifiedShop() {
+      return document.body.classList.contains("shop-unified");
+    }
+
     function orderCatalogs() {
-      return state.brand === "walkerhill" ? ["walkerhill"] : catalogTypes(type);
+      // Combined / unified shop: keep Walkerhill + Kimchi House items in one cart
+      if (type === "combined" || isUnifiedShop()) {
+        return ["frozen", "kimchi", "walkerhill"].filter((cat) => catalogHasCartItems(cat));
+      }
+      if (state.brand === "walkerhill") return ["walkerhill"].filter((cat) => catalogHasCartItems(cat));
+      return catalogTypes(type).filter((cat) => catalogHasCartItems(cat));
     }
 
     function shippingFee() {
-      return orderCatalogs().reduce((sum, cat) => sum + shippingFeeFor(cat), 0);
+      const sub = subtotal();
+      if (sub === 0) return 0;
+      const cats = orderCatalogs();
+      if (cats.length === 1 && cats[0] === "walkerhill") {
+        const hasSet = getAllItems("walkerhill").some((item) => item.tier && qty(item.id) > 0);
+        if (hasSet) return 0;
+      }
+      return sub >= cfg.freeShippingThreshold ? 0 : cfg.shippingFee;
     }
 
     function total() {
@@ -205,11 +270,20 @@
     }
 
     function shippingBreakdown() {
+      const cats = orderCatalogs();
+      const fee = shippingFee();
       const breakdown = {};
-      for (const cat of orderCatalogs()) {
+      let feeAssigned = false;
+      for (const cat of cats) {
+        const sub = subtotalFor(cat);
+        let ship = 0;
+        if (sub > 0 && !feeAssigned) {
+          ship = fee;
+          feeAssigned = true;
+        }
         breakdown[cat] = {
-          subtotal: subtotalFor(cat),
-          shippingFee: shippingFeeFor(cat),
+          subtotal: sub,
+          shippingFee: ship,
           delivery: KH_PRODUCTS[cat].delivery,
         };
       }
@@ -795,9 +869,9 @@
 
     function renderDeliveryNote() {
       if (state.brand === "walkerhill") {
-        return "워커힐 호텔 김치 · 7/5일부터 배송";
+        return "워커힐 호텔 김치 · 8월 16일 일괄 배송";
       }
-      return "냉동 반찬 6/26~29 · 김치·장류 7/5부터 · 회차별 별도 배송";
+      return "주문 한 번에 접수 · 8월 16일 일괄 배송";
     }
 
     function renderCatalog() {
@@ -810,18 +884,20 @@
     }
 
     function renderBarMeta() {
-      if (type !== "combined") {
-        const ship = shippingFee();
+      const ship = shippingFee();
+      const cats = orderCatalogs();
+      if (cats.length <= 1) {
         return ship === 0 ? "배송비 무료" : `배송비 ${money(ship)}`;
       }
-      return orderCatalogs()
+      const parts = cats
         .map((cat) => {
           const sub = subtotalFor(cat);
           if (sub === 0) return "";
-          return `${KH_PRODUCTS[cat].label} 배송 ${shipLabel(shippingFeeFor(cat))}`;
+          return `${KH_PRODUCTS[cat].label} ${money(sub)}`;
         })
-        .filter(Boolean)
-        .join(" · ") || "배송비 —";
+        .filter(Boolean);
+      const shipText = ship === 0 ? "배송비 무료" : `배송비 ${money(ship)}`;
+      return [...parts, shipText].join(" · ");
     }
 
     function renderBarItems(lines) {
@@ -840,15 +916,12 @@
         </div>
       </li>`;
 
-      if (state.brand === "walkerhill") {
+      const catsInCart = orderCatalogs();
+      if (catsInCart.length <= 1) {
         return lines.map(renderLine).join("");
       }
 
-      if (type !== "combined") {
-        return lines.map(renderLine).join("");
-      }
-
-      return orderCatalogs()
+      return catsInCart
         .map((cat) => {
           const catLines = lines.filter((line) => line.category === cat);
           if (!catLines.length) return "";
@@ -883,9 +956,10 @@
       if (!root || !overlay) return;
 
       if (!state.detail) {
+        root._modalScrollAbort?.abort();
         overlay.classList.remove("open");
         root.innerHTML = "";
-        document.body.style.overflow = "";
+        unlockPageScroll();
         return;
       }
 
@@ -934,12 +1008,13 @@
         ).join("")}</div>`;
       }
 
-      const meta = [
-        section.tab && `<li>${section.tab}</li>`,
-        catalog?.delivery && `<li>배송: ${catalog.delivery}</li>`,
-        section.note && `<li>${section.note}</li>`,
-        item.desc && `<li>${item.desc}</li>`,
-      ].filter(Boolean).join("");
+      const metaLines = [];
+      const descText = cardDesc(item, section);
+      if (section.tab && section.tab !== descText) metaLines.push(`<li>${section.tab}</li>`);
+      if (catalog?.delivery) metaLines.push(`<li>배송: ${catalog.delivery}</li>`);
+      if (section.note && section.note !== descText) metaLines.push(`<li>${section.note}</li>`);
+      if (item.desc && item.desc !== descText) metaLines.push(`<li>${item.desc}</li>`);
+      const meta = metaLines.join("");
 
       const detailSrcs = Array.isArray(item.detailImages) && item.detailImages.length
         ? item.detailImages
@@ -950,28 +1025,118 @@
           ).join("")}</div>`
         : "";
 
+      const buyAction = item.soldOut
+        ? '<p class="product-modal-soldout">품절</p>'
+        : (hasTierPricing(item)
+          ? ""
+          : `<button type="button" class="shop-btn shop-btn-primary shop-btn-block" data-modal-add="${addKey}">담기</button>`);
+      const miniAction = item.soldOut
+        ? '<span class="product-modal-mini-soldout">품절</span>'
+        : (hasTierPricing(item)
+          ? ""
+          : `<button type="button" class="shop-btn shop-btn-primary product-modal-mini-add" data-modal-add="${addKey}">담기</button>`);
+      const miniPrice = item.variants
+        ? money(getSelectedVariant(item).price)
+        : displayPriceFor(item);
+      const prevScroll = root.scrollTop || 0;
+
       root.innerHTML = `
-        <button type="button" class="product-modal-close" id="product-modal-close" aria-label="닫기">×</button>
-        <div class="product-modal-img">
-          ${badge}
-          ${item.image ? `<img src="${item.image}" alt="${item.name}" />` : ""}
+        <div class="product-modal-fixed-ui">
+          <button type="button" class="product-modal-close" id="product-modal-close" aria-label="닫기">×</button>
         </div>
-        <div class="product-modal-body">
+        <div class="product-modal-mini" data-product-mini aria-hidden="true">
+          <strong class="product-modal-mini-name">${item.name}</strong>
+          <span class="product-modal-mini-price">${miniPrice}</span>
+          ${miniAction}
+        </div>
+        <div class="product-modal-hero">
+          <div class="product-modal-img">
+            ${badge}
+            ${item.image ? `<img src="${item.image}" alt="${item.name}" decoding="async" />` : ""}
+          </div>
+        </div>
+        <div class="product-modal-card" data-product-card>
           <h2>${item.name}</h2>
-          ${cardDesc(item, section) ? `<p class="product-modal-desc">${cardDesc(item, section)}</p>` : ""}
-          ${meta ? `<ul class="product-modal-meta">${meta}</ul>` : ""}
-          ${variantHtml}
-          ${tierHtml}
+          <div class="product-modal-extra">
+            ${descText ? `<p class="product-modal-desc">${descText}</p>` : ""}
+            ${meta ? `<ul class="product-modal-meta">${meta}</ul>` : ""}
+            ${variantHtml}
+            ${tierHtml}
+          </div>
           ${priceHtml}
-          ${item.soldOut
-            ? '<p class="product-modal-soldout">품절</p>'
-            : (hasTierPricing(item)
-              ? ""
-              : `<button type="button" class="shop-btn shop-btn-primary shop-btn-block" data-modal-add="${addKey}">담기</button>`)}
-          ${detailHtml}
-        </div>`;
+          ${buyAction}
+        </div>
+        ${detailHtml}`;
       overlay.classList.add("open");
-      document.body.style.overflow = "hidden";
+      lockPageScroll();
+      root.scrollTop = prevScroll;
+      bindProductModalScroll(root);
+    }
+
+    function bindProductModalScroll(root) {
+      root._modalScrollAbort?.abort();
+      const ac = new AbortController();
+      root._modalScrollAbort = ac;
+      const { signal } = ac;
+
+      const card = root.querySelector("[data-product-card]");
+      const mini = root.querySelector("[data-product-mini]");
+      if (!card) return;
+
+      const desktopMq = window.matchMedia("(min-width: 768px)");
+
+      const syncDesktopCard = () => {
+        if (!desktopMq.matches) return;
+        const rect = root.getBoundingClientRect();
+        card.style.top = `${Math.round(rect.top)}px`;
+        card.style.left = `${Math.round(rect.right)}px`;
+        card.style.width = "280px";
+        card.style.maxHeight = `${Math.max(240, Math.round(window.innerHeight - rect.top - 24))}px`;
+        mini?.classList.remove("is-visible");
+        mini?.setAttribute("aria-hidden", "true");
+      };
+
+      const clearDesktopInline = () => {
+        card.style.top = "";
+        card.style.left = "";
+        card.style.width = "";
+        card.style.maxHeight = "";
+      };
+
+      const syncMobileMini = () => {
+        if (desktopMq.matches) return;
+        clearDesktopInline();
+        const rootRect = root.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
+        const show = cardRect.bottom <= rootRect.top + 8;
+        mini?.classList.toggle("is-visible", show);
+        mini?.setAttribute("aria-hidden", show ? "false" : "true");
+      };
+
+      let raf = 0;
+      const onScroll = () => {
+        if (raf) return;
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          if (desktopMq.matches) return;
+          syncMobileMini();
+        });
+      };
+
+      const onResizeOrChange = () => {
+        if (desktopMq.matches) {
+          clearDesktopInline();
+          syncDesktopCard();
+        } else {
+          clearDesktopInline();
+          syncMobileMini();
+        }
+      };
+
+      root.addEventListener("scroll", onScroll, { passive: true, signal });
+      window.addEventListener("resize", onResizeOrChange, { passive: true, signal });
+      desktopMq.addEventListener?.("change", onResizeOrChange, { signal });
+      onResizeOrChange();
     }
 
     function openProductModal(itemId) {
@@ -988,14 +1153,12 @@
 
     function openCartSheet() {
       document.getElementById("cart-sheet-overlay")?.classList.add("open");
-      document.body.style.overflow = "hidden";
+      lockPageScroll();
     }
 
     function closeCartSheet() {
       document.getElementById("cart-sheet-overlay")?.classList.remove("open");
-      if (!state.detail && !document.getElementById("product-search-overlay")?.classList.contains("open")) {
-        document.body.style.overflow = "";
-      }
+      unlockPageScroll();
     }
 
     function searchItemImage(item, cat) {
@@ -1105,7 +1268,7 @@
       const overlay = document.getElementById("product-search-overlay");
       if (!overlay) return;
       overlay.classList.add("open");
-      document.body.style.overflow = "hidden";
+      lockPageScroll();
       const input = document.getElementById("product-search-input");
       if (input) {
         input.value = "";
@@ -1116,9 +1279,7 @@
 
     function closeSearchOverlay() {
       document.getElementById("product-search-overlay")?.classList.remove("open");
-      if (!state.detail && !document.getElementById("cart-sheet-overlay")?.classList.contains("open")) {
-        document.body.style.overflow = "";
-      }
+      unlockPageScroll();
     }
 
     function goToProductFromSearch(itemId) {
@@ -1256,14 +1417,14 @@
         alert("품목을 1개 이상 선택해 주세요.");
         return;
       }
-      closeCartSheet();
+      document.getElementById("cart-sheet-overlay")?.classList.remove("open");
       document.getElementById("checkout-overlay").classList.add("open");
-      document.body.style.overflow = "hidden";
+      lockPageScroll();
     }
 
     function closeCheckout() {
       document.getElementById("checkout-overlay").classList.remove("open");
-      document.body.style.overflow = "";
+      unlockPageScroll();
     }
 
     function addWalkerhillSet(productId) {
@@ -1290,9 +1451,18 @@
         return;
       }
 
+      const cats = orderCatalogs();
+      const hasWalkerhill = cats.includes("walkerhill");
+      const hasKimchiHouse = cats.some((cat) => cat === "kimchi" || cat === "frozen");
+      const orderType = hasWalkerhill && hasKimchiHouse
+        ? "combined"
+        : hasWalkerhill
+          ? "walkerhill"
+          : type;
+
       const payload = {
         secret: cfg.orderSecret,
-        type: state.brand === "walkerhill" ? "walkerhill" : type,
+        type: orderType,
         customer: { name, phone, address, suburb, kakao },
         items,
         subtotal: subtotal(),
@@ -1302,7 +1472,7 @@
         note,
       };
 
-      if (type === "combined" || state.brand === "walkerhill") {
+      if (orderType === "combined" || orderType === "walkerhill" || cats.length > 1) {
         payload.shippingBreakdown = shippingBreakdown();
       }
 
@@ -1535,16 +1705,17 @@
     scrollToShopIfNeeded();
 
     function setBrandExternal(brand) {
-      if (brand === "kimchi-house" && isWalkerhillPath()) {
-        location.href = "index.html";
-        return;
+      if (!isUnifiedShop()) {
+        if (brand === "kimchi-house" && isWalkerhillPath()) {
+          location.href = "index.html";
+          return;
+        }
+        if (brand === "walkerhill" && !isWalkerhillPath()) {
+          const path = location.pathname.endsWith(".html") ? "walkerhill.html" : "walkerhill";
+          location.href = path;
+          return;
+        }
       }
-      if (brand === "walkerhill" && !isWalkerhillPath()) {
-        const path = location.pathname.endsWith(".html") ? "walkerhill.html" : "walkerhill";
-        location.href = path;
-        return;
-      }
-      if (brand !== state.brand) state.cart = {};
       state.brand = brand;
       document.body.dataset.brand = brand;
       if (!cartOnly) state.activeCategory = brand === "walkerhill" ? "all" : "pogi";

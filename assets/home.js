@@ -387,10 +387,10 @@
     document.querySelector("#order-steps .shop-btn-primary")?.setAttribute("href", urlFor(currentBrand));
     document.querySelector(".shop-fixed-cta .shop-btn-primary")?.setAttribute("href", urlFor(currentBrand));
 
-    const events = document.querySelectorAll(".shop-event-card");
-    if (events[0]) events[0].href = urlFor("kimchi-house", "special", "b4");
-    if (events[1]) events[1].href = urlFor(currentBrand);
-    if (events[2]) events[2].href = urlFor(currentBrand);
+    const eventsPanel = document.querySelector(".shop-events-panel");
+    if (eventsPanel) eventsPanel.href = urlFor("kimchi-house", "special", "b4");
+    const eventsMore = document.querySelector(".shop-events-block .shop-section-more");
+    if (eventsMore) eventsMore.href = urlFor(currentBrand);
   }
 
   function originalPrice(item) {

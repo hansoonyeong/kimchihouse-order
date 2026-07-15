@@ -14,7 +14,7 @@ window.KH_CONFIG = {
 window.KH_PRODUCTS = {
   frozen: {
     label: "냉동 반찬",
-    delivery: "6/26 ~ 6/29 배송",
+    delivery: "8월 16일 배송",
     sections: [
       {
         id: "mandu",
@@ -117,15 +117,46 @@ window.KH_PRODUCTS = {
   },
   kimchi: {
     label: "김치·장류",
-    delivery: "7/5일부터 배송 시작",
+    delivery: "8월 16일 배송",
     sections: [
       {
         id: "pogi",
         tab: "포기김치",
         title: "새벽 3차 포기김치 3종",
         items: [
-          { id: "b1", name: "서울식 포기김치", variants: [{ key: "7kg", label: "7Kg", price: 85 }, { key: "3.5kg", label: "3.5Kg", price: 45 }], image: "assets/images/products/b1.png" },
-          { id: "b2", name: "전통 남도식 포기김치", variants: [{ key: "7kg", label: "7Kg", price: 85 }, { key: "3.5kg", label: "3.5Kg", price: 45 }], image: "assets/images/products/b2.png" },
+          {
+            id: "b1",
+            name: "서울식 포기김치",
+            variants: [{ key: "7kg", label: "7Kg", price: 85 }, { key: "3.5kg", label: "3.5Kg", price: 45 }],
+            image: "assets/images/products/pogi-thumb.gif",
+            detailImages: [
+              "assets/images/products/detail-pogi/02.jpg",
+              "assets/images/products/detail-pogi/03.gif",
+              "assets/images/products/detail-pogi/05.jpg",
+              "assets/images/products/detail-pogi/06.jpg",
+              "assets/images/products/detail-pogi/08.jpg",
+              "assets/images/products/detail-pogi/09.jpg",
+              "assets/images/products/detail-pogi/10.jpg",
+              "assets/images/products/detail-pogi/13.jpg",
+              "assets/images/products/detail-pogi/15.jpg",
+            ],
+          },
+          {
+            id: "b2",
+            name: "전통 남도식 포기김치",
+            variants: [{ key: "7kg", label: "7Kg", price: 85 }, { key: "3.5kg", label: "3.5Kg", price: 45 }],
+            image: "assets/images/products/b2.jpg",
+            detailImages: [
+              "assets/images/products/detail-pogi/03.gif",
+              "assets/images/products/detail-pogi/05.jpg",
+              "assets/images/products/detail-pogi/06.jpg",
+              "assets/images/products/detail-pogi/08.jpg",
+              "assets/images/products/detail-pogi/09.jpg",
+              "assets/images/products/detail-pogi/10.jpg",
+              "assets/images/products/detail-pogi/13.jpg",
+              "assets/images/products/detail-pogi/15.jpg",
+            ],
+          },
           { id: "b3", name: "무설탕·무조미료 자연 김치", variants: [{ key: "7kg", label: "7Kg", price: 85 }, { key: "3.5kg", label: "3.5Kg", price: 45 }], image: "assets/images/products/b3.png" },
         ],
       },
@@ -170,7 +201,7 @@ window.KH_PRODUCTS = {
   },
   walkerhill: {
     label: "워커힐 호텔 김치",
-    delivery: "7/5일부터 배송",
+    delivery: "8월 16일 배송",
     sections: [
       {
         id: "pogi",

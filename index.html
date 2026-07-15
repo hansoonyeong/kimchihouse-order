@@ -158,68 +158,67 @@
     <div class="shop-schedule-events-wrap">
       <section class="shop-section shop-schedule-block" id="schedule">
         <div class="shop-section-head">
-          <h2 class="shop-section-title">이번 차수 예약 일정</h2>
-          <a class="shop-section-more" href="#lookup">전체보기</a>
+          <h2 class="shop-section-title">이번 차수 배송 일정</h2>
+          <a class="shop-section-more" href="#shop">주문하기</a>
         </div>
-        <div class="shop-schedule-grid">
-          <a class="shop-schedule-card brand-kimchi-house-only" href="order.html">
-            <img src="assets/images/products/b1.png" alt="" loading="lazy" decoding="async" />
-            <div>
-              <strong>새벽김치 3차</strong>
-              <span>7월 5일 배송</span>
-            </div>
-          </a>
-          <a class="shop-schedule-card brand-kimchi-house-only" href="order.html">
-            <img src="assets/images/products/a14.png" alt="" loading="lazy" decoding="async" />
-            <div>
-              <strong>프리미엄 반찬</strong>
-              <span>6월 26~29일 배송</span>
-            </div>
-          </a>
-          <a class="shop-schedule-card brand-walkerhill-only" href="order.html">
-            <img src="assets/images/walkerhill/pogi.jpg" alt="" loading="lazy" decoding="async" />
-            <div>
-              <strong>배추김치 4kg</strong>
-              <span>7월 5일 배송 · $75</span>
-            </div>
-          </a>
-          <a class="shop-schedule-card brand-walkerhill-only" href="order.html">
-            <img src="assets/images/walkerhill/chonggak.png" alt="" loading="lazy" decoding="async" />
-            <div>
-              <strong>총각김치 2kg</strong>
-              <span>7월 5일 배송 · $60</span>
-            </div>
-          </a>
-        </div>
+        <a class="shop-schedule-panel" href="#shop">
+          <div class="shop-schedule-date">
+            <span class="shop-schedule-date-eyebrow">일괄 배송</span>
+            <strong class="shop-schedule-date-day">8월 16일부터 배송 시작</strong>
+            <p class="shop-schedule-date-note">김치·반찬·워커힐 모두 한 번에 배송됩니다</p>
+          </div>
+          <ul class="shop-schedule-points">
+            <li>
+              <strong>한 번에 주문</strong>
+              <span>브랜드 구분 없이 장바구니에 함께 담아 주문</span>
+            </li>
+            <li>
+              <strong>한 번에 배송</strong>
+              <span>8월 16일부터 같은 일정으로 일괄 출고</span>
+            </li>
+            <li>
+              <strong>신선 배송</strong>
+              <span>아이스팩·전용 포장으로 안전하게 전달</span>
+            </li>
+          </ul>
+        </a>
       </section>
 
       <section class="shop-section shop-events-block" id="events">
         <div class="shop-section-head">
           <h2 class="shop-section-title">이번 차수 한정 혜택</h2>
+          <a class="shop-section-more" href="#shop">혜택 상품</a>
         </div>
-        <div class="shop-events">
-          <a class="shop-event-card" href="#shop">
-            <span class="shop-event-icon">🔥</span>
-            <div>
-              <strong>총각김치 30% 할인</strong>
-              <span>이번 회차 한정 빅세일</span>
-            </div>
-          </a>
-          <a class="shop-event-card" href="#shop">
-            <span class="shop-event-icon">🚚</span>
-            <div>
-              <strong>$100 이상 무료배송</strong>
-              <span>회차별 $100 이상 주문 시</span>
-            </div>
-          </a>
-          <a class="shop-event-card" href="#shop">
-            <span class="shop-event-icon">🎁</span>
-            <div>
-              <strong>수량 한정 예약</strong>
-              <span>조기 품절 시 마감</span>
-            </div>
-          </a>
-        </div>
+        <a class="shop-schedule-panel shop-events-panel" href="#shop">
+          <div class="shop-schedule-date">
+            <span class="shop-schedule-date-eyebrow">한정 혜택</span>
+            <strong class="shop-schedule-date-day">이번 차수에만 적용</strong>
+            <p class="shop-schedule-date-note">주문·배송과 함께 아래 혜택이 적용됩니다</p>
+          </div>
+          <ul class="shop-schedule-points shop-events-points">
+            <li class="shop-event-row" data-event="sale">
+              <div class="shop-event-title">
+                <strong>총각김치 30% 할인</strong>
+                <span class="shop-event-tag shop-event-tag-sale">SALE</span>
+              </div>
+              <span>이번 회차 한정 빅세일 · 정가보다 저렴하게</span>
+            </li>
+            <li class="shop-event-row" data-event="ship">
+              <div class="shop-event-title">
+                <strong>$100 이상 무료배송</strong>
+                <span class="shop-event-tag shop-event-tag-free">FREE</span>
+              </div>
+              <span>한 번 주문 · 한 번 배송 기준으로 적용</span>
+            </li>
+            <li class="shop-event-row" data-event="limit">
+              <div class="shop-event-title">
+                <strong>수량 한정 예약</strong>
+                <span class="shop-event-tag shop-event-tag-limit">한정</span>
+              </div>
+              <span>조기 품절 시 마감 · 서둘러 주문하세요</span>
+            </li>
+          </ul>
+        </a>
       </section>
     </div>
 
@@ -460,7 +459,7 @@
           <p>전화/문자 <a href="tel:0486350080">0486 350 080</a></p>
         </div>
       </div>
-      <p class="shop-footer-note">냉동 반찬과 김치·장류는 별도 배송됩니다. 회차별 $100 이상 무료배송.</p>
+      <p class="shop-footer-note">주문은 한 번에 접수되어 8월 16일에 함께 배송됩니다. $100 이상 무료배송.</p>
       <p class="shop-footer-copy">© Kimchi House AU · Sydney</p>
     </div>
   </footer>
