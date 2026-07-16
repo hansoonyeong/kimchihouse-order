@@ -66,7 +66,9 @@ window.KH_PRODUCTS = {
           {
             id: "a3",
             name: "만두세트 (고기 1KG + 김치 1KG)",
-            price: 30,
+            price: 25,
+            wasPrice: 30,
+            sale: true,
             image: "assets/images/products/a3.jpg",
           },
           {
@@ -77,14 +79,20 @@ window.KH_PRODUCTS = {
           },
           {
             id: "extra-jaecheop",
-            name: "재첩국",
-            price: 10,
+            name: "재첩국 500g (2인분)",
+            price: 12,
+            tiers: [
+              [1, 12],
+              [2, 20],
+              [3, 30],
+              [5, 50],
+            ],
             image: "assets/images/products/a16.png",
           },
           {
             id: "extra-myeongtaecho",
             name: "명태커틀렛 (1.2kg / 60g×20)",
-            price: 38,
+            price: 30,
             image: "assets/images/products/myeongtae-cutlet.jpg",
           },
         ],
@@ -115,13 +123,24 @@ window.KH_PRODUCTS = {
             id: "a9",
             name: "간장게장 (650g)",
             price: 25,
+            tiers: [
+              [1, 25],
+              [3, 70],
+              [5, 110],
+              [10, 220],
+            ],
             image: "assets/images/products/a9.jpg",
             detailImage: "assets/images/products/detail-gejang/01.jpg",
           },
           {
             id: "a10",
-            name: "백명란 (500g)",
+            name: "최고급 명품 참 백명란 (500g)",
             price: 45,
+            tiers: [
+              [1, 45],
+              [2, 85],
+              [3, 125],
+            ],
             image: "assets/images/products/a10.png",
           },
           {
@@ -164,7 +183,7 @@ window.KH_PRODUCTS = {
             name: "서울식 포기김치",
             variants: [
               { key: "7kg", label: "7kg", price: 85 },
-              { key: "3.5kg", label: "3kg", price: 45 },
+              { key: "3.5kg", label: "3.5kg", price: 45 },
             ],
             image: "assets/images/products/pogi-thumb.gif",
             detailImages: [
@@ -181,10 +200,10 @@ window.KH_PRODUCTS = {
           },
           {
             id: "b2",
-            name: "남도식 포기김치",
+            name: "전통남도식 포기김치",
             variants: [
               { key: "7kg", label: "7kg", price: 85 },
-              { key: "3.5kg", label: "3kg", price: 45 },
+              { key: "3.5kg", label: "3.5kg", price: 45 },
             ],
             image: "assets/images/products/b2.jpg",
             detailImages: [
@@ -200,10 +219,10 @@ window.KH_PRODUCTS = {
           },
           {
             id: "b3",
-            name: "자연김치",
+            name: "무설탕 무조미료 자연 포기김치",
             variants: [
               { key: "7kg", label: "7kg", price: 85 },
-              { key: "3.5kg", label: "3kg", price: 45 },
+              { key: "3.5kg", label: "3.5kg", price: 45 },
             ],
             image: "assets/images/products/b3.png",
           },
@@ -214,10 +233,50 @@ window.KH_PRODUCTS = {
         tab: "별미김치",
         title: "별미김치 (1KG)",
         items: [
-          { id: "b4", name: "총각김치 (1KG)", price: 27, image: "assets/images/products/b4.png" },
-          { id: "b5", name: "열무김치 (1KG)", price: 27, image: "assets/images/products/b5.png" },
-          { id: "b6", name: "쪽파김치 (1KG)", price: 33, image: "assets/images/products/b6.png" },
-          { id: "b7", name: "갓김치 (1KG)", price: 29, image: "assets/images/products/b7.png" },
+          {
+            id: "b4",
+            name: "총각김치 (1KG)",
+            price: 27,
+            tiers: [
+              [1, 27],
+              [2, 49],
+              [3, 71],
+            ],
+            image: "assets/images/products/b4.png",
+          },
+          {
+            id: "b5",
+            name: "열무김치 (1KG)",
+            price: 27,
+            tiers: [
+              [1, 27],
+              [2, 49],
+              [3, 71],
+            ],
+            image: "assets/images/products/b5.png",
+          },
+          {
+            id: "b6",
+            name: "쪽파김치 (1KG)",
+            price: 33,
+            tiers: [
+              [1, 33],
+              [2, 61],
+              [3, 89],
+            ],
+            image: "assets/images/products/b6.png",
+          },
+          {
+            id: "b7",
+            name: "돌산 갓김치 (1KG)",
+            price: 29,
+            tiers: [
+              [1, 29],
+              [2, 53],
+              [3, 77],
+            ],
+            image: "assets/images/products/b7.png",
+          },
         ],
       },
       {
@@ -227,14 +286,18 @@ window.KH_PRODUCTS = {
         items: [
           {
             id: "b11",
-            name: "생청국장 (120g)",
+            name: "항아골 생청국장 (120g)",
             price: 25,
+            tiers: [
+              [4, 25],
+              [8, 45],
+            ],
             image: "assets/images/products/b11.png?v=2",
             detailImage: "assets/images/products/detail-cheonggukjang/01.jpg",
           },
           {
             id: "b12",
-            name: "된장 (1Kg)",
+            name: "순정원 전통된장 (1Kg)",
             price: 38,
             image: "assets/images/products/b12.jpg",
             detailImages: [
@@ -245,7 +308,7 @@ window.KH_PRODUCTS = {
           },
           {
             id: "b8",
-            name: "도시락김 (72봉)",
+            name: "올리브유 도시락김 (72봉)",
             price: 33,
             image: "assets/images/products/b8.png",
           },

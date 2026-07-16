@@ -172,31 +172,46 @@
     }
 
     function calcSpecialKimchiPrice() {
-      const b5 = qty("b5");
-      const b7 = qty("b7");
-      const totalQty = b5 + b7;
+      const specialIds = getAllItems("kimchi")
+        .filter((item) => item.group === "special")
+        .map((item) => item.id);
+      if (!specialIds.length) return 0;
+      const totalQty = specialIds.reduce((sum, id) => sum + qty(id), 0);
       if (totalQty === 0) return 0;
-      return calcTierTotal(totalQty, KH_SPECIAL_TIERS);
+      return calcTierTotal(totalQty, window.KH_SPECIAL_TIERS || []);
     }
 
     function allocateSpecialPrices() {
-      const b5Count = qty("b5");
-      const b7Count = qty("b7");
+      const specialItems = getAllItems("kimchi").filter((item) => item.group === "special");
+      const out = {};
+      for (const item of specialItems) out[item.id] = 0;
       const total = calcSpecialKimchiPrice();
-      if (total === 0) return { b5: 0, b7: 0 };
+      if (total === 0) return out;
 
-      if (b5Count > 0 && b7Count === 0) return { b5: total, b7: 0 };
-      if (b7Count > 0 && b5Count === 0) return { b5: 0, b7: total };
-
-      const b5Price = Math.round((total * b5Count) / (b5Count + b7Count));
-      return { b5: b5Price, b7: total - b5Price };
+      const counts = specialItems.map((item) => ({ id: item.id, count: qty(item.id) }));
+      const active = counts.filter((c) => c.count > 0);
+      if (active.length === 1) {
+        out[active[0].id] = total;
+        return out;
+      }
+      const sumQty = active.reduce((s, c) => s + c.count, 0);
+      let assigned = 0;
+      active.forEach((c, idx) => {
+        if (idx === active.length - 1) out[c.id] = total - assigned;
+        else {
+          const share = Math.round((total * c.count) / sumQty);
+          out[c.id] = share;
+          assigned += share;
+        }
+      });
+      return out;
     }
 
     function barPriceFor(item) {
       const count = qty(item.id);
       if (count <= 0) return 0;
       if (item.group === "special") return allocateSpecialPrices()[item.id] || 0;
-      if (item.group === "pa") return calcTierTotal(count, KH_PA_TIERS);
+      if (item.group === "pa") return calcTierTotal(count, window.KH_PA_TIERS || []);
       if (item.tiers) return calcTierTotal(count, item.tiers);
       return itemPrice(item);
     }
@@ -228,8 +243,9 @@
       }
       if (cat === "kimchi") {
         total += calcSpecialKimchiPrice();
-        total += calcTierTotal(qty("b6"), KH_PA_TIERS);
-        // flat-price 별미 (group 없는 b4~b7)는 위 itemPrice에서 이미 합산
+        for (const item of getAllItems(cat)) {
+          if (item.group === "pa") total += calcTierTotal(qty(item.id), window.KH_PA_TIERS || []);
+        }
       }
       return total;
     }
@@ -333,32 +349,25 @@
 
       if (cat === "kimchi") {
         const specialPrices = allocateSpecialPrices();
-        if (qty("b5") > 0) {
-          lines.push({
-            name: "열무김치 (1KG)",
-            qty: qty("b5"),
-            price: specialPrices.b5,
-            category: cat,
-            productId: "b5",
-          });
-        }
-        if (qty("b7") > 0) {
-          lines.push({
-            name: "돌산 갓김치 (1KG)",
-            qty: qty("b7"),
-            price: specialPrices.b7,
-            category: cat,
-            productId: "b7",
-          });
-        }
-        if (qty("b6") > 0) {
-          lines.push({
-            name: "쪽파김치 (1KG)",
-            qty: qty("b6"),
-            price: calcTierTotal(qty("b6"), KH_PA_TIERS),
-            category: cat,
-            productId: "b6",
-          });
+        for (const item of getAllItems(cat)) {
+          if (item.group === "special" && qty(item.id) > 0) {
+            lines.push({
+              name: item.name,
+              qty: qty(item.id),
+              price: specialPrices[item.id] || 0,
+              category: cat,
+              productId: item.id,
+            });
+          }
+          if (item.group === "pa" && qty(item.id) > 0) {
+            lines.push({
+              name: item.name,
+              qty: qty(item.id),
+              price: calcTierTotal(qty(item.id), window.KH_PA_TIERS || []),
+              category: cat,
+              productId: item.id,
+            });
+          }
         }
       }
       return lines;
