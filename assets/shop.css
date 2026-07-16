@@ -1127,6 +1127,11 @@ body[data-brand="walkerhill"] .shop-cat-icon.active .shop-cat-icon-label {
   color: var(--white);
 }
 
+.shop-badge-vegan {
+  background: #2f6b3a;
+  color: #fff;
+}
+
 .shop-product-name {
   font-size: 14px;
   font-weight: 600;

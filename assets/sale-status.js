@@ -82,11 +82,14 @@
           const items = section.items || [];
           for (const item of items) {
             const detail = this.details[item.id];
-            const status = normalizeStatus(
-              this.statuses[item.id] ?? detail?.saleStatus,
-              item._catalogSoldOut ?? item.soldOut
-            );
             if (item._catalogSoldOut == null) item._catalogSoldOut = Boolean(item.soldOut);
+            if (item._catalogSaleStatus == null && item.saleStatus) {
+              item._catalogSaleStatus = item.saleStatus;
+            }
+            const status = normalizeStatus(
+              this.statuses[item.id] ?? detail?.saleStatus ?? item._catalogSaleStatus,
+              item._catalogSoldOut
+            );
             item.saleStatus = status;
             item.soldOut = status === "sold_out" || status === "coming_soon";
             if (item.variants?.length) {
@@ -94,7 +97,7 @@
               for (const v of item.variants) {
                 const vid = `${item.id}:${v.key}`;
                 const vStatus = normalizeStatus(
-                  this.statuses[vid] ?? this.statuses[item.id] ?? detail?.saleStatus,
+                  this.statuses[vid] ?? this.statuses[item.id] ?? detail?.saleStatus ?? item._catalogSaleStatus,
                   item._catalogSoldOut
                 );
                 v.saleStatus = vStatus;

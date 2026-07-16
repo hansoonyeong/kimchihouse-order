@@ -497,6 +497,9 @@
       const saleBadge = window.KHSale?.badgeHtml?.(item);
       if (saleBadge) return saleBadge;
       if (saleStatusOf(item) === "sold_out" || saleStatusOf(item) === "coming_soon") return "";
+      if (item.vegan) {
+        return `<span class="shop-badge shop-badge-vegan">VEGAN</span>`;
+      }
       if (item.sale || item.saleLabel) {
         return `<span class="shop-badge shop-badge-sale">${item.saleLabel || "SALE"}</span>`;
       }
