@@ -1,0 +1,16 @@
+---
+description: 상품 썸네일·상세 이미지는 채팅 첨부가 아니라 Downloads 원본을 사용한다
+alwaysApply: true
+---
+
+# 상품 이미지 원본 사용
+
+채팅에 첨부된 이미지는 Cursor가 해상도를 크게 줄인다 (폭 200~500px 수준).
+
+상품 썸네일·상세 페이지 이미지를 등록/교체할 때는:
+
+1. **채팅 첨부 파일을 그대로 쓰지 말 것**
+2. 먼저 `/Users/soonyeong/Downloads` (및 `Downloads/KIMCHI HOUSE`)에서 **같은 내용의 원본 파일**을 찾아 사용한다
+3. 원본이 있으면 `cp`로 `assets/images/products/` 아래로 복사한다
+4. 원본이 없을 때만 사용자에게 Downloads에 원본을 넣어달라고 요청한다
+5. 상세 이미지는 파일 **이름순**으로 `detailImages`에 넣는다 (사용자가 이름순을 요청한 경우)
