@@ -461,7 +461,7 @@
       pogi: "assets/images/products/b1.png",
       special: "assets/images/browse/special.png",
       seafood: "assets/images/browse/jeotgal.png",
-      frozen: "assets/images/browse/banchan.png",
+      frozen: "assets/images/browse/frozen.png",
       jang: "assets/images/browse/jang.png",
       set2: "assets/images/walkerhill/set.jpg",
       set3: "assets/images/walkerhill/set.jpg",
@@ -499,6 +499,9 @@
       if (saleStatusOf(item) === "sold_out" || saleStatusOf(item) === "coming_soon") return "";
       if (item.vegan) {
         return `<span class="shop-badge shop-badge-vegan">VEGAN</span>`;
+      }
+      if (item.isNew || item.badge === "NEW") {
+        return `<span class="shop-badge shop-badge-new">NEW</span>`;
       }
       if (item.sale || item.saleLabel) {
         return `<span class="shop-badge shop-badge-sale">${item.saleLabel || "SALE"}</span>`;

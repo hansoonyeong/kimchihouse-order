@@ -1149,6 +1149,11 @@ body[data-brand="walkerhill"] .shop-cat-icon.active .shop-cat-icon-label {
   color: #fff;
 }
 
+.shop-badge-new {
+  background: #c44020;
+  color: #fff;
+}
+
 .shop-product-name {
   font-size: 14px;
   font-weight: 600;
@@ -2464,6 +2469,11 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 }
 
 .shop-events-points .shop-event-tag-sale {
+  background: rgba(196, 64, 32, 0.12);
+  color: #b53a1c;
+}
+
+.shop-events-points .shop-event-tag-new {
   background: rgba(196, 64, 32, 0.12);
   color: #b53a1c;
 }

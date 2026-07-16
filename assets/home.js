@@ -72,7 +72,7 @@
     {
       id: "frozen",
       label: "냉동·간편식",
-      image: "assets/images/browse/banchan.png",
+      image: "assets/images/browse/frozen.png",
       brand: "kimchi-house",
       orderCat: "frozen",
       linkBrand: "kimchihouse",
@@ -100,7 +100,7 @@
       { id: "pogi", label: "포기김치", image: "assets/images/products/b1.png", href: "#shop", itemIds: ["b1", "b2", "b3"] },
       { id: "special", label: "별미김치", image: "assets/images/browse/special.png", href: "#shop", itemIds: ["b4", "b5", "b6", "b7"] },
       { id: "seafood", label: "프리미엄 수산·반찬", image: "assets/images/browse/jeotgal.png", href: "#shop", itemIds: ["a9", "a10", "b10"] },
-      { id: "frozen", label: "냉동·간편식", image: "assets/images/browse/banchan.png", href: "#shop", itemIds: ["a3", "a4", "extra-jaecheop", "extra-myeongtaecho"] },
+      { id: "frozen", label: "냉동·간편식", image: "assets/images/browse/frozen.png", href: "#shop", itemIds: ["a3", "a4", "extra-jaecheop", "extra-myeongtaecho"] },
       { id: "jang", label: "전통 장류·김", image: "assets/images/browse/jang.png", href: "#shop", itemIds: ["b11", "b12", "b8"] },
     ],
     walkerhill: [
@@ -149,6 +149,8 @@
     if (item.premium || item.id === "w1" || item.id === "w2" || item.id?.startsWith("w_set")) {
       return { cls: "premium", text: "PREMIUM" };
     }
+    if (item.isNew || item.badge === "NEW") return { cls: "new", text: "NEW" };
+    if (item.vegan) return { cls: "vegan", text: "VEGAN" };
     if (item.sale || item.saleLabel) return { cls: "sale", text: item.saleLabel || "SALE" };
     if (item.id === "b8" || item.id === "b1") return { cls: "best", text: "BEST" };
     if (item.id === "w_set2b") return { cls: "best", text: "⭐ 인기" };
@@ -419,7 +421,7 @@
     const eventsPanel = document.querySelector(".shop-events-panel");
     if (eventsPanel) {
       eventsPanel.href = "#shop";
-      eventsPanel.dataset.orderCat = "special";
+      eventsPanel.dataset.orderCat = "frozen";
     }
     const eventsMore = document.querySelector(".shop-events-block .shop-section-more");
     if (eventsMore) eventsMore.href = "#shop";
