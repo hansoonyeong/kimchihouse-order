@@ -5136,9 +5136,126 @@ button.shop-product-cta {
     height: 48px;
   }
 
-  .shop-admin-page .admin-sales-table th:nth-child(3),
-  .shop-admin-page .admin-sales-table td:nth-child(3) {
+  /* 주문 목록은 카드만 쓰지만, 재고·판매는 테이블만 있으므로 모바일에서도 보이게 */
+  .shop-admin-page #stock-list .admin-table-wrap,
+  .shop-admin-page #sales-list .admin-table-wrap {
+    display: block !important;
+    overflow: visible;
+    border: none;
+    background: transparent;
+  }
+
+  .shop-admin-page #stock-list .admin-table,
+  .shop-admin-page #sales-list .admin-table,
+  .shop-admin-page #stock-list .admin-table tbody,
+  .shop-admin-page #sales-list .admin-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .shop-admin-page #stock-list .admin-table thead,
+  .shop-admin-page #sales-list .admin-table thead {
     display: none;
+  }
+
+  .shop-admin-page #stock-list .admin-table tr,
+  .shop-admin-page #sales-list .admin-table tr {
+    display: grid;
+    gap: 8px 10px;
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--white);
+  }
+
+  .shop-admin-page #stock-list .admin-table td,
+  .shop-admin-page #sales-list .admin-table td {
+    border: 0;
+    padding: 0;
+  }
+
+  /* 재고: 상품 / 카테고리 / 준비 / 예약 / 잔여 */
+  .shop-admin-page #stock-list .admin-table tr {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .shop-admin-page #stock-list .admin-table td:nth-child(1) {
+    grid-column: 1 / -1;
+  }
+  .shop-admin-page #stock-list .admin-table td:nth-child(2) {
+    grid-column: 1 / -1;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+  .shop-admin-page #stock-list .admin-table td:nth-child(3)::before {
+    content: "준비 ";
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+  .shop-admin-page #stock-list .admin-table td:nth-child(4)::before {
+    content: "예약 ";
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+  .shop-admin-page #stock-list .admin-table td:nth-child(5)::before {
+    content: "잔여 ";
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+  .shop-admin-page #stock-list .admin-stock-input {
+    width: 100%;
+    min-height: 40px;
+    font-size: 16px;
+  }
+
+  /* 판매: 체크 / 상품 / 카테고리 / 가격 / 입고 / 주문 / 잔여 / 상태 */
+  .shop-admin-page #sales-list .admin-table tr {
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+  }
+  .shop-admin-page #sales-list .admin-table td:nth-child(1) {
+    grid-row: 1;
+    padding-top: 4px;
+  }
+  .shop-admin-page #sales-list .admin-table td:nth-child(2) {
+    grid-column: 2 / -1;
+  }
+  .shop-admin-page #sales-list .admin-table td:nth-child(3) {
+    display: none;
+  }
+  .shop-admin-page #sales-list .admin-table td:nth-child(4),
+  .shop-admin-page #sales-list .admin-table td:nth-child(5),
+  .shop-admin-page #sales-list .admin-table td:nth-child(6),
+  .shop-admin-page #sales-list .admin-table td:nth-child(7) {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .shop-admin-page #sales-list .admin-table td:nth-child(4)::before {
+    content: "가격 ";
+  }
+  .shop-admin-page #sales-list .admin-table td:nth-child(5)::before {
+    content: "입고 ";
+  }
+  .shop-admin-page #sales-list .admin-table td:nth-child(6)::before {
+    content: "주문 ";
+  }
+  .shop-admin-page #sales-list .admin-table td:nth-child(7)::before {
+    content: "잔여 ";
+  }
+  .shop-admin-page #sales-list .admin-table td:nth-child(8) {
+    grid-column: 1 / -1;
+  }
+  .shop-admin-page #sales-list .admin-sale-status {
+    width: 100%;
+    min-height: 40px;
+    font-size: 15px;
+  }
+
+  .shop-admin-page .admin-sales-group-actions {
+    width: 100%;
+  }
+  .shop-admin-page .admin-sales-group-actions .shop-btn {
+    flex: 1 1 calc(50% - 4px);
   }
 }
 
