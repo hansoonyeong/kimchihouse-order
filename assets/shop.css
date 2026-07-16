@@ -5008,6 +5008,36 @@ button.shop-product-cta {
   font-weight: 600;
 }
 
+.shop-admin-page .admin-round-scope {
+  flex-wrap: wrap;
+}
+
+.shop-admin-page .admin-round-group {
+  margin-bottom: 28px;
+}
+
+.shop-admin-page .admin-round-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.shop-admin-page .admin-round-group-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.shop-admin-page .admin-round-group-head span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+}
+
 .shop-admin-page .admin-sales-bulk {
   flex-wrap: wrap;
   gap: 8px;

@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Redis } from "@upstash/redis";
+import { migrateLegacyVariantStock } from "./catalog.js";
 
 const STOCK_KEY = "kimchi-house:stock";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -53,20 +54,7 @@ function normalizeStockMap(raw) {
   return out;
 }
 
-export async function readStock() {
-  const redis = getRedis();
-  if (!redis) return normalizeStockMap(readLocalStock());
-  try {
-    const stock = await redis.get(STOCK_KEY);
-    return normalizeStockMap(stock);
-  } catch (err) {
-    console.error("Redis stock read error:", err);
-    return {};
-  }
-}
-
-export async function writeStock(stock) {
-  const normalized = normalizeStockMap(stock);
+async function persistStock(normalized) {
   const redis = getRedis();
   if (!redis) {
     writeLocalStock(normalized);
@@ -74,6 +62,34 @@ export async function writeStock(stock) {
   }
   await redis.set(STOCK_KEY, normalized);
   return normalized;
+}
+
+export async function readStock() {
+  const redis = getRedis();
+  let stock = {};
+  try {
+    if (!redis) stock = normalizeStockMap(readLocalStock());
+    else stock = normalizeStockMap(await redis.get(STOCK_KEY));
+  } catch (err) {
+    console.error("Redis stock read error:", err);
+    return {};
+  }
+
+  const migrated = migrateLegacyVariantStock(stock);
+  if (migrated.changed) {
+    try {
+      await persistStock(normalizeStockMap(migrated.stock));
+    } catch (err) {
+      console.error("Stock migration persist error:", err);
+    }
+  }
+  return normalizeStockMap(migrated.stock);
+}
+
+export async function writeStock(stock) {
+  const normalized = normalizeStockMap(stock);
+  const migrated = migrateLegacyVariantStock(normalized);
+  return persistStock(normalizeStockMap(migrated.stock));
 }
 
 export async function patchStockPrepared(updates) {

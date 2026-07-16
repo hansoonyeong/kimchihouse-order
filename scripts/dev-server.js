@@ -16,7 +16,7 @@ import {
 } from "../api/_lib/order-utils.js";
 import { hasRedisEnv, readOrders, writeOrders } from "../api/_lib/orders-store.js";
 import { readSettings, writeSettings } from "../api/_lib/settings-store.js";
-import { buildStockRows, buildSalesRows, reservedByProduct, stockKeyFromItem, stockUnitsFromItem, productNameIndex, sellableProductIndex, SALE_CATEGORIES } from "../api/_lib/catalog.js";
+import { buildStockRows, buildSalesRows, reservedByProduct, resolvePrepared, stockKeyFromItem, stockUnitsFromItem, productNameIndex, sellableProductIndex, SALE_CATEGORIES } from "../api/_lib/catalog.js";
 import { patchStockPrepared, readStock } from "../api/_lib/stock-store.js";
 import {
   IMPORTANT_PRODUCT_IDS,
@@ -92,7 +92,7 @@ async function assertStockAvailable(items) {
     }
   }
   for (const [id, qty] of Object.entries(needed)) {
-    const prepared = Number(stock[id]?.prepared || 0);
+    const prepared = resolvePrepared(stock, id);
     if (prepared <= 0) continue; // 준비수량 미설정 상품은 제한하지 않음
     const left = prepared - (reserved[id] || 0);
     if (qty > left) {

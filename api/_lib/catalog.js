@@ -287,14 +287,101 @@ export function reservedByProduct(orders) {
   return reserved;
 }
 
+function rawPrepared(stockMap, id) {
+  if (!id) return 0;
+  return Number(stockMap?.[id]?.prepared ?? stockMap?.[id] ?? 0) || 0;
+}
+
+function variantsByBaseId() {
+  const map = new Map();
+  for (const p of listCatalogProducts()) {
+    if (!p.hasVariants || !p.baseId) continue;
+    if (!map.has(p.baseId)) map.set(p.baseId, []);
+    map.get(p.baseId).push(p);
+  }
+  return map;
+}
+
+function primaryVariantId(variants) {
+  if (!variants?.length) return "";
+  const preferred = variants.find((v) => v.variantKey === "7kg") || variants[0];
+  return preferred.id;
+}
+
+/**
+ * 용량 변형 도입 전 baseId(b1) 재고를 기본 용량(b1:7kg)으로 연결.
+ * 변형 SKU가 전부 0인데 base에만 값이 있으면(저장 실수 포함) 복구한다.
+ */
+export function migrateLegacyVariantStock(stockMap) {
+  const current = stockMap && typeof stockMap === "object" ? { ...stockMap } : {};
+  const byBase = variantsByBaseId();
+  let changed = false;
+
+  for (const [baseId, variants] of byBase) {
+    const basePrepared = rawPrepared(current, baseId);
+    if (basePrepared <= 0) continue;
+
+    const variantPreparedSum = variants.reduce((sum, v) => sum + rawPrepared(current, v.id), 0);
+    if (variantPreparedSum > 0) continue;
+
+    const primaryId = primaryVariantId(variants);
+    if (!primaryId) continue;
+    current[primaryId] = { prepared: basePrepared };
+    changed = true;
+  }
+
+  return { stock: current, changed };
+}
+
+/** 재고 조회: 변형 SKU → 없으면 baseId(레거시) */
+export function resolvePrepared(stockMap, productOrId) {
+  const id = typeof productOrId === "string" ? productOrId : productOrId?.id;
+  const baseId =
+    typeof productOrId === "string"
+      ? String(productOrId).split(":")[0]
+      : productOrId?.baseId || String(id || "").split(":")[0];
+
+  const direct = rawPrepared(stockMap, id);
+  if (direct > 0) return direct;
+
+  if (!baseId || baseId === id) return direct;
+
+  const byBase = variantsByBaseId();
+  const variants = byBase.get(baseId) || [];
+  const anyVariant = variants.some((v) => rawPrepared(stockMap, v.id) > 0);
+  if (anyVariant) return direct;
+
+  const basePrepared = rawPrepared(stockMap, baseId);
+  if (basePrepared <= 0) return direct;
+
+  const primaryId = primaryVariantId(variants);
+  if (primaryId && id === primaryId) return basePrepared;
+  if (!variants.length && id === baseId) return basePrepared;
+  return direct;
+}
+
+function resolveReserved(reservedMap, product) {
+  let reserved = Number(reservedMap[product.id] || 0);
+  if (product.baseId && product.baseId !== product.id) {
+    const byBase = variantsByBaseId();
+    const variants = byBase.get(product.baseId) || [];
+    const anyVariantReserved = variants.some((v) => Number(reservedMap[v.id] || 0) > 0);
+    if (!anyVariantReserved && primaryVariantId(variants) === product.id) {
+      reserved += Number(reservedMap[product.baseId] || 0);
+    }
+  }
+  return reserved;
+}
+
 export function buildStockRows(stockMap, orders) {
+  const { stock: hydrated } = migrateLegacyVariantStock(stockMap);
   const reservedMap = reservedByProduct(orders);
   // 워커힐 세트는 단품(w1/w2) 재고로만 관리 — 세트 SKU 행은 숨김
   return listCatalogProducts()
     .filter((p) => !WALKERHILL_SET_CONTENTS[p.id] && !WALKERHILL_SET_CONTENTS[p.baseId])
     .map((p) => {
-      const prepared = Number(stockMap?.[p.id]?.prepared ?? stockMap?.[p.id] ?? 0) || 0;
-      const reserved = Number(reservedMap[p.id] || 0);
+      const prepared = resolvePrepared(hydrated, p);
+      const reserved = resolveReserved(reservedMap, p);
       const remaining = prepared - reserved;
       return {
         ...p,

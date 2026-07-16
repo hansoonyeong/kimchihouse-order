@@ -99,11 +99,12 @@
           <div class="admin-toolbar">
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="refresh-btn">새로고침</button>
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="export-btn">CSV 내보내기</button>
-            <label class="admin-sales-check" style="margin-left:auto">
-              <input type="checkbox" id="show-previous-rounds-orders" /> 이전 차수 주문 보기
-            </label>
+            <div class="filter-tabs admin-round-scope" id="round-scope-tabs-orders" style="margin-left:auto">
+              <button type="button" class="filter-tab active" data-round-scope="current">이번 차수</button>
+              <button type="button" class="filter-tab" data-round-scope="previous">이전 차수</button>
+            </div>
           </div>
-          <p class="admin-stock-note" id="previous-rounds-hint-orders" hidden></p>
+          <p class="admin-stock-note" id="previous-rounds-hint-orders"></p>
 
           <div id="order-list"></div>
         </section>
@@ -147,11 +148,12 @@
 
           <div class="admin-toolbar">
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="delivery-refresh-btn">새로고침</button>
-            <label class="admin-sales-check" style="margin-left:auto">
-              <input type="checkbox" id="show-previous-rounds-delivery" /> 이전 차수 주문 보기
-            </label>
+            <div class="filter-tabs admin-round-scope" id="round-scope-tabs-delivery" style="margin-left:auto">
+              <button type="button" class="filter-tab active" data-round-scope="current">이번 차수</button>
+              <button type="button" class="filter-tab" data-round-scope="previous">이전 차수</button>
+            </div>
           </div>
-          <p class="admin-stock-note" id="previous-rounds-hint-delivery" hidden></p>
+          <p class="admin-stock-note" id="previous-rounds-hint-delivery"></p>
 
           <div id="delivery-order-list"></div>
         </section>
@@ -164,7 +166,7 @@
               <div>
                 <div class="admin-filter-label">상품별 재고</div>
                 <h2 class="admin-round-title">준비 · 예약 · 잔여</h2>
-                <p class="admin-stock-note">이번 차수 판매 품목(숨김 제외)만 표시됩니다. 예약 수량은 이번 차수 배송일(8월 23일~) 주문만 반영하며, 이전 차수 주문은 재고에 영향을 주지 않습니다. 준비 수량이 0이면 주문 제한을 하지 않습니다. 워커힐 세트 주문은 배추(w1)·총각(w2) 단품 재고에 반영됩니다.</p>
+                <p class="admin-stock-note">이번 차수 판매 품목(숨김 제외)만 표시됩니다. 예약 수량은 이번 차수 배송일(8월 23일~) 주문만 반영하며, 이전 차수 주문은 재고에 영향을 주지 않습니다. 준비 수량이 0이면 주문 제한을 하지 않습니다. 워커힐 세트 주문은 배추(w1)·총각(w2) 단품 재고에 반영됩니다. 포기김치 등 용량 상품은 7kg/3kg가 각각 따로 관리되며, 예전 재고(b1)는 자동으로 7kg로 연결됩니다.</p>
               </div>
               <div class="admin-toolbar" style="margin:0">
                 <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="stock-refresh-btn">새로고침</button>
@@ -301,7 +303,7 @@
     let roundFilter = "all";
     let payFilter = "all";
     let statusFilter = "all";
-    let showPreviousRounds = false;
+    let roundScope = "current"; // current | previous
     let searchQuery = "";
     let preorderOpen = true;
     let expandedIds = new Set();
@@ -333,6 +335,14 @@
 
     function isCurrentRoundOrder(o) {
       return deliveryDate(o) >= D.DEFAULT_DELIVERY_DATE;
+    }
+
+    function isPreviousRoundOrder(o) {
+      return !isCurrentRoundOrder(o);
+    }
+
+    function ordersInScope() {
+      return orders.filter((o) => (roundScope === "previous" ? isPreviousRoundOrder(o) : isCurrentRoundOrder(o)));
     }
 
     function deliveryLabel(o) {
@@ -378,14 +388,14 @@
     }
 
     function uniqueDeliveryDates() {
-      const source = showPreviousRounds ? orders : orders.filter(isCurrentRoundOrder);
-      const set = new Set(source.map((o) => deliveryDate(o)));
-      return Array.from(set).sort();
+      const set = new Set(ordersInScope().map((o) => deliveryDate(o)));
+      const dates = Array.from(set).sort();
+      return roundScope === "previous" ? dates.reverse() : dates;
     }
 
     function ordersForRound(dateKey) {
-      const source = showPreviousRounds ? orders.slice() : orders.filter(isCurrentRoundOrder);
-      if (dateKey === "all") return source;
+      const source = ordersInScope();
+      if (dateKey === "all") return source.slice();
       return source.filter((o) => deliveryDate(o) === dateKey);
     }
 
@@ -397,6 +407,7 @@
 
     function activeFilterLabels() {
       const labels = [];
+      labels.push(roundScope === "previous" ? "이전 차수" : "이번 차수");
       if (adminView === "delivery") {
         if (roundFilter !== "all") labels.push(D.formatDeliveryDateLabel(roundFilter) + " 배송");
         if (statusFilter !== "all") labels.push(statusFilter);
@@ -411,7 +422,7 @@
       const useRound = opts.useRound !== false;
       const useStatus = opts.useStatus !== false;
       const usePay = opts.usePay !== false;
-      if (!showPreviousRounds && !isCurrentRoundOrder(o)) return false;
+      if (roundScope === "previous" ? isCurrentRoundOrder(o) : isPreviousRoundOrder(o)) return false;
       if (useRound && roundFilter !== "all" && deliveryDate(o) !== roundFilter) return false;
       if (usePay && payFilter === "cash" && o.payment !== "cash") return false;
       if (usePay && payFilter === "transfer" && o.payment === "cash") return false;
@@ -427,10 +438,12 @@
     function buildOrderListHtml(list) {
       if (!list.length) {
         const query = searchQuery.trim();
-        const msg = query || activeFilterLabels().length ? "조건에 맞는 주문이 없습니다." : "주문 내역이 없습니다.";
+        const emptyScope = roundScope === "previous" ? "이전 차수 주문이 없습니다." : "이번 차수 주문이 없습니다.";
+        const msg = query || activeFilterLabels().length ? "조건에 맞는 주문이 없습니다." : emptyScope;
         return `<p class="admin-empty">${msg}</p>`;
       }
-      return `
+
+      const renderBlock = (blockList) => `
         <div class="admin-table-wrap">
           <table class="admin-table">
             <thead>
@@ -446,10 +459,30 @@
                 <th>상세보기</th>
               </tr>
             </thead>
-            <tbody>${renderTableRows(list)}</tbody>
+            <tbody>${renderTableRows(blockList)}</tbody>
           </table>
         </div>
-        <div class="admin-card-list">${renderMobileCards(list)}</div>`;
+        <div class="admin-card-list">${renderMobileCards(blockList)}</div>`;
+
+      // 이전 차수 + 전체: 배송일별 섹션으로 분류
+      if (roundScope === "previous" && roundFilter === "all") {
+        const dates = uniqueDeliveryDates();
+        return dates
+          .map((date) => {
+            const group = list.filter((o) => deliveryDate(o) === date);
+            if (!group.length) return "";
+            return `<section class="admin-round-group">
+              <div class="admin-round-group-head">
+                <h3>${D.formatDeliveryDateLabel(date)} 배송</h3>
+                <span>${group.length}건</span>
+              </div>
+              ${renderBlock(group)}
+            </section>`;
+          })
+          .join("");
+      }
+
+      return renderBlock(list);
     }
 
     function shippingSummary(o) {
@@ -595,11 +628,12 @@
       const statsRoot = document.getElementById("round-stats");
       const tabsRoot = document.getElementById("round-filter-tabs");
       const title = document.getElementById("round-title");
+      const scopeList = ordersInScope();
+      const scopeLabel = roundScope === "previous" ? "이전 차수" : "이번 차수";
 
-      const allCount = orders.length;
       statsRoot.innerHTML = `
         <button type="button" class="stat stat-round${roundFilter === "all" ? " active" : ""}" data-round-stat="all">
-          <div class="num">${allCount}</div><div class="lbl">전체</div>
+          <div class="num">${scopeList.length}</div><div class="lbl">${scopeLabel} 전체</div>
         </button>
         ${dates
           .map((date) => {
@@ -611,7 +645,7 @@
           .join("")}`;
 
       tabsRoot.innerHTML = `
-        <button type="button" class="filter-tab filter-tab-round${roundFilter === "all" ? " active" : ""}" data-filter-group="round" data-filter-value="all">전체</button>
+        <button type="button" class="filter-tab filter-tab-round${roundFilter === "all" ? " active" : ""}" data-filter-group="round" data-filter-value="all">${scopeLabel} 전체</button>
         ${dates
           .map(
             (date) =>
@@ -619,7 +653,11 @@
           )
           .join("")}`;
 
-      title.textContent = roundFilter === "all" ? "전체 배송" : `${D.formatDeliveryDateLabel(roundFilter)} 배송`;
+      if (roundFilter === "all") {
+        title.textContent = `${scopeLabel} · 전체 배송`;
+      } else {
+        title.textContent = `${scopeLabel} · ${D.formatDeliveryDateLabel(roundFilter)} 배송`;
+      }
 
       const roundList = ordersForRound(roundFilter);
       const counts = statusCounts(roundList);
@@ -878,21 +916,19 @@
     function renderOrders() {
       renderRoundControls();
       syncPayStatusTabs();
+      syncRoundScopeTabs();
 
-      const previousCount = orders.filter((o) => !isCurrentRoundOrder(o)).length;
-      const hintText = previousCount
-        ? `이전 차수 주문 ${previousCount}건은 기본 숨김입니다. 필요하면 「이전 차수 주문 보기」를 켜 주세요.`
-        : "";
+      const previousCount = orders.filter(isPreviousRoundOrder).length;
+      const currentCount = orders.filter(isCurrentRoundOrder).length;
+      const hintText =
+        roundScope === "previous"
+          ? `이전 차수 ${previousCount}건 · 배송일별로 분류되어 있습니다. 위 회차 탭으로 특정 날짜만 볼 수 있습니다.`
+          : `이번 차수(8월 23일~) ${currentCount}건을 보고 있습니다.${previousCount ? ` 이전 차수 ${previousCount}건은 「이전 차수」탭에서 확인하세요.` : ""}`;
       ["previous-rounds-hint-orders", "previous-rounds-hint-delivery"].forEach((id) => {
         const el = document.getElementById(id);
         if (!el) return;
-        if (!showPreviousRounds && previousCount) {
-          el.hidden = false;
-          el.textContent = hintText;
-        } else {
-          el.hidden = true;
-          el.textContent = "";
-        }
+        el.hidden = false;
+        el.textContent = hintText;
       });
 
       const orderList = filteredOrders({ useRound: false, useStatus: false, usePay: true });
@@ -1099,23 +1135,29 @@
     document.getElementById("refresh-btn").addEventListener("click", refresh);
     document.getElementById("delivery-refresh-btn").addEventListener("click", refresh);
 
-    function syncPreviousRoundsToggles(checked) {
-      showPreviousRounds = Boolean(checked);
-      const ordersToggle = document.getElementById("show-previous-rounds-orders");
-      const deliveryToggle = document.getElementById("show-previous-rounds-delivery");
-      if (ordersToggle) ordersToggle.checked = showPreviousRounds;
-      if (deliveryToggle) deliveryToggle.checked = showPreviousRounds;
-      if (!showPreviousRounds && roundFilter !== "all") {
-        const stillVisible = uniqueDeliveryDates().includes(roundFilter);
-        if (!stillVisible) roundFilter = "all";
-      }
+    function syncRoundScopeTabs() {
+      document.querySelectorAll("[data-round-scope]").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.roundScope === roundScope);
+      });
+    }
+
+    function setRoundScope(scope) {
+      if (scope !== "current" && scope !== "previous") return;
+      roundScope = scope;
+      const dates = uniqueDeliveryDates();
+      if (roundFilter !== "all" && !dates.includes(roundFilter)) roundFilter = "all";
       renderOrders();
     }
-    document.getElementById("show-previous-rounds-orders")?.addEventListener("change", (e) => {
-      syncPreviousRoundsToggles(e.target.checked);
+
+    document.getElementById("round-scope-tabs-orders")?.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-round-scope]");
+      if (!btn) return;
+      setRoundScope(btn.dataset.roundScope);
     });
-    document.getElementById("show-previous-rounds-delivery")?.addEventListener("change", (e) => {
-      syncPreviousRoundsToggles(e.target.checked);
+    document.getElementById("round-scope-tabs-delivery")?.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-round-scope]");
+      if (!btn) return;
+      setRoundScope(btn.dataset.roundScope);
     });
     document.getElementById("stock-refresh-btn").addEventListener("click", async () => {
       try {

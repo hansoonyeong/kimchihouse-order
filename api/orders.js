@@ -8,7 +8,7 @@ import {
   parseDeliveryDate,
   resolveDeliveryDate,
 } from "./_lib/order-utils.js";
-import { productNameIndex, reservedByProduct, sellableProductIndex, stockKeyFromItem, stockUnitsFromItem } from "./_lib/catalog.js";
+import { productNameIndex, reservedByProduct, resolvePrepared, sellableProductIndex, stockUnitsFromItem } from "./_lib/catalog.js";
 import { readOrders, writeOrders } from "./_lib/orders-store.js";
 import {
   applyAutoSoldOutFromStock,
@@ -30,7 +30,7 @@ async function assertStockAvailable(items) {
     }
   }
   for (const [id, qty] of Object.entries(needed)) {
-    const prepared = Number(stock[id]?.prepared || 0);
+    const prepared = resolvePrepared(stock, id);
     if (prepared <= 0) continue;
     const left = prepared - (reserved[id] || 0);
     if (qty > left) {
