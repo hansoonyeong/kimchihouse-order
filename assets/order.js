@@ -965,19 +965,7 @@
 
     function renderBarMeta() {
       const ship = shippingFee();
-      const cats = orderCatalogs();
-      if (cats.length <= 1) {
-        return ship === 0 ? "배송비 무료" : `배송비 ${money(ship)}`;
-      }
-      const parts = cats
-        .map((cat) => {
-          const sub = subtotalFor(cat);
-          if (sub === 0) return "";
-          return `${KH_PRODUCTS[cat].label} ${money(sub)}`;
-        })
-        .filter(Boolean);
-      const shipText = ship === 0 ? "배송비 무료" : `배송비 ${money(ship)}`;
-      return [...parts, shipText].join(" · ");
+      return ship === 0 ? "배송비 무료" : `배송비 ${money(ship)}`;
     }
 
     function renderBarItems(lines) {
