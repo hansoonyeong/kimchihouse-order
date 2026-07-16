@@ -171,8 +171,15 @@ export function publicSaleDetails(doc, catalogProducts) {
 }
 
 export function resolveSaleStatus(doc, productId, catalogSoldOut = false) {
-  const stored = doc?.products?.[productId];
-  if (stored) return normalizeSaleStatus(stored.saleStatus, catalogSoldOut);
+  const id = String(productId || "");
+  const stored = doc?.products?.[id];
+  if (stored?.saleStatus) return normalizeSaleStatus(stored.saleStatus, catalogSoldOut);
+  // 변형(b1:7kg)에 개별 상태가 없으면 기본 상품(b1) 상태 상속
+  const baseId = id.includes(":") ? id.split(":")[0] : "";
+  if (baseId && baseId !== id) {
+    const baseStored = doc?.products?.[baseId];
+    if (baseStored?.saleStatus) return normalizeSaleStatus(baseStored.saleStatus, catalogSoldOut);
+  }
   return catalogSoldOut ? "sold_out" : DEFAULT_SALE_STATUS;
 }
 
@@ -285,36 +292,23 @@ export async function deletePreset(presetId, meta = {}) {
   return { doc, deleted: true };
 }
 
-/** 재고 0(준비>0 & 잔여<=0)이면 sold_out — 복구 시 active로 되돌리지 않음 */
+/** 재고 0(준비>0 & 잔여<=0)이면 sold_out — 용량 변형은 SKU별(예: b1:7kg)로 처리 */
 export async function applyAutoSoldOutFromStock(stockMap, orders) {
   const doc = await readSales();
   if (!doc.settings.autoSoldOutOnZero) return { doc, changed: [] };
 
   const rows = buildStockRows(stockMap, orders);
-  const byBase = {};
-  for (const row of rows) {
-    const baseId = row.baseId || row.id;
-    if (!byBase[baseId]) {
-      byBase[baseId] = { name: row.name, soldOut: row.soldOut, tracked: false, allEmpty: true };
-    }
-    const prepared = Number(row.prepared || 0);
-    const remaining = Number(row.remaining || 0);
-    if (prepared > 0) {
-      byBase[baseId].tracked = true;
-      if (remaining > 0) byBase[baseId].allEmpty = false;
-      // keep a cleaner name without variant suffix when possible
-      if (!row.hasVariants) byBase[baseId].name = row.name;
-    }
-  }
-
   const updates = {};
   const names = {};
-  for (const [baseId, info] of Object.entries(byBase)) {
-    if (!info.tracked || !info.allEmpty) continue;
-    const current = resolveSaleStatus(doc, baseId, info.soldOut);
+  for (const row of rows) {
+    const prepared = Number(row.prepared || 0);
+    const remaining = Number(row.remaining || 0);
+    if (!(prepared > 0 && remaining <= 0)) continue;
+    const id = row.id;
+    const current = resolveSaleStatus(doc, id, row.soldOut);
     if (current === "active") {
-      updates[baseId] = "sold_out";
-      names[baseId] = info.name;
+      updates[id] = "sold_out";
+      names[id] = row.name;
     }
   }
   if (!Object.keys(updates).length) return { doc, changed: [] };
@@ -324,12 +318,19 @@ export async function applyAutoSoldOutFromStock(stockMap, orders) {
 
 export function assertItemsPurchasable(items, doc, catalogById) {
   for (const item of items || []) {
-    const productId = String(item?.productId || item?.id || "").split(":")[0];
-    if (!productId) continue;
-    const catalog = catalogById?.get?.(productId);
-    const status = resolveSaleStatus(doc, productId, catalog?.soldOut);
+    const rawId = String(item?.productId || item?.id || "").trim();
+    if (!rawId) continue;
+    const variantKey = item?.variantKey ? String(item.variantKey) : "";
+    const fullId = rawId.includes(":")
+      ? rawId
+      : variantKey
+        ? `${rawId.split(":")[0]}:${variantKey}`
+        : rawId;
+    const baseId = fullId.split(":")[0];
+    const catalog = catalogById?.get?.(fullId) || catalogById?.get?.(baseId);
+    const status = resolveSaleStatus(doc, fullId, catalog?.soldOut);
     if (status !== "active") {
-      const label = catalog?.name || item?.name || productId;
+      const label = catalog?.name || item?.name || fullId;
       const msg =
         status === "sold_out"
           ? `품절 상품은 주문할 수 없습니다: ${label}`

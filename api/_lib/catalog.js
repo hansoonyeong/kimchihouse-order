@@ -114,7 +114,7 @@ export function listCatalogProducts() {
   return products;
 }
 
-/** 판매 상태 관리용 — 변형은 기본 상품 1행 (고객 UI와 동일) */
+/** 판매 상태 관리용 — 용량 변형(7kg/3kg)은 각각 별도 행으로 품절 관리 */
 export function listSellableProducts() {
   const catalog = loadProductCatalog();
   const products = [];
@@ -122,6 +122,27 @@ export function listSellableProducts() {
     for (const section of block.sections || []) {
       for (const item of section.items || []) {
         const saleCat = resolveSaleCategory(category, section.id, item.id);
+        if (item.variants?.length) {
+          for (const v of item.variants) {
+            products.push({
+              id: `${item.id}:${v.key}`,
+              baseId: item.id,
+              name: `${item.name} (${v.label})`,
+              category,
+              categoryLabel: block.label || category,
+              sectionId: section.id,
+              saleCategory: saleCat.id,
+              saleCategoryLabel: saleCat.label,
+              image: item.image || "",
+              price: catalogDisplayPrice(item, v),
+              soldOut: Boolean(item.soldOut),
+              hasVariants: true,
+              variantKey: v.key,
+              variantKeys: [v.key],
+            });
+          }
+          continue;
+        }
         products.push({
           id: item.id,
           baseId: item.id,
@@ -132,10 +153,10 @@ export function listSellableProducts() {
           saleCategory: saleCat.id,
           saleCategoryLabel: saleCat.label,
           image: item.image || "",
-          price: catalogDisplayPrice(item, item.variants?.[0]),
+          price: catalogDisplayPrice(item),
           soldOut: Boolean(item.soldOut),
-          hasVariants: Boolean(item.variants?.length),
-          variantKeys: (item.variants || []).map((v) => v.key),
+          hasVariants: false,
+          variantKeys: [],
         });
       }
     }
@@ -285,27 +306,32 @@ export function buildStockRows(stockMap, orders) {
     });
 }
 
-/** 판매 품목 관리용 행 (기본 상품 + 재고 합산) */
+/** 판매 품목 관리용 행 (변형 SKU별 재고·판매상태) */
 export function buildSalesRows(stockMap, orders, salesDoc) {
   const stockRows = buildStockRows(stockMap, orders);
-  const stockByBase = {};
+  const stockById = {};
   for (const row of stockRows) {
-    const key = row.baseId || row.id;
-    if (!stockByBase[key]) stockByBase[key] = { prepared: 0, reserved: 0, remaining: 0 };
-    stockByBase[key].prepared += Number(row.prepared || 0);
-    stockByBase[key].reserved += Number(row.reserved || 0);
-    stockByBase[key].remaining += Number(row.remaining || 0);
+    stockById[row.id] = {
+      prepared: Number(row.prepared || 0),
+      reserved: Number(row.reserved || 0),
+      remaining: Number(row.remaining || 0),
+    };
   }
 
   const products = salesDoc?.products || {};
   return listSellableProducts().map((p, index) => {
-    const stock = stockByBase[p.id] || { prepared: 0, reserved: 0, remaining: 0 };
-    const stored = products[p.id];
+    const stock = stockById[p.id] || { prepared: 0, reserved: 0, remaining: 0 };
+    const stored = products[p.id] || products[p.baseId];
     let saleStatus = "active";
-    if (stored?.saleStatus) saleStatus = stored.saleStatus;
+    if (products[p.id]?.saleStatus) saleStatus = products[p.id].saleStatus;
+    else if (p.baseId && products[p.baseId]?.saleStatus) saleStatus = products[p.baseId].saleStatus;
     else if (p.soldOut) saleStatus = "sold_out";
     const sortOrder = stored?.sortOrder != null ? Number(stored.sortOrder) : index;
-    const priceOverride = stored?.price != null ? Number(stored.price) : null;
+    const priceOverride = products[p.id]?.price != null
+      ? Number(products[p.id].price)
+      : stored?.price != null
+        ? Number(stored.price)
+        : null;
     return {
       ...p,
       prepared: stock.prepared,

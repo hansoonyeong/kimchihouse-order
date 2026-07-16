@@ -148,11 +148,21 @@
 
     function setQty(id, value) {
       if (value > 0) {
-        const baseId = String(id).split(":")[0];
+        const raw = String(id);
+        const baseId = raw.split(":")[0];
+        const variantKey = raw.includes(":") ? raw.split(":")[1] : "";
         const found = findItemById(baseId);
-        if (found && window.KHSale && !window.KHSale.isPurchasable(found.item)) {
-          alert(`${found.item.name}은(는) 현재 주문할 수 없습니다. (${window.KHSale.label(found.item)})`);
-          return;
+        if (found && window.KHSale) {
+          const ok = variantKey
+            ? window.KHSale.isPurchasable(found.item, variantKey)
+            : window.KHSale.isPurchasable(found.item);
+          if (!ok) {
+            const label = variantKey
+              ? `${found.item.name} (${variantKey})`
+              : found.item.name;
+            alert(`${label}은(는) 현재 주문할 수 없습니다. (${window.KHSale.label(found.item, variantKey)})`);
+            return;
+          }
         }
       }
       if (value <= 0) delete state.cart[id];
@@ -390,29 +400,51 @@
     }
 
     function buildBarLines() {
-      return orderCatalogs().flatMap((cat) => buildBarLinesFor(cat));
+      return orderCatalogs()
+        .flatMap((cat) => buildBarLinesFor(cat))
+        .map((line) => ({
+          ...line,
+          shopCategory: shopCategoryForProductId(line.id),
+        }));
     }
 
     function getSelectedVariant(item) {
       if (!item.variants?.length) return null;
       const sel = state.selectedVariant[item.id];
-      if (sel) return item.variants.find((v) => v.key === sel) || item.variants[0];
-      return item.variants[0];
+      const preferred = sel ? item.variants.find((v) => v.key === sel) : null;
+      if (preferred && (!window.KHSale || window.KHSale.isPurchasable(item, preferred.key))) return preferred;
+      const firstActive = item.variants.find((v) => !window.KHSale || window.KHSale.isPurchasable(item, v.key));
+      return firstActive || preferred || item.variants[0];
     }
 
     const KH_CATEGORIES = [
       { id: "premium", label: "워커힐 프리미엄", sections: [] },
       { id: "pogi", label: "포기김치", sections: [{ cat: "kimchi", sid: "pogi" }] },
       { id: "special", label: "별미김치", sections: [{ cat: "kimchi", sid: "special" }] },
-      { id: "seafood", label: "프리미엄 수산·반찬", sections: [{ cat: "frozen", sid: "jeotgal" }] },
-      { id: "frozen", label: "냉동·간편식", sections: [{ cat: "frozen", sid: "mandu" }] },
+      {
+        id: "seafood",
+        label: "프리미엄 수산·반찬",
+        sections: [
+          { cat: "frozen", sid: "jeotgal" },
+          { cat: "frozen", sid: "fish" },
+          { cat: "frozen", sid: "namul" },
+        ],
+      },
+      {
+        id: "frozen",
+        label: "냉동·간편식",
+        sections: [
+          { cat: "frozen", sid: "mandu" },
+          { cat: "frozen", sid: "kimbap" },
+        ],
+      },
       { id: "jang", label: "전통 장류·김", sections: [{ cat: "kimchi", sid: "jang" }] },
     ];
 
     const WH_SET_TIERS = [
-      { id: "set2", label: "2 SET", note: "무료배송 + 약 5% 추가할인 (총 $15 혜택)" },
-      { id: "set3", label: "3 SET", note: "무료배송 + 10% 할인" },
-      { id: "set5", label: "5 SET", note: "무료배송 + 15% 할인" },
+      { id: "set2", label: "2 SET", note: "무료배송 + 세트 할인" },
+      { id: "set3", label: "3 SET", note: "BEST · 무료배송 + 세트 할인" },
+      { id: "set5", label: "5 SET", note: "무료배송 + 세트 할인" },
     ];
 
     const KH_CAT_IMAGES = {
@@ -567,14 +599,24 @@
       if (item.variants) {
         const selected = getSelectedVariant(item);
         variantHtml = `<div class="kurly-option-list">${item.variants.map((v) => {
-          const active = selected?.key === v.key ? " active" : "";
-          return `<button type="button" class="kurly-option${active}" data-variant-pick="${item.id}" data-variant-key="${v.key}">
+          const vStatus = window.KHSale?.status?.(item, v.key) || "active";
+          if (vStatus === "hidden") return "";
+          const unavailable = vStatus === "sold_out" || vStatus === "coming_soon";
+          const active = !unavailable && selected?.key === v.key ? " active" : "";
+          const statusNote = unavailable ? (vStatus === "coming_soon" ? " · 판매 예정" : " · 품절") : "";
+          return `<button type="button" class="kurly-option${active}${unavailable ? " sold-out" : ""}" data-variant-pick="${item.id}" data-variant-key="${v.key}"${unavailable ? " disabled" : ""}>
             <span class="kurly-option-radio"></span>
-            <span class="kurly-option-label">${v.label}</span>
+            <span class="kurly-option-label">${v.label}${statusNote}</span>
             <span class="kurly-option-price">${money(v.price)}</span>
           </button>`;
         }).join("")}</div>`;
-        priceHtml = renderSalePriceHtml(item, selected.price);
+        const selectedStatus = selected ? window.KHSale?.status?.(item, selected.key) : "active";
+        if (selectedStatus === "sold_out" || selectedStatus === "coming_soon") {
+          priceHtml = renderSalePriceHtml(item, selected?.price);
+          addBtn = `<button type="button" class="kurly-add-btn" disabled>${selectedStatus === "coming_soon" ? "판매 예정" : "품절"}</button>`;
+        } else {
+          priceHtml = renderSalePriceHtml(item, selected.price);
+        }
       } else if (hasTierPricing(item)) {
         const tiers = getTierList(item);
         const salePrice = tiers[0][1];
@@ -632,22 +674,56 @@
       return itemId === "w1" || itemId === "w2" || itemId?.startsWith("w_set");
     }
 
-    function categoryForItemId(brand, itemId) {
-      if (!itemId) return null;
-      if (isWalkerhillItem(itemId)) {
-        if (itemId.startsWith("w_set2")) return "set2";
-        if (itemId.startsWith("w_set3")) return "set3";
-        if (itemId.startsWith("w_set5")) return "set5";
-        return "premium";
-      }
+    function baseProductId(itemId) {
+      return String(itemId || "").split(":")[0];
+    }
+
+    /** 쇼핑몰 탭과 동일한 카테고리 (장바구니 그룹용) */
+    function shopCategoryForProductId(itemId) {
+      const id = baseProductId(itemId);
+      if (!id) return "other";
+      if (isWalkerhillItem(id)) return "premium";
+
       for (const catDef of KH_CATEGORIES) {
         if (catDef.id === "premium") continue;
-        const sections = sectionsForCategory(catDef);
-        for (const { section } of sections) {
-          if (section.items.some((i) => i.id === itemId)) return catDef.id;
+        for (const { section } of sectionsForCategory(catDef)) {
+          if (section.items?.some((item) => item.id === id)) return catDef.id;
         }
       }
-      return null;
+
+      // 섹션 매핑 누락 대비 — 카탈로그에서 직접 탐색
+      for (const [cat, block] of Object.entries(KH_PRODUCTS || {})) {
+        for (const section of block.sections || []) {
+          if (!section.items?.some((item) => item.id === id)) continue;
+          if (cat === "walkerhill") return "premium";
+          if (section.id === "pogi") return "pogi";
+          if (section.id === "special") return "special";
+          if (section.id === "jang") return "jang";
+          if (section.id === "mandu" || section.id === "kimbap") return "frozen";
+          if (section.id === "jeotgal" || section.id === "fish" || section.id === "namul") return "seafood";
+          if (cat === "kimchi") return "pogi";
+          if (cat === "frozen") return "frozen";
+        }
+      }
+      return "other";
+    }
+
+    function shopCategoryLabel(shopCatId) {
+      if (shopCatId === "other") return "기타";
+      return KH_CATEGORIES.find((c) => c.id === shopCatId)?.label || shopCatId;
+    }
+
+    function categoryForItemId(brand, itemId) {
+      if (!itemId) return null;
+      const id = baseProductId(itemId);
+      if (isWalkerhillItem(id)) {
+        if (id.startsWith("w_set2")) return "set2";
+        if (id.startsWith("w_set3")) return "set3";
+        if (id.startsWith("w_set5")) return "set5";
+        return "premium";
+      }
+      const shopCat = shopCategoryForProductId(id);
+      return shopCat === "other" ? null : shopCat;
     }
 
     function validCategory(brand, cat) {
@@ -920,16 +996,15 @@
         </div>
       </li>`;
 
-      const catsInCart = orderCatalogs();
-      if (catsInCart.length <= 1) {
-        return lines.map(renderLine).join("");
-      }
+      const order = [...KH_CATEGORIES.map((c) => c.id), "other"];
+      const present = order.filter((id) => lines.some((line) => line.shopCategory === id));
+      if (!present.length) return lines.map(renderLine).join("");
 
-      return catsInCart
-        .map((cat) => {
-          const catLines = lines.filter((line) => line.category === cat);
+      return present
+        .map((shopCat) => {
+          const catLines = lines.filter((line) => line.shopCategory === shopCat);
           if (!catLines.length) return "";
-          const header = `<li class="bar-group-title">${KH_PRODUCTS[cat].label}</li>`;
+          const header = `<li class="bar-group-title">${shopCategoryLabel(shopCat)}</li>`;
           return header + catLines.map(renderLine).join("");
         })
         .join("");
@@ -979,9 +1054,10 @@
         const selected = getSelectedVariant(item);
         variantHtml = `<div class="kurly-option-list modal-options">${item.variants.map((v) => {
           const active = selected?.key === v.key ? " active" : "";
-          return `<button type="button" class="kurly-option${active}" data-modal-variant="${item.id}" data-variant-key="${v.key}">
+          const unavailable = window.KHSale ? !window.KHSale.isPurchasable(item, v.key) : false;
+          return `<button type="button" class="kurly-option${active}${unavailable ? " sold-out" : ""}" data-modal-variant="${item.id}" data-variant-key="${v.key}"${unavailable ? " disabled" : ""}>
             <span class="kurly-option-radio"></span>
-            <span class="kurly-option-label">${v.label}</span>
+            <span class="kurly-option-label">${v.label}${unavailable ? ` · ${window.KHSale.label(item, v.key)}` : ""}</span>
             <span class="kurly-option-price">${money(v.price)}</span>
           </button>`;
         }).join("")}</div>`;
