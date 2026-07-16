@@ -10,10 +10,21 @@
     "w_set5a", "w_set5b", "w_set5c", "w_set5d",
   ];
   const WALKERHILL_ITEM_IDS = new Set(["w1", "w2", ...WALKERHILL_SET_IDS]);
-  const POPULAR_IDS = ["b4", "b1", "a4", "b8", "a9", "b12", "a3", "b6"];
+  const POPULAR_IDS = ["w1", "w2", "w_set2b", "b1", "b4", "a9", "a3", "b8"];
   const WALKERHILL_POPULAR_IDS = ["w1", "w2", "w_set2b", "w_set3a", "w_set5a", "w_set3b", "w_set5b", "w_set2a"];
 
   const BROWSE_CATEGORIES = [
+    {
+      id: "premium",
+      label: "워커힐 프리미엄",
+      image: "assets/images/walkerhill/pogi.jpg",
+      brand: "kimchi-house",
+      orderCat: "premium",
+      linkBrand: "kimchihouse",
+      linkCategory: "premium",
+      itemIds: ["w1", "w2", "w_set2b", "w_set3a"],
+      theme: "wh",
+    },
     {
       id: "pogi",
       label: "포기김치",
@@ -37,71 +48,59 @@
       theme: "kh",
     },
     {
-      id: "banchan",
-      label: "반찬·냉동식품",
-      image: "assets/images/browse/banchan.png",
+      id: "seafood",
+      label: "프리미엄 수산·반찬",
+      image: "assets/images/browse/jeotgal.png",
       brand: "kimchi-house",
-      orderCat: "banchan",
+      orderCat: "seafood",
       linkBrand: "kimchihouse",
-      linkCategory: "frozen",
-      itemIds: ["a4", "a3", "a1", "a14"],
+      linkCategory: "seafood",
+      itemIds: ["a9", "a10", "b10"],
       theme: "kh",
     },
     {
-      id: "jeotgal",
-      label: "젓갈·수산",
-      image: "assets/images/browse/jeotgal.png",
+      id: "frozen",
+      label: "냉동·간편식",
+      image: "assets/images/browse/banchan.png",
       brand: "kimchi-house",
-      orderCat: "jeotgal",
+      orderCat: "frozen",
       linkBrand: "kimchihouse",
-      linkCategory: "seafood",
-      itemIds: ["a9", "a10", "a12", "a5"],
+      linkCategory: "frozen",
+      itemIds: ["a3", "a4", "extra-jaecheop", "extra-myeongtaecho"],
       theme: "kh",
     },
     {
       id: "jang",
-      label: "장류·한국식품",
+      label: "전통 장류·김",
       image: "assets/images/browse/jang.png",
       brand: "kimchi-house",
       orderCat: "jang",
       linkBrand: "kimchihouse",
       linkCategory: "pantry",
-      itemIds: ["b12", "b13", "b14", "b11", "b8", "b9", "b10"],
+      itemIds: ["b11", "b12", "b8"],
       theme: "kh",
-    },
-    {
-      id: "walkerhill",
-      label: "워커힐 호텔 김치",
-      image: "assets/images/walkerhill/pogi.jpg",
-      brand: "walkerhill",
-      orderCat: "all",
-      linkBrand: "walkerhill",
-      linkCategory: "walkerhill",
-      itemIds: ["w1", "w2", "w_set2b", "w_set3a"],
-      theme: "wh",
     },
   ];
 
   const CATEGORIES = {
     "kimchi-house": [
-      { id: "all", label: "전체", href: "order.html" },
-      { id: "pogi", label: "새벽김치", image: "assets/images/products/b1.png", href: "order.html", itemIds: ["b1", "b2", "b3"] },
-      { id: "special", label: "별미김치", image: "assets/images/browse/special.png", href: "order.html", itemIds: ["b4", "b5", "b6", "b7"] },
-      { id: "frozen", label: "반찬", image: "assets/images/browse/banchan.png", href: "order.html", itemIds: ["a1","a2","a3","a4","a5","a6","a7","a8","a14","a15","a16","a17","a18"] },
-      { id: "jeotgal", label: "젓갈", image: "assets/images/browse/jeotgal.png", href: "order.html", itemIds: ["a9","a10","a12"] },
-      { id: "jang", label: "장류", image: "assets/images/browse/jang.png", href: "order.html", itemIds: ["b11","b12","b13","b14","b8","b9","b10"] },
+      { id: "all", label: "전체", href: "#shop" },
+      { id: "premium", label: "워커힐 프리미엄", image: "assets/images/walkerhill/pogi.jpg", href: "#shop", itemIds: ["w1", "w2", ...WALKERHILL_SET_IDS] },
+      { id: "pogi", label: "포기김치", image: "assets/images/products/b1.png", href: "#shop", itemIds: ["b1", "b2", "b3"] },
+      { id: "special", label: "별미김치", image: "assets/images/browse/special.png", href: "#shop", itemIds: ["b4", "b5", "b6", "b7"] },
+      { id: "seafood", label: "프리미엄 수산·반찬", image: "assets/images/browse/jeotgal.png", href: "#shop", itemIds: ["a9", "a10", "b10"] },
+      { id: "frozen", label: "냉동·간편식", image: "assets/images/browse/banchan.png", href: "#shop", itemIds: ["a3", "a4", "extra-jaecheop", "extra-myeongtaecho"] },
+      { id: "jang", label: "전통 장류·김", image: "assets/images/browse/jang.png", href: "#shop", itemIds: ["b11", "b12", "b8"] },
     ],
     walkerhill: [
-      { id: "all", label: "전체", href: "order.html" },
-      { id: "pogi", label: "배추김치", image: "assets/images/walkerhill/pogi.jpg", href: "order.html", itemIds: ["w1"] },
-      { id: "chonggak", label: "총각김치", image: "assets/images/walkerhill/chonggak.png", href: "order.html", itemIds: ["w2"] },
-      { id: "set", label: "세트", image: "assets/images/walkerhill/set.jpg", href: "order.html", itemIds: WALKERHILL_SET_IDS },
+      { id: "all", label: "전체", href: "#shop" },
+      { id: "premium", label: "워커힐 프리미엄", image: "assets/images/walkerhill/pogi.jpg", href: "#shop", itemIds: ["w1", "w2", ...WALKERHILL_SET_IDS] },
     ],
   };
 
   let currentBrand = "kimchi-house";
   let activeHomeCategory = "all";
-  let activeBrowseCategory = "pogi";
+  let activeBrowseCategory = "premium";
   let heroIndex = 0;
   let heroTimer = null;
   let preorderOpen = true;
@@ -111,13 +110,17 @@
   }
 
   function lowestPrice(item) {
-    if (item.soldOut) return null;
+    if (window.KHSale && !window.KHSale.isVisible(item)) return null;
     if (item.variants?.length) return Math.min(...item.variants.map((v) => v.price));
     if (item.tiers?.length) return item.tiers[0][1];
     if (item.group === "special") return window.KH_SPECIAL_TIERS?.[0]?.[1] ?? null;
     if (item.group === "pa") return window.KH_PA_TIERS?.[0]?.[1] ?? null;
     if (item.price != null) return item.price;
     return null;
+  }
+
+  function itemSaleStatus(item) {
+    return window.KHSale?.status(item) || (item.soldOut ? "sold_out" : "active");
   }
 
   function itemDesc(item, section) {
@@ -129,26 +132,31 @@
   }
 
   function itemBadge(item) {
+    const saleStatus = itemSaleStatus(item);
+    if (saleStatus === "sold_out") return { cls: "soldout", text: "품절" };
+    if (saleStatus === "coming_soon") return { cls: "soon", text: "판매 예정" };
+    if (item.premium || item.id === "w1" || item.id === "w2" || item.id?.startsWith("w_set")) {
+      return { cls: "premium", text: "PREMIUM" };
+    }
     if (item.sale || item.saleLabel) return { cls: "sale", text: item.saleLabel || "SALE" };
-    if (item.id === "b8" || item.id === "b1" || item.id === "w1") return { cls: "best", text: "BEST" };
+    if (item.id === "b8" || item.id === "b1") return { cls: "best", text: "BEST" };
     if (item.id === "w_set2b") return { cls: "best", text: "⭐ 인기" };
-    if (item.id.startsWith("w_set")) return { cls: "premium", text: "SET" };
-    if (item.id === "b2" || item.id === "b3") return { cls: "premium", text: "PREMIUM" };
     return null;
   }
 
   function collectProducts(brand) {
     const list = [];
-    const cats = brand === "walkerhill" ? ["walkerhill"] : ["frozen", "kimchi"];
+    const cats = ["walkerhill", "kimchi", "frozen"];
 
     for (const catKey of cats) {
       const cat = window.KH_PRODUCTS[catKey];
       if (!cat) continue;
       for (const section of cat.sections) {
         for (const item of section.items) {
+          if (itemSaleStatus(item) === "hidden") continue;
           if (brand === "walkerhill" && !WALKERHILL_ITEM_IDS.has(item.id)) continue;
           const price = lowestPrice(item);
-          if (price == null && !item.soldOut) continue;
+          if (price == null && itemSaleStatus(item) === "active") continue;
           list.push({
             ...item,
             catKey,
@@ -157,6 +165,7 @@
             displayPrice: price,
             desc: itemDesc(item, section),
             badge: itemBadge(item),
+            saleStatus: itemSaleStatus(item),
           });
         }
       }
@@ -180,7 +189,7 @@
 
     for (const id of ids) {
       const item = pool.find((p) => p.id === id);
-      if (item && !seen.has(id)) {
+      if (item && !seen.has(id) && itemSaleStatus(item) === "active") {
         picked.push(item);
         seen.add(id);
       }
@@ -189,7 +198,7 @@
 
     if (picked.length < 4) {
       for (const item of pool) {
-        if (seen.has(item.id) || item.soldOut) continue;
+        if (seen.has(item.id) || itemSaleStatus(item) !== "active") continue;
         picked.push(item);
         seen.add(item.id);
         if (picked.length >= 8) break;
@@ -262,10 +271,7 @@
   }
 
   function browseCategoryHref(cat) {
-    const params = new URLSearchParams();
-    params.set("brand", cat.linkBrand);
-    params.set("category", cat.linkCategory);
-    return `order.html?${params.toString()}#shop`;
+    return `#shop`;
   }
 
   function browseRecommendProducts(catId) {
@@ -276,7 +282,7 @@
 
     for (const id of cat.itemIds || []) {
       const item = all.find((p) => p.id === id);
-      if (item && !seen.has(id)) {
+      if (item && !seen.has(id) && itemSaleStatus(item) === "active") {
         picked.push(item);
         seen.add(id);
       }
@@ -285,7 +291,7 @@
 
     if (picked.length < 4) {
       for (const item of all) {
-        if (seen.has(item.id) || item.soldOut) continue;
+        if (seen.has(item.id) || itemSaleStatus(item) !== "active") continue;
         picked.push(item);
         seen.add(item.id);
         if (picked.length >= 4) break;
@@ -299,8 +305,9 @@
     const badge = item.badge
       ? `<span class="shop-badge shop-badge-${item.badge.cls}">${item.badge.text}</span>`
       : "";
-    const action = item.soldOut
-      ? `<button type="button" class="browse-product-cta" disabled>품절</button>`
+    const status = itemSaleStatus(item);
+    const action = status !== "active"
+      ? `<button type="button" class="browse-product-cta" disabled>${status === "coming_soon" ? "판매 예정" : "품절"}</button>`
       : renderProductAction(item).replace("shop-product-cta", "browse-product-cta");
 
     return `<article class="browse-product">
@@ -363,34 +370,42 @@
       const item = e.target.closest("[data-browse-cat]");
       if (item) renderBrowseRecommend(item.dataset.browseCat);
     });
+
+    rail.addEventListener("click", (e) => {
+      const item = e.target.closest("[data-browse-cat]");
+      if (!item) return;
+      e.preventDefault();
+      const cat = BROWSE_CATEGORIES.find((c) => c.id === item.dataset.browseCat);
+      renderBrowseRecommend(item.dataset.browseCat);
+      if (cat?.orderCat) window.shopApi?.setCategory(cat.orderCat);
+      document.getElementById("shop")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   function syncOrderLinks() {
-    const urlFor = (b, cat, item) => buildOrderUrl({ brand: b, cat, item });
-
-    document.querySelectorAll(".shop-hero-slide").forEach((slide, idx) => {
-      const b = idx === 1 ? "walkerhill" : "kimchi-house";
+    document.querySelectorAll(".shop-hero-slide").forEach((slide) => {
+      const cat = slide.id === "premium" ? "premium" : "pogi";
       slide.querySelectorAll("[data-order-link]").forEach((a) => {
-        a.href = urlFor(b);
+        a.href = "#shop";
+        if (!a.dataset.orderCat) a.dataset.orderCat = cat;
       });
     });
 
-    const schedKh = document.querySelectorAll(".shop-schedule-card.brand-kimchi-house-only");
-    if (schedKh[0]) schedKh[0].href = urlFor("kimchi-house", "pogi");
-    if (schedKh[1]) schedKh[1].href = urlFor("kimchi-house", "banchan");
-
-    const schedWh = document.querySelectorAll(".shop-schedule-card.brand-walkerhill-only");
-    if (schedWh[0]) schedWh[0].href = urlFor("walkerhill", "pogi", "w1");
-    if (schedWh[1]) schedWh[1].href = urlFor("walkerhill", "chonggak", "w2");
-
-    document.getElementById("browse-view-all")?.setAttribute("href", urlFor(currentBrand));
-    document.querySelector("#order-steps .shop-btn-primary")?.setAttribute("href", urlFor(currentBrand));
-    document.querySelector(".shop-fixed-cta .shop-btn-primary")?.setAttribute("href", urlFor(currentBrand));
+    const browseViewAll = document.getElementById("browse-view-all");
+    if (browseViewAll) {
+      browseViewAll.setAttribute("href", "#shop");
+      browseViewAll.dataset.orderCat = "all";
+    }
+    document.querySelector("#order-steps .shop-btn-primary")?.setAttribute("href", "#shop");
+    document.querySelector(".shop-fixed-cta .shop-btn-primary")?.setAttribute("href", "#shop");
 
     const eventsPanel = document.querySelector(".shop-events-panel");
-    if (eventsPanel) eventsPanel.href = urlFor("kimchi-house", "special", "b4");
+    if (eventsPanel) {
+      eventsPanel.href = "#shop";
+      eventsPanel.dataset.orderCat = "special";
+    }
     const eventsMore = document.querySelector(".shop-events-block .shop-section-more");
-    if (eventsMore) eventsMore.href = urlFor(currentBrand);
+    if (eventsMore) eventsMore.href = "#shop";
   }
 
   function originalPrice(item) {
@@ -405,7 +420,9 @@
   }
 
   function renderPriceHtml(item) {
-    if (item.soldOut) return `<span style="color:var(--text-muted)">품절</span>`;
+    const status = itemSaleStatus(item);
+    if (status === "sold_out") return `<span style="color:var(--text-muted)">품절</span>`;
+    if (status === "coming_soon") return `<span style="color:var(--text-muted)">판매 예정</span>`;
     const tiers = getTierList(item);
     if (tiers?.length) {
       const salePrice = tiers[0][1];
@@ -434,6 +451,10 @@
   }
 
   function renderProductAction(item) {
+    const status = itemSaleStatus(item);
+    if (status !== "active") {
+      return `<button type="button" class="shop-product-cta" disabled>${status === "coming_soon" ? "판매 예정" : "품절"}</button>`;
+    }
     if (getTierList(item)) return renderHomeTierPicks(item);
     if (item.variants?.length) {
       return `<button type="button" class="shop-product-cta" data-home-modal="${item.id}">옵션 선택 · 담기</button>`;
@@ -551,19 +572,18 @@
   }
 
   function onShopBrandChange(brand) {
-    if (!BRANDS[brand]) return;
-    currentBrand = brand;
-    document.body.dataset.brand = brand;
+    currentBrand = "kimchi-house";
+    document.body.dataset.brand = "kimchi-house";
     syncOrderLinks();
-    if (brand === "walkerhill") goHero(1);
-    else goHero(0);
-    syncHeroDots();
+    renderBrowseRecommend(activeBrowseCategory);
+    renderPopular("kimchi-house");
     startHeroAutoplay();
   }
 
   function setBrand(brand) {
-    onShopBrandChange(brand);
-    window.shopApi?.setBrand(brand);
+    onShopBrandChange("kimchi-house");
+    if (brand === "walkerhill") window.shopApi?.setCategory("premium");
+    else window.shopApi?.setBrand("kimchi-house");
   }
 
   function setHomeCategory(catId) {
@@ -685,32 +705,9 @@
   }
 
   function goToBrandCategory(brand, catId) {
-    const onWhPath = /walkerhill(\.html)?$/i.test((location.pathname || "").replace(/\/+$/, ""));
-    const category = catId || "all";
-
-    if (brand === "walkerhill" && !onWhPath) {
-      const params = new URLSearchParams({ brand: "walkerhill", category });
-      const target = location.pathname.endsWith(".html") ? "walkerhill.html" : "walkerhill";
-      location.href = `${target}?${params.toString()}#shop`;
-      return;
-    }
-
-    if (brand === "kimchi-house" && onWhPath) {
-      const params = new URLSearchParams({ brand: "kimchihouse", category });
-      location.href = `index.html?${params.toString()}#shop`;
-      return;
-    }
-
-    if (brand && window.shopApi?.setBrand) {
-      window.shopApi.setBrand(brand);
-    } else if (brand) {
-      setBrand(brand);
-    }
-    if (category && window.shopApi?.setCategory) {
-      window.shopApi.setCategory(category);
-    }
-    const shop = document.getElementById("shop");
-    if (shop) shop.scrollIntoView({ behavior: "smooth", block: "start" });
+    const category = catId || (brand === "walkerhill" ? "premium" : "all");
+    window.shopApi?.setCategory(category);
+    document.getElementById("shop")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function bindBrandMenus() {
@@ -795,9 +792,18 @@
     try {
       const res = await fetch("/api/config");
       const data = await res.json();
-      if (data.ok) preorderOpen = data.preorderOpen !== false;
+      if (data.ok) {
+        preorderOpen = data.preorderOpen !== false;
+        window.KHSale?.applyFromPayload?.(data);
+      }
     } catch (_) {}
     applyPreorderState();
+  }
+
+  async function loadSalesAndRefresh() {
+    if (window.KHSale) await window.KHSale.load();
+    renderBrowseRecommend(activeBrowseCategory);
+    renderPopular(currentBrand);
   }
 
   const STATUS_META = {
@@ -882,7 +888,7 @@
     bindHero();
     bindMainNav();
     bindMobileNav();
-    fetchConfig();
+    Promise.all([fetchConfig(), loadSalesAndRefresh()]);
 
     if (!unified) {
       document.getElementById("home-cat-tabs")?.addEventListener("click", (e) => {

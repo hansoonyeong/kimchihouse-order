@@ -23,6 +23,7 @@
     const itemsHtml = order.items
       .map((item) => `<li>${item.name} × ${item.qty} — ${money(item.price)}</li>`)
       .join("");
+    const deliveryLabel = order.deliveryDateLabel || order.deliveryDate || "-";
 
     return `<article class="lookup-card">
       <div class="lookup-card-head">
@@ -31,9 +32,16 @@
           <div class="lookup-order-date">주문일 ${order.orderDate}</div>
         </div>
       </div>
-      <div class="lookup-status-block">
-        <div class="lookup-status-label">배송 상태</div>
-        ${statusBadge(order.status)}
+      <div class="lookup-delivery-block">
+        <div class="lookup-row-inline">
+          <span class="lookup-status-label">배송 예정일</span>
+          <strong>${deliveryLabel}</strong>
+        </div>
+        <div class="lookup-status-block">
+          <div class="lookup-status-label">배송 상태</div>
+          ${statusBadge(order.status)}
+        </div>
+        <p class="lookup-delivery-note">${order.deliveryNote || "김치와 냉동·반찬 상품은 함께 배송됩니다."}</p>
       </div>
       <dl class="lookup-details">
         <div class="lookup-row"><dt>주문자</dt><dd>${order.customer.name}</dd></div>

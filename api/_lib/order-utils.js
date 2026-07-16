@@ -8,6 +8,15 @@ export const DELIVERY_STATUSES = [
 
 export const DEFAULT_DELIVERY_STATUS = "예약 접수";
 
+/** 현재 회차 기본 배송일 (YYYY-MM-DD) */
+export const DEFAULT_DELIVERY_DATE = "2026-08-23";
+
+export const CATEGORY_LABELS = {
+  kimchi: "김치",
+  frozen: "냉동·반찬",
+  walkerhill: "워커힐",
+};
+
 export function normalizePhone(phone) {
   return String(phone || "").replace(/\D/g, "");
 }
@@ -22,9 +31,78 @@ export function phonesMatch(a, b) {
   return na.endsWith(nb) || nb.endsWith(na);
 }
 
+function pickValidStatus(value) {
+  return DELIVERY_STATUSES.includes(value) ? value : null;
+}
+
+/** 레거시 김치/냉동 분리 상태를 하나의 상태로 병합 */
+export function mergeDeliveryStatuses(...statuses) {
+  const valid = statuses.map(pickValidStatus).filter(Boolean);
+  if (!valid.length) return DEFAULT_DELIVERY_STATUS;
+  if (valid.every((s) => s === "배송 완료")) return "배송 완료";
+  if (valid.some((s) => s === "배송 준비 중")) return "배송 준비 중";
+  if (valid.some((s) => s === "배송 안내 완료")) return "배송 안내 완료";
+  if (valid.some((s) => s === "주문 확인 완료")) return "주문 확인 완료";
+  return "예약 접수";
+}
+
+function legacyStatuses(order) {
+  const found = [];
+  if (order?.kimchiDeliveryStatus) found.push(order.kimchiDeliveryStatus);
+  if (order?.frozenDeliveryStatus) found.push(order.frozenDeliveryStatus);
+  if (order?.delivery?.kimchi?.status) found.push(order.delivery.kimchi.status);
+  if (order?.delivery?.frozen?.status) found.push(order.delivery.frozen.status);
+  if (typeof order?.delivery?.kimchi === "string") found.push(order.delivery.kimchi);
+  if (typeof order?.delivery?.frozen === "string") found.push(order.delivery.frozen);
+  return found;
+}
+
 export function orderStatus(order) {
-  const status = order?.status;
-  return DELIVERY_STATUSES.includes(status) ? status : DEFAULT_DELIVERY_STATUS;
+  const direct = pickValidStatus(order?.status) || pickValidStatus(order?.deliveryStatus) || pickValidStatus(order?.delivery?.status);
+  if (direct) return direct;
+  const legacy = legacyStatuses(order);
+  if (legacy.length) return mergeDeliveryStatuses(...legacy);
+  return DEFAULT_DELIVERY_STATUS;
+}
+
+/** "8월 23일 배송" / "2026-08-23" → "2026-08-23" */
+export function parseDeliveryDate(value, fallbackYear = 2026) {
+  if (!value) return null;
+  const raw = String(value).trim();
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+
+  const md = raw.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
+  if (md) {
+    const y = fallbackYear;
+    const m = String(Number(md[1])).padStart(2, "0");
+    const d = String(Number(md[2])).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  return null;
+}
+
+export function formatDeliveryDateLabel(isoDate) {
+  const parsed = parseDeliveryDate(isoDate);
+  if (!parsed) return "-";
+  const match = parsed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return parsed;
+  return `${Number(match[2])}월 ${Number(match[3])}일`;
+}
+
+export function resolveDeliveryDate(order) {
+  const candidates = [
+    order?.deliveryDate,
+    order?.delivery?.date,
+    order?.shippingBreakdown?.kimchi?.delivery,
+    order?.shippingBreakdown?.frozen?.delivery,
+    order?.shippingBreakdown?.walkerhill?.delivery,
+  ];
+  for (const value of candidates) {
+    const parsed = parseDeliveryDate(value);
+    if (parsed) return parsed;
+  }
+  return DEFAULT_DELIVERY_DATE;
 }
 
 export function paymentLabel(payment) {
@@ -40,26 +118,49 @@ export function formatOrderDate(iso) {
   return `${y}-${m}-${day}`;
 }
 
-export function publicOrderView(order) {
-  const c = order.customer || {};
+/** 읽기용: 기존 필드는 유지하고 통합 필드를 채워 넣음 (원본 손상 없음) */
+export function normalizeOrderDelivery(order) {
+  if (!order || typeof order !== "object") return order;
+  const status = orderStatus(order);
+  const deliveryDate = resolveDeliveryDate(order);
   return {
-    id: order.id,
-    createdAt: order.createdAt,
-    orderDate: formatOrderDate(order.createdAt),
+    ...order,
+    status,
+    deliveryDate,
+    deliveryStatus: status,
+    delivery: {
+      ...(typeof order.delivery === "object" && order.delivery ? order.delivery : {}),
+      date: deliveryDate,
+      status,
+    },
+  };
+}
+
+export function publicOrderView(order) {
+  const normalized = normalizeOrderDelivery(order);
+  const c = normalized.customer || {};
+  return {
+    id: normalized.id,
+    createdAt: normalized.createdAt,
+    orderDate: formatOrderDate(normalized.createdAt),
     customer: {
       name: c.name || "",
       phone: c.phone || "",
       address: c.address || "",
       suburb: c.suburb || "",
     },
-    items: (order.items || []).map((item) => ({
+    items: (normalized.items || []).map((item) => ({
       name: item.name,
       qty: item.qty,
       price: item.price,
+      category: item.category || "",
     })),
-    total: order.total,
-    payment: order.payment,
-    paymentLabel: paymentLabel(order.payment),
-    status: orderStatus(order),
+    total: normalized.total,
+    payment: normalized.payment,
+    paymentLabel: paymentLabel(normalized.payment),
+    status: orderStatus(normalized),
+    deliveryDate: resolveDeliveryDate(normalized),
+    deliveryDateLabel: formatDeliveryDateLabel(resolveDeliveryDate(normalized)),
+    deliveryNote: "김치와 냉동·반찬 상품은 함께 배송됩니다.",
   };
 }

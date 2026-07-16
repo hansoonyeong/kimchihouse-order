@@ -1,0 +1,294 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(__dirname, "../..");
+
+/** 카탈로그에 없는 이번 차수 입고 품목 (products.js에 이미 있으면 비움) */
+export const EXTRA_STOCK_ITEMS = [];
+
+/** 관리자 판매 품목 관리 카테고리 */
+export const SALE_CATEGORIES = [
+  { id: "walkerhill", label: "워커힐 프리미엄" },
+  { id: "pogi", label: "포기김치" },
+  { id: "special", label: "별미김치" },
+  { id: "seafood", label: "프리미엄 수산·반찬" },
+  { id: "frozen", label: "냉동·간편식" },
+  { id: "jang", label: "전통 장류·김" },
+];
+
+export function resolveSaleCategory(category, sectionId, productId) {
+  if (category === "walkerhill") return { id: "walkerhill", label: "워커힐 프리미엄" };
+  if (sectionId === "pogi" && category === "kimchi") return { id: "pogi", label: "포기김치" };
+  if (sectionId === "special") return { id: "special", label: "별미김치" };
+  if (sectionId === "jang") return { id: "jang", label: "전통 장류·김" };
+  if (sectionId === "mandu" || sectionId === "kimbap") return { id: "frozen", label: "냉동·간편식" };
+  if (sectionId === "jeotgal" || productId === "b10") {
+    return { id: "seafood", label: "프리미엄 수산·반찬" };
+  }
+  if (productId === "extra-jaecheop" || productId === "extra-myeongtaecho") {
+    return { id: "frozen", label: "냉동·간편식" };
+  }
+  if (sectionId === "fish" || sectionId === "namul") {
+    return { id: "seafood", label: "프리미엄 수산·반찬" };
+  }
+  if (category === "frozen") return { id: "frozen", label: "냉동·간편식" };
+  if (category === "kimchi") return { id: "special", label: "별미김치" };
+  return { id: "other", label: "기타" };
+}
+
+export function catalogDisplayPrice(item, variant = null) {
+  if (variant?.price != null) return Number(variant.price);
+  if (item?.price != null) return Number(item.price);
+  if (item?.tiers?.length) return Number(item.tiers[0][1]);
+  if (item?.group === "special") return 27;
+  if (item?.group === "pa") return 33;
+  return null;
+}
+
+export function loadProductCatalog() {
+  const filePath = path.join(ROOT, "assets", "products.js");
+  const code = fs.readFileSync(filePath, "utf8");
+  const sandbox = { window: {} };
+  new Function("window", code)(sandbox.window);
+  return sandbox.window.KH_PRODUCTS || {};
+}
+
+/** 재고 관리용 SKU 목록 (변형은 별도 행) */
+export function listCatalogProducts() {
+  const catalog = loadProductCatalog();
+  const products = [];
+  for (const [category, block] of Object.entries(catalog)) {
+    for (const section of block.sections || []) {
+      for (const item of section.items || []) {
+        const saleCat = resolveSaleCategory(category, section.id, item.id);
+        if (item.variants?.length) {
+          for (const v of item.variants) {
+            products.push({
+              id: `${item.id}:${v.key}`,
+              baseId: item.id,
+              name: `${item.name} (${v.label})`,
+              category,
+              categoryLabel: block.label || category,
+              sectionId: section.id,
+              saleCategory: saleCat.id,
+              saleCategoryLabel: saleCat.label,
+              image: item.image || "",
+              price: catalogDisplayPrice(item, v),
+              soldOut: Boolean(item.soldOut),
+              hasVariants: true,
+              variantKey: v.key,
+            });
+          }
+          continue;
+        }
+        products.push({
+          id: item.id,
+          baseId: item.id,
+          name: item.name,
+          category,
+          categoryLabel: block.label || category,
+          sectionId: section.id,
+          saleCategory: saleCat.id,
+          saleCategoryLabel: saleCat.label,
+          image: item.image || "",
+          price: catalogDisplayPrice(item),
+          soldOut: Boolean(item.soldOut),
+          hasVariants: false,
+        });
+      }
+    }
+  }
+  for (const extra of EXTRA_STOCK_ITEMS) {
+    products.push({
+      ...extra,
+      baseId: extra.id,
+      soldOut: false,
+      hasVariants: false,
+      image: "",
+      price: null,
+    });
+  }
+  return products;
+}
+
+/** 판매 상태 관리용 — 변형은 기본 상품 1행 (고객 UI와 동일) */
+export function listSellableProducts() {
+  const catalog = loadProductCatalog();
+  const products = [];
+  for (const [category, block] of Object.entries(catalog)) {
+    for (const section of block.sections || []) {
+      for (const item of section.items || []) {
+        const saleCat = resolveSaleCategory(category, section.id, item.id);
+        products.push({
+          id: item.id,
+          baseId: item.id,
+          name: item.name,
+          category,
+          categoryLabel: block.label || category,
+          sectionId: section.id,
+          saleCategory: saleCat.id,
+          saleCategoryLabel: saleCat.label,
+          image: item.image || "",
+          price: catalogDisplayPrice(item, item.variants?.[0]),
+          soldOut: Boolean(item.soldOut),
+          hasVariants: Boolean(item.variants?.length),
+          variantKeys: (item.variants || []).map((v) => v.key),
+        });
+      }
+    }
+  }
+  for (const extra of EXTRA_STOCK_ITEMS) {
+    products.push({
+      ...extra,
+      baseId: extra.id,
+      soldOut: false,
+      hasVariants: false,
+      image: "",
+      price: null,
+      variantKeys: [],
+    });
+  }
+  return products;
+}
+
+export function sellableProductIndex() {
+  const map = new Map();
+  for (const p of listSellableProducts()) map.set(p.id, p);
+  return map;
+}
+
+export function productNameIndex() {
+  const map = new Map();
+  for (const p of listCatalogProducts()) {
+    map.set(p.name, p.id);
+    map.set(p.name.replace(/\s+/g, ""), p.id);
+    if (p.baseId && p.baseId !== p.id) {
+      map.set(p.baseId, p.baseId);
+    }
+  }
+  return map;
+}
+
+/** 주문 라인 → 재고 SKU (변형은 productId:variantKey) */
+export function stockKeyFromItem(item, nameIndex) {
+  const productId = String(item?.productId || "").trim();
+  const variantKey = String(item?.variantKey || "").trim();
+  if (productId && variantKey) return `${productId}:${variantKey}`;
+  if (productId.includes(":")) return productId;
+
+  const raw = String(item?.id || "").trim();
+  if (raw.includes(":")) return raw;
+
+  const name = String(item?.name || "").trim();
+  if (name && nameIndex?.has(name)) return nameIndex.get(name);
+
+  if (productId) return productId;
+  if (raw) return raw;
+
+  if (!name || !nameIndex) return "";
+  const base = name.replace(/\s*\([^)]*\)\s*$/, "").trim();
+  if (nameIndex.has(base)) return nameIndex.get(base);
+  for (const [key, id] of nameIndex) {
+    if (name.startsWith(key)) return id;
+  }
+  return "";
+}
+
+/** 워커힐 세트 → 단품(w1 포기 / w2 총각) 구성 */
+export const WALKERHILL_SET_CONTENTS = {
+  w_set2a: { w1: 2 },
+  w_set2b: { w1: 1, w2: 1 },
+  w_set2c: { w2: 2 },
+  w_set3a: { w1: 3 },
+  w_set3b: { w1: 2, w2: 1 },
+  w_set3c: { w1: 1, w2: 2 },
+  w_set3d: { w2: 3 },
+  w_set5a: { w1: 5 },
+  w_set5b: { w1: 3, w2: 2 },
+  w_set5c: { w1: 2, w2: 3 },
+  w_set5d: { w2: 5 },
+};
+
+/** 주문 라인 → 재고 차감 단위 목록 [{ key, qty }] (세트는 단품으로 분해) */
+export function stockUnitsFromItem(item, nameIndex) {
+  const qty = Number(item?.qty) || 0;
+  if (qty <= 0) return [];
+
+  const productId = String(item?.productId || item?.id || "").trim().split(":")[0];
+  const contents = WALKERHILL_SET_CONTENTS[productId];
+  if (contents) {
+    return Object.entries(contents).map(([key, n]) => ({ key, qty: n * qty }));
+  }
+
+  const key = stockKeyFromItem(item, nameIndex);
+  if (!key) return [];
+  return [{ key, qty }];
+}
+
+export function reservedByProduct(orders) {
+  const nameIndex = productNameIndex();
+  const reserved = {};
+  for (const order of orders || []) {
+    for (const item of order.items || []) {
+      for (const unit of stockUnitsFromItem(item, nameIndex)) {
+        reserved[unit.key] = (reserved[unit.key] || 0) + unit.qty;
+      }
+    }
+  }
+  return reserved;
+}
+
+export function buildStockRows(stockMap, orders) {
+  const reservedMap = reservedByProduct(orders);
+  // 워커힐 세트는 단품(w1/w2) 재고로만 관리 — 세트 SKU 행은 숨김
+  return listCatalogProducts()
+    .filter((p) => !WALKERHILL_SET_CONTENTS[p.id] && !WALKERHILL_SET_CONTENTS[p.baseId])
+    .map((p) => {
+      const prepared = Number(stockMap?.[p.id]?.prepared ?? stockMap?.[p.id] ?? 0) || 0;
+      const reserved = Number(reservedMap[p.id] || 0);
+      const remaining = prepared - reserved;
+      return {
+        ...p,
+        prepared,
+        reserved,
+        remaining,
+        tracked: prepared > 0 || reserved > 0,
+      };
+    });
+}
+
+/** 판매 품목 관리용 행 (기본 상품 + 재고 합산) */
+export function buildSalesRows(stockMap, orders, salesDoc) {
+  const stockRows = buildStockRows(stockMap, orders);
+  const stockByBase = {};
+  for (const row of stockRows) {
+    const key = row.baseId || row.id;
+    if (!stockByBase[key]) stockByBase[key] = { prepared: 0, reserved: 0, remaining: 0 };
+    stockByBase[key].prepared += Number(row.prepared || 0);
+    stockByBase[key].reserved += Number(row.reserved || 0);
+    stockByBase[key].remaining += Number(row.remaining || 0);
+  }
+
+  const products = salesDoc?.products || {};
+  return listSellableProducts().map((p, index) => {
+    const stock = stockByBase[p.id] || { prepared: 0, reserved: 0, remaining: 0 };
+    const stored = products[p.id];
+    let saleStatus = "active";
+    if (stored?.saleStatus) saleStatus = stored.saleStatus;
+    else if (p.soldOut) saleStatus = "sold_out";
+    const sortOrder = stored?.sortOrder != null ? Number(stored.sortOrder) : index;
+    const priceOverride = stored?.price != null ? Number(stored.price) : null;
+    return {
+      ...p,
+      prepared: stock.prepared,
+      reserved: stock.reserved,
+      remaining: stock.remaining,
+      saleStatus,
+      sortOrder,
+      priceOverride,
+      displayPrice: priceOverride != null ? priceOverride : p.price,
+    };
+  });
+}

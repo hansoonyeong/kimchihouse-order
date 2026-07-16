@@ -13,14 +13,13 @@ window.KH_CONFIG = {
 
 window.KH_PRODUCTS = {
   frozen: {
-    label: "냉동 반찬",
-    delivery: "8월 16일 배송",
+    label: "냉동·수산",
+    delivery: "8월 23일 배송",
     sections: [
       {
         id: "mandu",
-        tab: "만두",
-        title: "최고급 만두 2종",
-        note: "한국 파르팜 비건 인증 · 학교급식 전용",
+        tab: "냉동·간편식",
+        title: "냉동·간편식",
         items: [
           {
             id: "a1",
@@ -64,23 +63,42 @@ window.KH_PRODUCTS = {
               "assets/images/products/detail-mandu/13.jpg",
             ],
           },
-          { id: "a3", name: "[세트] 고기 1KG + 김치 1KG", price: 25, wasPrice: 30, sale: true, image: "assets/images/products/a3.jpg" },
+          {
+            id: "a3",
+            name: "만두세트 (고기 1KG + 김치 1KG)",
+            price: 30,
+            image: "assets/images/products/a3.jpg",
+          },
+          {
+            id: "a4",
+            name: "충무김밥 세트 (김밥 20개 + 꼬들매콤 오징어무침 500g)",
+            price: 45,
+            image: "assets/images/products/a4.png",
+          },
+          {
+            id: "extra-jaecheop",
+            name: "재첩국",
+            price: 10,
+            image: "assets/images/products/a16.png",
+          },
+          {
+            id: "extra-myeongtaecho",
+            name: "명태커틀렛 (1.2kg / 60g×20)",
+            price: 38,
+            image: "assets/images/products/myeongtae-cutlet.jpg",
+          },
         ],
       },
       {
         id: "kimbap",
         tab: "김밥·간편식",
-        title: "충무김밥 파티 팩 (3~5인분)",
-        note: "전자레인지 해동으로 간편하게",
-        items: [
-          { id: "a4", name: "충무김밥 세트 (김밥 20개 + 꼬들매콤 오징어무침 500g)", price: 45, image: "assets/images/products/a4.png" },
-        ],
+        title: "김밥·간편식",
+        items: [],
       },
       {
         id: "fish",
         tab: "생선",
-        title: "완벽 손질 생선 3종",
-        note: "해동 후 바로 조리 가능",
+        title: "손질 생선",
         items: [
           { id: "a5", name: "손질 가자미 (미국산 / 850g)", price: 15, image: "assets/images/products/a5.png" },
           { id: "a6", name: "손질 갈치 (오만산 / 850g)", price: 25, image: "assets/images/products/a6.png" },
@@ -90,11 +108,29 @@ window.KH_PRODUCTS = {
       },
       {
         id: "jeotgal",
-        tab: "젓갈",
-        title: "최고급 젓갈류",
+        tab: "프리미엄 수산·반찬",
+        title: "프리미엄 수산·반찬",
         items: [
-          { id: "a9", name: "간장게장 (650g)", tiers: [[1, 25], [3, 70], [5, 110], [10, 220]], image: "assets/images/products/a9.jpg", detailImage: "assets/images/products/detail-gejang/01.jpg" },
-          { id: "a10", name: "명품 참 백명란 (500g)", tiers: [[1, 45], [2, 85], [3, 125]], image: "assets/images/products/a10.png" },
+          {
+            id: "a9",
+            name: "간장게장 (650g)",
+            price: 25,
+            image: "assets/images/products/a9.jpg",
+            detailImage: "assets/images/products/detail-gejang/01.jpg",
+          },
+          {
+            id: "a10",
+            name: "백명란 (500g)",
+            price: 45,
+            image: "assets/images/products/a10.png",
+          },
+          {
+            id: "b10",
+            name: "진미채 (200g × 3봉)",
+            price: 40,
+            image: "assets/images/products/b10.jpg",
+            detailImage: "assets/images/products/detail-jinmichae/01.jpg",
+          },
           { id: "a11", name: "최고급 낙지젓", soldOut: true, image: "assets/images/products/a11.png" },
           { id: "a12", name: "씨앗비빔 오징어젓 (500g)", price: 20, image: "assets/images/products/a12.png" },
         ],
@@ -102,8 +138,7 @@ window.KH_PRODUCTS = {
       {
         id: "namul",
         tab: "나물·반찬",
-        title: "100% 국산 나물 & 반찬",
-        note: "급속 냉동으로 풍미 유지",
+        title: "나물·반찬",
         items: [
           { id: "a13", name: "맛 취나물 (500g)", soldOut: true, image: "assets/images/products/a13.png" },
           { id: "a14", name: "애호박꼬지 나물 (500g)", price: 25, image: "assets/images/products/a14.png" },
@@ -117,17 +152,20 @@ window.KH_PRODUCTS = {
   },
   kimchi: {
     label: "김치·장류",
-    delivery: "8월 16일 배송",
+    delivery: "8월 23일 배송",
     sections: [
       {
         id: "pogi",
         tab: "포기김치",
-        title: "새벽 3차 포기김치 3종",
+        title: "포기김치",
         items: [
           {
             id: "b1",
             name: "서울식 포기김치",
-            variants: [{ key: "7kg", label: "7Kg", price: 85 }, { key: "3.5kg", label: "3.5Kg", price: 45 }],
+            variants: [
+              { key: "7kg", label: "7kg", price: 85 },
+              { key: "3.5kg", label: "3kg", price: 45 },
+            ],
             image: "assets/images/products/pogi-thumb.gif",
             detailImages: [
               "assets/images/products/detail-pogi/02.jpg",
@@ -143,8 +181,11 @@ window.KH_PRODUCTS = {
           },
           {
             id: "b2",
-            name: "전통 남도식 포기김치",
-            variants: [{ key: "7kg", label: "7Kg", price: 85 }, { key: "3.5kg", label: "3.5Kg", price: 45 }],
+            name: "남도식 포기김치",
+            variants: [
+              { key: "7kg", label: "7kg", price: 85 },
+              { key: "3.5kg", label: "3kg", price: 45 },
+            ],
             image: "assets/images/products/b2.jpg",
             detailImages: [
               "assets/images/products/detail-pogi/03.gif",
@@ -157,62 +198,101 @@ window.KH_PRODUCTS = {
               "assets/images/products/detail-pogi/15.jpg",
             ],
           },
-          { id: "b3", name: "무설탕·무조미료 자연 김치", variants: [{ key: "7kg", label: "7Kg", price: 85 }, { key: "3.5kg", label: "3.5Kg", price: 45 }], image: "assets/images/products/b3.png" },
+          {
+            id: "b3",
+            name: "자연김치",
+            variants: [
+              { key: "7kg", label: "7kg", price: 85 },
+              { key: "3.5kg", label: "3kg", price: 45 },
+            ],
+            image: "assets/images/products/b3.png",
+          },
         ],
       },
       {
         id: "special",
-        tab: "특수김치",
-        title: "특수 김치 (1KG)",
-        note: "총각김치 30% 빅세일 · 열무·갓김치 합산 할인 · 쪽파김치 별도",
+        tab: "별미김치",
+        title: "별미김치 (1KG)",
         items: [
-          { id: "b4", name: "총각김치 (1KG)", tiers: [[1, 19], [2, 33], [3, 47]], wasTiers: [[1, 27], [2, 49], [3, 71]], sale: true, saleLabel: "30% 빅세일", saleNote: "이번 회차 한정 · 정가 $27 → 세일 $19", image: "assets/images/products/b4.png" },
-          { id: "b5", name: "열무김치 (1KG)", group: "special", desc: "열무 합산 할인 · 1개 $27", image: "assets/images/products/b5.png" },
-          { id: "b6", name: "쪽파김치 (1KG)", group: "pa", desc: "쪽파김치 별도 가격 · 1개 $33", image: "assets/images/products/b6.png" },
-          { id: "b7", name: "돌산 갓김치 (1KG)", group: "special", desc: "갓김치 합산 할인 · 1개 $27", image: "assets/images/products/b7.png" },
+          { id: "b4", name: "총각김치 (1KG)", price: 27, image: "assets/images/products/b4.png" },
+          { id: "b5", name: "열무김치 (1KG)", price: 27, image: "assets/images/products/b5.png" },
+          { id: "b6", name: "쪽파김치 (1KG)", price: 33, image: "assets/images/products/b6.png" },
+          { id: "b7", name: "갓김치 (1KG)", price: 29, image: "assets/images/products/b7.png" },
         ],
       },
       {
         id: "jang",
-        tab: "장류·한국식품",
-        title: "장류·한국식품",
+        tab: "전통 장류·김",
+        title: "전통 장류·김",
         items: [
-          { id: "b11", name: "항아골 생청국장 (120g)", tiers: [[4, 25], [8, 45]], image: "assets/images/products/b11.png?v=2", detailImage: "assets/images/products/detail-cheonggukjang/01.jpg" },
-          { id: "b12", name: "순정원 전통된장 (1Kg)", price: 38, image: "assets/images/products/b12.jpg", detailImages: [
-            "assets/images/products/detail-doenjang/01.jpg",
-            "assets/images/products/detail-doenjang/02.jpg",
-            "assets/images/products/detail-doenjang/03.jpg",
-          ] },
-          { id: "b13", name: "순정원 전통고추장 (1Kg)", price: 38, image: "assets/images/products/b13.jpg", detailImages: [
-            "assets/images/products/detail-gochujang/01.jpg",
-            "assets/images/products/detail-gochujang/02.jpg",
-            "assets/images/products/detail-gochujang/03.jpg",
-          ] },
-          { id: "b14", name: "순정원 쌈장 (1Kg)", price: 25, wasPrice: 38, sale: true, image: "assets/images/products/b14.jpg", detailImages: [
-            "assets/images/products/detail-ssamjang/01.jpg",
-            "assets/images/products/detail-ssamjang/02.jpg",
-          ] },
-          { id: "b8", name: "올리브유 도시락김 — 대용량 (72봉)", price: 33, image: "assets/images/products/b8.png" },
+          {
+            id: "b11",
+            name: "생청국장 (120g)",
+            price: 25,
+            image: "assets/images/products/b11.png?v=2",
+            detailImage: "assets/images/products/detail-cheonggukjang/01.jpg",
+          },
+          {
+            id: "b12",
+            name: "된장 (1Kg)",
+            price: 38,
+            image: "assets/images/products/b12.jpg",
+            detailImages: [
+              "assets/images/products/detail-doenjang/01.jpg",
+              "assets/images/products/detail-doenjang/02.jpg",
+              "assets/images/products/detail-doenjang/03.jpg",
+            ],
+          },
+          {
+            id: "b8",
+            name: "도시락김 (72봉)",
+            price: 33,
+            image: "assets/images/products/b8.png",
+          },
+          {
+            id: "b13",
+            name: "순정원 전통고추장 (1Kg)",
+            price: 38,
+            image: "assets/images/products/b13.jpg",
+            detailImages: [
+              "assets/images/products/detail-gochujang/01.jpg",
+              "assets/images/products/detail-gochujang/02.jpg",
+              "assets/images/products/detail-gochujang/03.jpg",
+            ],
+          },
+          {
+            id: "b14",
+            name: "순정원 쌈장 (1Kg)",
+            price: 25,
+            wasPrice: 38,
+            sale: true,
+            image: "assets/images/products/b14.jpg",
+            detailImages: [
+              "assets/images/products/detail-ssamjang/01.jpg",
+              "assets/images/products/detail-ssamjang/02.jpg",
+            ],
+          },
           { id: "b9", name: "올리브유 도시락김 — 실속형 (36봉)", price: 18, image: "assets/images/products/b9.png" },
-          { id: "b10", name: "조미 진미채 (200g × 3봉)", price: 40, image: "assets/images/products/b10.jpg", detailImage: "assets/images/products/detail-jinmichae/01.jpg" },
         ],
       },
     ],
   },
   walkerhill: {
-    label: "워커힐 호텔 김치",
-    delivery: "8월 16일 배송",
+    label: "워커힐 프리미엄",
+    delivery: "8월 23일 배송",
     sections: [
       {
         id: "pogi",
-        tab: "배추김치",
-        title: "워커힐 호텔 배추김치",
-        note: "1963년부터 이어온 프리미엄 호텔 김치 · 100% 국내산",
+        tab: "포기김치",
+        title: "워커힐 포기김치",
+        note: "Premium Line · 1963년부터 이어온 호텔 김치",
         items: [
           {
             id: "w1",
-            name: "워커힐 호텔 배추김치 (4KG)",
-            price: 75,
+            name: "워커힐 포기김치 4kg",
+            price: 70,
+            featured: true,
+            premium: true,
             image: "assets/images/walkerhill/pogi.jpg",
             detailImage: "assets/images/walkerhill/detail-pogi.jpg",
           },
@@ -221,12 +301,13 @@ window.KH_PRODUCTS = {
       {
         id: "chonggak",
         tab: "총각김치",
-        title: "워커힐 호텔 총각김치",
+        title: "워커힐 총각김치",
         items: [
           {
             id: "w2",
-            name: "워커힐 호텔 총각김치 (2KG)",
-            price: 60,
+            name: "워커힐 총각김치 2kg",
+            price: 55,
+            premium: true,
             image: "assets/images/walkerhill/chonggak.png",
             detailImage: "assets/images/walkerhill/detail-chonggak.jpg",
           },
@@ -235,20 +316,20 @@ window.KH_PRODUCTS = {
       {
         id: "sets",
         tab: "세트",
-        title: "세트 상품",
+        title: "워커힐 Premium Set",
         note: "세트 구매 시 무료배송 + 추가할인",
         items: [
-          { id: "w_set2a", tier: "set2", name: "2 SET ①", desc: "배추김치 2개", price: 145, image: "assets/images/walkerhill/pogi.jpg" },
-          { id: "w_set2b", tier: "set2", name: "2 SET ②", desc: "배추김치 1개 + 총각김치 1개", price: 130, featured: true, image: "assets/images/walkerhill/set.jpg" },
-          { id: "w_set2c", tier: "set2", name: "2 SET ③", desc: "총각김치 2개", price: 115, image: "assets/images/walkerhill/chonggak.png" },
-          { id: "w_set3a", tier: "set3", name: "3 SET ①", desc: "배추김치 3개", price: 203, image: "assets/images/walkerhill/pogi.jpg" },
-          { id: "w_set3b", tier: "set3", name: "3 SET ②", desc: "배추김치 2개 + 총각김치 1개", price: 189, image: "assets/images/walkerhill/set.jpg" },
-          { id: "w_set3c", tier: "set3", name: "3 SET ③", desc: "배추김치 1개 + 총각김치 2개", price: 176, image: "assets/images/walkerhill/set.jpg" },
-          { id: "w_set3d", tier: "set3", name: "3 SET ④", desc: "총각김치 3개", price: 162, image: "assets/images/walkerhill/chonggak.png" },
-          { id: "w_set5a", tier: "set5", name: "5 SET ①", desc: "배추김치 5개", price: 319, image: "assets/images/walkerhill/pogi.jpg" },
-          { id: "w_set5b", tier: "set5", name: "5 SET ②", desc: "배추김치 3개 + 총각김치 2개", price: 293, image: "assets/images/walkerhill/set.jpg" },
-          { id: "w_set5c", tier: "set5", name: "5 SET ③", desc: "배추김치 2개 + 총각김치 3개", price: 280, image: "assets/images/walkerhill/set.jpg" },
-          { id: "w_set5d", tier: "set5", name: "5 SET ④", desc: "총각김치 5개", price: 255, image: "assets/images/walkerhill/chonggak.png" },
+          { id: "w_set2a", tier: "set2", name: "2 SET ①", desc: "배추김치 2개", price: 145, premium: true, image: "assets/images/walkerhill/pogi.jpg" },
+          { id: "w_set2b", tier: "set2", name: "2 SET ②", desc: "배추김치 1개 + 총각김치 1개", price: 130, featured: true, premium: true, image: "assets/images/walkerhill/set.jpg" },
+          { id: "w_set2c", tier: "set2", name: "2 SET ③", desc: "총각김치 2개", price: 115, premium: true, image: "assets/images/walkerhill/chonggak.png" },
+          { id: "w_set3a", tier: "set3", name: "3 SET ①", desc: "배추김치 3개", price: 203, premium: true, image: "assets/images/walkerhill/pogi.jpg" },
+          { id: "w_set3b", tier: "set3", name: "3 SET ②", desc: "배추김치 2개 + 총각김치 1개", price: 189, premium: true, image: "assets/images/walkerhill/set.jpg" },
+          { id: "w_set3c", tier: "set3", name: "3 SET ③", desc: "배추김치 1개 + 총각김치 2개", price: 176, premium: true, image: "assets/images/walkerhill/set.jpg" },
+          { id: "w_set3d", tier: "set3", name: "3 SET ④", desc: "총각김치 3개", price: 162, premium: true, image: "assets/images/walkerhill/chonggak.png" },
+          { id: "w_set5a", tier: "set5", name: "5 SET ①", desc: "배추김치 5개", price: 319, premium: true, image: "assets/images/walkerhill/pogi.jpg" },
+          { id: "w_set5b", tier: "set5", name: "5 SET ②", desc: "배추김치 3개 + 총각김치 2개", price: 293, premium: true, image: "assets/images/walkerhill/set.jpg" },
+          { id: "w_set5c", tier: "set5", name: "5 SET ③", desc: "배추김치 2개 + 총각김치 3개", price: 280, premium: true, image: "assets/images/walkerhill/set.jpg" },
+          { id: "w_set5d", tier: "set5", name: "5 SET ④", desc: "총각김치 5개", price: 255, premium: true, image: "assets/images/walkerhill/chonggak.png" },
         ],
       },
     ],

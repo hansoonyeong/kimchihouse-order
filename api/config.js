@@ -1,5 +1,6 @@
 import { getAdminKey, json, optionsResponse, requireEnv } from "./_lib/http.js";
-import { DEFAULT_SETTINGS, readSettings, writeSettings } from "./_lib/settings-store.js";
+import { readSettings, writeSettings } from "./_lib/settings-store.js";
+import { publicSaleDetails, publicSaleMap, readSales } from "./_lib/sales-store.js";
 
 export async function OPTIONS() {
   return optionsResponse();
@@ -10,11 +11,16 @@ export async function GET() {
     const env = requireEnv();
     if (!env.ok) return env.response;
 
-    const settings = await readSettings();
+    const [settings, sales] = await Promise.all([readSettings(), readSales()]);
     return json({
       ok: true,
       orderSecret: env.orderSecret,
       preorderOpen: settings.preorderOpen !== false,
+      saleStatuses: publicSaleMap(sales),
+      saleDetails: publicSaleDetails(sales),
+      salesSettings: {
+        autoSoldOutOnZero: sales.settings?.autoSoldOutOnZero !== false,
+      },
     });
   } catch (err) {
     console.error("config GET error:", err);

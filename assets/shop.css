@@ -2807,6 +2807,10 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   background: transparent;
 }
 
+.why-walkerhill[hidden] {
+  display: none !important;
+}
+
 .why-wh-banner {
   display: block;
   width: 100%;
@@ -3006,22 +3010,22 @@ body[data-brand="walkerhill"] .shop-step-num {
   height: auto;
   max-height: 72px;
   object-fit: contain;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
   display: block;
 }
 
 .shop-footer-contact {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
+  display: block;
+  margin: 0 0 20px;
+  text-align: left;
 }
 
 .shop-footer-contact-block {
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
 }
 
 .shop-footer-contact-block strong {
@@ -4048,7 +4052,7 @@ body.shop-preorder-off .shop-main {
   }
 
   .shop-footer-contact {
-    grid-template-columns: 1fr 1fr;
+    display: block;
   }
 
   .shop-hero-card,
@@ -4388,6 +4392,39 @@ button.shop-product-cta {
   margin-bottom: 8px;
 }
 
+.lookup-delivery-block {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--bg-soft);
+  display: grid;
+  gap: 10px;
+}
+
+.lookup-delivery-block .lookup-status-block {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.lookup-row-inline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lookup-row-inline .lookup-status-label {
+  margin: 0;
+}
+
+.lookup-delivery-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
 .lookup-status-received { background: #fff8e1; color: #9a7b00; }
 .lookup-status-confirmed { background: #e8f4fd; color: #1565a8; }
 .lookup-status-preparing { background: #e8f5ec; color: #1b6b3a; }
@@ -4552,10 +4589,6 @@ button.shop-product-cta {
     grid-template-columns: 1fr;
   }
 
-  .shop-footer-contact {
-    grid-template-columns: 1fr;
-  }
-
   .checkout-panel {
     border-radius: 16px 16px 0 0;
     max-height: 92vh;
@@ -4621,4 +4654,642 @@ button.shop-product-cta {
     padding: 0 12px;
     font-size: 13px;
   }
+}
+
+/* ===== Admin page (shop shell) ===== */
+.shop-admin-page {
+  background: var(--bg-soft);
+  min-height: 100vh;
+}
+
+.shop-admin-page .shop-admin-main {
+  max-width: var(--shop-max);
+  margin: 0 auto;
+  padding: 0 var(--shop-pad) 48px;
+}
+
+.shop-admin-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.shop-admin-page .admin-login,
+.shop-admin-page .admin-panel {
+  min-height: 100vh;
+}
+
+.shop-admin-page .admin-panel {
+  display: none;
+}
+
+.shop-admin-page .admin-panel.show {
+  display: block;
+}
+
+.shop-admin-page .admin-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.shop-admin-page .admin-view-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 0;
+}
+
+.shop-admin-page .admin-view-tab {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  background: var(--white);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.shop-admin-page .admin-view-tab.active {
+  border-color: var(--primary);
+  background: #edf5f0;
+  color: var(--primary);
+}
+
+.shop-admin-page .admin-round-panel,
+.shop-admin-page .admin-stock-panel {
+  padding: 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+}
+
+.shop-admin-page .admin-round-title {
+  margin: 4px 0 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.shop-admin-page .admin-filter-label {
+  color: var(--text-muted);
+}
+
+.shop-admin-page .filter-tab {
+  border-radius: 6px;
+  border-color: var(--border);
+  background: var(--white);
+}
+
+.shop-admin-page .filter-tab.active,
+.shop-admin-page .filter-tab-round.active,
+.shop-admin-page .filter-tab-status.active,
+.shop-admin-page .stat-round.active {
+  background: #edf5f0;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.shop-admin-page .stat {
+  background: var(--bg-soft);
+  border-color: var(--border);
+  border-radius: 10px;
+}
+
+.shop-admin-page .stat .num {
+  color: var(--primary);
+}
+
+.shop-admin-page .admin-search,
+.shop-admin-page .admin-search.shop-lookup-input {
+  width: 100%;
+  margin: 0;
+}
+
+.shop-admin-page .admin-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+  overflow: auto;
+}
+
+.shop-admin-page .admin-table thead {
+  background: var(--bg-soft);
+  color: var(--text);
+}
+
+.shop-admin-page .admin-table th,
+.shop-admin-page .admin-table td {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.shop-admin-page .admin-order-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+}
+
+.shop-admin-page .admin-btn-delete {
+  background: #fff;
+  color: #c62828;
+  border: 1.5px solid #ef9a9a;
+}
+
+.shop-admin-page .admin-store-badge {
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+
+.shop-admin-page .admin-store-badge.redis {
+  background: #e8f5ec;
+  border-color: #c8e6c9;
+  color: #1b6b3a;
+}
+
+.shop-admin-page .admin-store-badge.local {
+  background: #fff4e5;
+  border-color: #ffe0b2;
+  color: #b45309;
+}
+
+.shop-admin-page .admin-toast {
+  background: rgba(15, 74, 53, 0.96);
+}
+
+@media (max-width: 767px) {
+  .shop-admin-page .shop-header-row-simple {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .shop-admin-page .admin-header-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .shop-admin-page .admin-round-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ===== Sale status badges ===== */
+.shop-badge-soldout {
+  background: #5c5c5c;
+  color: #fff;
+}
+
+.shop-badge-soon {
+  background: #2f6fed;
+  color: #fff;
+}
+
+/* ===== Admin logo (dark on white bg) ===== */
+.shop-admin-page .shop-logo-mark {
+  height: 56px;
+  width: auto;
+}
+
+.shop-admin-page .shop-logo-text {
+  font-size: 17px;
+  color: var(--text);
+}
+
+/* ===== Excel-like stock sheet ===== */
+.shop-admin-page .admin-stock-sheet-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--white);
+  max-width: 100%;
+}
+
+.shop-admin-page .admin-stock-sheet {
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: max-content;
+  color: #1a1a1a;
+}
+
+.shop-admin-page .admin-stock-sheet-amount {
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.shop-admin-page .admin-stock-sheet th,
+.shop-admin-page .admin-stock-sheet td {
+  border: 1px solid #d7d7d7;
+  padding: 6px 8px;
+  text-align: center;
+  white-space: nowrap;
+  color: #1a1a1a;
+  vertical-align: middle;
+}
+
+.shop-admin-page .admin-stock-sheet-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #f3f3f3 !important;
+  font-weight: 800;
+  text-align: left !important;
+  min-width: 64px;
+}
+
+.shop-admin-page .admin-stock-sheet thead th.admin-stock-sheet-label {
+  z-index: 3;
+}
+
+.shop-admin-page .admin-stock-col {
+  font-weight: 800;
+  min-width: 72px;
+}
+
+.shop-admin-page .admin-stock-sheet .tone-wh {
+  background: #e8f5e9;
+}
+
+.shop-admin-page .admin-stock-sheet .tone-kimchi {
+  background: #eef2f5;
+}
+
+.shop-admin-page .admin-stock-sheet .tone-frozen {
+  background: #f8efe4;
+}
+
+.shop-admin-page .admin-stock-sheet .tone-jang {
+  background: #f5f0e8;
+}
+
+.shop-admin-page .admin-stock-sheet .tone-other {
+  background: #fafafa;
+}
+
+.shop-admin-page .admin-stock-sheet-input {
+  width: 64px;
+  padding: 4px 6px;
+  border: 1px solid #cfcfcf;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+.shop-admin-page .admin-stock-sheet-name {
+  font-weight: 700;
+}
+
+.shop-admin-page .admin-stock-sheet-rem.neg {
+  color: #c62828;
+  font-weight: 800;
+}
+
+.shop-admin-page .admin-stock-sheet-rem.zero {
+  color: #b45309;
+  font-weight: 800;
+}
+
+/* ===== Admin sales panel ===== */
+.shop-admin-page .admin-sales-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shop-admin-page .admin-sales-presets,
+.shop-admin-page .admin-sales-logs {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+}
+
+.shop-admin-page .admin-sales-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.shop-admin-page .admin-sales-preset-select {
+  min-width: 200px;
+  flex: 1;
+}
+
+.shop-admin-page .admin-sales-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.shop-admin-page .admin-sales-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shop-admin-page .admin-sales-bulk {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shop-admin-page .admin-sales-group {
+  margin-bottom: 20px;
+}
+
+.shop-admin-page .admin-sales-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.shop-admin-page .admin-sales-group-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.shop-admin-page .admin-sales-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.shop-admin-page .admin-sales-group-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.shop-admin-page .admin-sales-product {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+}
+
+.shop-admin-page .admin-sales-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--bg-soft);
+  flex-shrink: 0;
+}
+
+.shop-admin-page .admin-sales-thumb.placeholder {
+  display: inline-block;
+}
+
+.shop-admin-page .admin-sale-status {
+  min-width: 120px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  background: #fff;
+}
+
+.shop-admin-page .admin-sales-log-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.shop-admin-page .admin-sales-log-list li {
+  font-size: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.shop-admin-page .admin-sales-log-list span {
+  display: block;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+@media (max-width: 767px) {
+  .shop-admin-page .shop-logo-mark {
+    height: 48px;
+  }
+
+  .shop-admin-page .admin-sales-table th:nth-child(3),
+  .shop-admin-page .admin-sales-table td:nth-child(3) {
+    display: none;
+  }
+}
+
+/* ===== Single-brand header categories ===== */
+.shop-header-cats {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 980px) {
+  .shop-header-row {
+    grid-template-columns: auto 1fr auto;
+  }
+  .shop-header-cats {
+    display: flex;
+  }
+  .shop-header-cats a {
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .shop-header-cats a:hover {
+    background: var(--bg-soft);
+    color: var(--primary);
+  }
+}
+
+/* Always show both brand sections under unified Kimchi House */
+body.shop-unified .brand-kimchi-house-only,
+body.shop-unified .brand-walkerhill-only,
+body[data-brand="kimchi-house"] .brand-walkerhill-only {
+  display: block;
+}
+
+/* Premium set area — aligned product grids, no card chrome */
+.wh-premium-block {
+  margin-bottom: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.wh-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.wh-singles {
+  margin-bottom: 8px;
+}
+
+.wh-singles .kurly-product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 12px;
+}
+
+.wh-set-area {
+  margin-top: 32px;
+}
+
+.wh-set-area > .wh-section-title {
+  margin: 0 0 18px;
+  padding-bottom: 10px;
+}
+
+.wh-set-tier {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  margin: 0 0 28px;
+  padding: 0;
+  overflow: visible;
+}
+
+.wh-set-tier:last-child {
+  margin-bottom: 0;
+}
+
+.wh-set-tier-head {
+  margin: 0 0 14px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.wh-set-tier-head h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.wh-set-tier-head p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.wh-set-grid.kurly-product-grid,
+.wh-set-tier .kurly-product-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 12px;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+}
+
+.wh-set-grid .kurly-card,
+.wh-set-tier .kurly-card,
+.wh-singles .kurly-card {
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  flex: none;
+}
+
+.wh-set-grid .kurly-card-thumb,
+.wh-set-tier .kurly-card-thumb,
+.wh-singles .kurly-card-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.wh-set-grid .kurly-card-thumb img,
+.wh-set-tier .kurly-card-thumb img,
+.wh-singles .kurly-card-thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+@media (min-width: 768px) {
+  .wh-singles .kurly-product-grid,
+  .wh-set-grid.kurly-product-grid,
+  .wh-set-tier .kurly-product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .wh-set-grid.kurly-product-grid,
+  .wh-set-tier .kurly-product-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.shop-cat-icon.is-premium .shop-cat-icon-label {
+  color: #9a6b1f;
+  font-weight: 800;
+}
+
+/* Header alignment after brand-tab removal */
+.shop-page .shop-header-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--header-h);
+}
+
+.shop-page .shop-header-cats {
+  justify-content: center;
+}
+
+.shop-page .shop-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-self: end;
 }
