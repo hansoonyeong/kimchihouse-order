@@ -15,6 +15,17 @@
 
   const BROWSE_CATEGORIES = [
     {
+      id: "all",
+      label: "ALL",
+      brand: "kimchi-house",
+      orderCat: "all",
+      linkBrand: "kimchihouse",
+      linkCategory: "all",
+      itemIds: POPULAR_IDS,
+      theme: "kh",
+      isAll: true,
+    },
+    {
       id: "premium",
       label: "워커힐 프리미엄",
       image: "assets/images/walkerhill/pogi.jpg",
@@ -100,7 +111,7 @@
 
   let currentBrand = "kimchi-house";
   let activeHomeCategory = "all";
-  let activeBrowseCategory = "premium";
+  let activeBrowseCategory = "all";
   let heroIndex = 0;
   let heroTimer = null;
   let preorderOpen = true;
@@ -331,8 +342,11 @@
     rail.innerHTML = BROWSE_CATEGORIES.map((cat) => {
       const active = cat.id === activeBrowseCategory ? " is-active" : "";
       const theme = cat.theme === "wh" ? " is-wh" : "";
+      const thumb = cat.isAll
+        ? `<span class="browse-category-thumb browse-category-thumb-all"><span>ALL</span></span>`
+        : `<span class="browse-category-thumb"><img src="${cat.image}" alt="" loading="lazy" decoding="async" /></span>`;
       return `<a class="browse-category-item${active}${theme}" href="${browseCategoryHref(cat)}" data-browse-cat="${cat.id}" role="listitem">
-        <span class="browse-category-thumb"><img src="${cat.image}" alt="" loading="lazy" decoding="async" /></span>
+        ${thumb}
         <span class="browse-category-label">${cat.label}</span>
       </a>`;
     }).join("");
@@ -345,8 +359,11 @@
     const title = document.getElementById("browse-recommend-title");
     const more = document.getElementById("browse-recommend-more");
 
-    if (title) title.textContent = `${cat.label} 추천 상품`;
-    if (more) more.href = browseCategoryHref(cat);
+    if (title) title.textContent = cat.isAll ? "전체 추천 상품" : `${cat.label} 추천 상품`;
+    if (more) {
+      more.href = browseCategoryHref(cat);
+      if (cat.orderCat) more.dataset.orderCat = cat.orderCat;
+    }
     if (grid) grid.innerHTML = products.map(renderBrowseProductCard).join("");
 
     document.querySelectorAll("[data-browse-cat]").forEach((el) => {
