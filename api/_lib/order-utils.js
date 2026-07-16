@@ -65,7 +65,7 @@ export function orderStatus(order) {
   return DEFAULT_DELIVERY_STATUS;
 }
 
-/** "8월 23일 배송" / "2026-08-23" → "2026-08-23" */
+/** "8월 23일 배송" / "2026-08-23" / "6/26 ~ 6/29" → "2026-08-23" */
 export function parseDeliveryDate(value, fallbackYear = 2026) {
   if (!value) return null;
   const raw = String(value).trim();
@@ -79,6 +79,13 @@ export function parseDeliveryDate(value, fallbackYear = 2026) {
     const d = String(Number(md[2])).padStart(2, "0");
     return `${y}-${m}-${d}`;
   }
+
+  const slash = raw.match(/(\d{1,2})\s*\/\s*(\d{1,2})/);
+  if (slash) {
+    const m = String(Number(slash[1])).padStart(2, "0");
+    const d = String(Number(slash[2])).padStart(2, "0");
+    return `${fallbackYear}-${m}-${d}`;
+  }
   return null;
 }
 
@@ -90,7 +97,8 @@ export function formatDeliveryDateLabel(isoDate) {
   return `${Number(match[2])}월 ${Number(match[3])}일`;
 }
 
-export function resolveDeliveryDate(order) {
+/** 주문에 저장된 배송일만 (기본값으로 추정하지 않음) */
+export function explicitDeliveryDate(order) {
   const candidates = [
     order?.deliveryDate,
     order?.delivery?.date,
@@ -102,6 +110,58 @@ export function resolveDeliveryDate(order) {
     const parsed = parseDeliveryDate(value);
     if (parsed) return parsed;
   }
+  return null;
+}
+
+function hasLegacySplitDelivery(order) {
+  return Boolean(
+    order?.kimchiDeliveryStatus ||
+      order?.frozenDeliveryStatus ||
+      order?.delivery?.kimchi ||
+      order?.delivery?.frozen
+  );
+}
+
+/** 회차 분류용 — shippingBreakdown 등에서 가장 이른 배송일 */
+export function inferredDeliveryDate(order) {
+  const candidates = [
+    order?.deliveryDate,
+    order?.delivery?.date,
+    order?.shippingBreakdown?.kimchi?.delivery,
+    order?.shippingBreakdown?.frozen?.delivery,
+    order?.shippingBreakdown?.walkerhill?.delivery,
+  ];
+  const parsed = candidates.map((v) => parseDeliveryDate(v)).filter(Boolean);
+  if (parsed.length) return parsed.sort()[0];
+  return null;
+}
+
+/** 이번 차수(8/23~) 이전 배송 회차 주문 */
+export function isPreviousRoundOrder(order, minDate = DEFAULT_DELIVERY_DATE) {
+  const inferred = inferredDeliveryDate(order);
+  if (inferred && inferred < minDate) return true;
+  if (inferred && inferred >= minDate) return false;
+
+  const stored = explicitDeliveryDate(order);
+  if (stored && stored < minDate) return true;
+  if (stored && stored >= minDate) return false;
+
+  // 마이그레이션 후 deliveryDate만 8/23으로 채워진 이전 차수
+  if (hasLegacySplitDelivery(order)) return true;
+
+  const ROUND_OPEN_DATE = "2026-07-16";
+  if (stored === minDate && order?.createdAt?.slice(0, 10) < ROUND_OPEN_DATE) return true;
+
+  return false;
+}
+
+export function isCurrentRoundOrder(order, minDate = DEFAULT_DELIVERY_DATE) {
+  return !isPreviousRoundOrder(order, minDate);
+}
+
+export function resolveDeliveryDate(order) {
+  const explicit = explicitDeliveryDate(order);
+  if (explicit) return explicit;
   return DEFAULT_DELIVERY_DATE;
 }
 

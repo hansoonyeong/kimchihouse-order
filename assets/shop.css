@@ -5012,6 +5012,13 @@ button.shop-product-cta {
   flex-wrap: wrap;
 }
 
+.shop-admin-page .admin-round-count {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #888;
+}
+
 .shop-admin-page .admin-round-group {
   margin-bottom: 28px;
 }

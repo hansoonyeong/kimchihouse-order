@@ -100,8 +100,8 @@
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="refresh-btn">새로고침</button>
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="export-btn">CSV 내보내기</button>
             <div class="filter-tabs admin-round-scope" id="round-scope-tabs-orders" style="margin-left:auto">
-              <button type="button" class="filter-tab active" data-round-scope="current">이번 차수</button>
-              <button type="button" class="filter-tab" data-round-scope="previous">이전 차수</button>
+              <button type="button" class="filter-tab active" data-round-scope="current">이번 차수 <span class="admin-round-count" id="round-count-current-orders"></span></button>
+              <button type="button" class="filter-tab" data-round-scope="previous">이전 차수 <span class="admin-round-count" id="round-count-previous-orders"></span></button>
             </div>
           </div>
           <p class="admin-stock-note" id="previous-rounds-hint-orders"></p>
@@ -149,8 +149,8 @@
           <div class="admin-toolbar">
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="delivery-refresh-btn">새로고침</button>
             <div class="filter-tabs admin-round-scope" id="round-scope-tabs-delivery" style="margin-left:auto">
-              <button type="button" class="filter-tab active" data-round-scope="current">이번 차수</button>
-              <button type="button" class="filter-tab" data-round-scope="previous">이전 차수</button>
+              <button type="button" class="filter-tab active" data-round-scope="current">이번 차수 <span class="admin-round-count" id="round-count-current-delivery"></span></button>
+              <button type="button" class="filter-tab" data-round-scope="previous">이전 차수 <span class="admin-round-count" id="round-count-previous-delivery"></span></button>
             </div>
           </div>
           <p class="admin-stock-note" id="previous-rounds-hint-delivery"></p>
@@ -331,15 +331,15 @@
     }
 
     function deliveryDate(o) {
-      return D.resolveDeliveryDate(o);
+      return D.inferredDeliveryDate(o) || D.resolveDeliveryDate(o);
     }
 
     function isCurrentRoundOrder(o) {
-      return deliveryDate(o) >= D.DEFAULT_DELIVERY_DATE;
+      return D.isCurrentRoundOrder(o);
     }
 
     function isPreviousRoundOrder(o) {
-      return !isCurrentRoundOrder(o);
+      return D.isPreviousRoundOrder(o);
     }
 
     function ordersInScope() {
@@ -951,8 +951,8 @@
       const currentCount = orders.filter(isCurrentRoundOrder).length;
       const hintText =
         roundScope === "previous"
-          ? `이전 차수 ${previousCount}건 · 배송일별로 분류되어 있습니다. 위 회차 탭으로 특정 날짜만 볼 수 있습니다.`
-          : `이번 차수(8월 23일~) ${currentCount}건을 보고 있습니다.${previousCount ? ` 이전 차수 ${previousCount}건은 「이전 차수」탭에서 확인하세요.` : ""}`;
+          ? `이전 차수 ${previousCount}건 · 8월 23일 이전 배송 회차입니다. 배송일별로 분류되어 있습니다.`
+          : `이번 차수(8월 23일~) ${currentCount}건입니다.${previousCount ? ` 이전 차수 ${previousCount}건은 「이전 차수」 탭에서 확인하세요.` : ""}`;
       ["previous-rounds-hint-orders", "previous-rounds-hint-delivery"].forEach((id) => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -1168,6 +1168,16 @@
       document.querySelectorAll("[data-round-scope]").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.roundScope === roundScope);
       });
+      const previousCount = orders.filter(isPreviousRoundOrder).length;
+      const currentCount = orders.filter(isCurrentRoundOrder).length;
+      const setCount = (id, n) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = n ? `(${n})` : "";
+      };
+      setCount("round-count-current-orders", currentCount);
+      setCount("round-count-previous-orders", previousCount);
+      setCount("round-count-current-delivery", currentCount);
+      setCount("round-count-previous-delivery", previousCount);
     }
 
     function setRoundScope(scope) {

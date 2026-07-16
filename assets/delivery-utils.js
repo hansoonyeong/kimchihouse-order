@@ -62,6 +62,12 @@
       const d = String(Number(md[2])).padStart(2, "0");
       return `${fallbackYear}-${m}-${d}`;
     }
+    const slash = raw.match(/(\d{1,2})\s*\/\s*(\d{1,2})/);
+    if (slash) {
+      const m = String(Number(slash[1])).padStart(2, "0");
+      const d = String(Number(slash[2])).padStart(2, "0");
+      return `${fallbackYear}-${m}-${d}`;
+    }
     return null;
   }
 
@@ -72,7 +78,7 @@
     return `${Number(parts[1])}월 ${Number(parts[2])}일`;
   }
 
-  function resolveDeliveryDate(order) {
+  function explicitDeliveryDate(order) {
     const candidates = [
       order?.deliveryDate,
       order?.delivery?.date,
@@ -84,6 +90,51 @@
       const parsed = parseDeliveryDate(value);
       if (parsed) return parsed;
     }
+    return null;
+  }
+
+  function hasLegacySplitDelivery(order) {
+    return Boolean(
+      order?.kimchiDeliveryStatus ||
+        order?.frozenDeliveryStatus ||
+        order?.delivery?.kimchi ||
+        order?.delivery?.frozen
+    );
+  }
+
+  function inferredDeliveryDate(order) {
+    const candidates = [
+      order?.deliveryDate,
+      order?.delivery?.date,
+      order?.shippingBreakdown?.kimchi?.delivery,
+      order?.shippingBreakdown?.frozen?.delivery,
+      order?.shippingBreakdown?.walkerhill?.delivery,
+    ];
+    const parsed = candidates.map((v) => parseDeliveryDate(v)).filter(Boolean);
+    if (parsed.length) return parsed.sort()[0];
+    return null;
+  }
+
+  function isPreviousRoundOrder(order, minDate = DEFAULT_DELIVERY_DATE) {
+    const inferred = inferredDeliveryDate(order);
+    if (inferred && inferred < minDate) return true;
+    if (inferred && inferred >= minDate) return false;
+    const stored = explicitDeliveryDate(order);
+    if (stored && stored < minDate) return true;
+    if (stored && stored >= minDate) return false;
+    if (hasLegacySplitDelivery(order)) return true;
+    const ROUND_OPEN_DATE = "2026-07-16";
+    if (stored === minDate && order?.createdAt?.slice(0, 10) < ROUND_OPEN_DATE) return true;
+    return false;
+  }
+
+  function isCurrentRoundOrder(order, minDate = DEFAULT_DELIVERY_DATE) {
+    return !isPreviousRoundOrder(order, minDate);
+  }
+
+  function resolveDeliveryDate(order) {
+    const explicit = explicitDeliveryDate(order);
+    if (explicit) return explicit;
     return DEFAULT_DELIVERY_DATE;
   }
 
@@ -234,6 +285,10 @@ ${lines || "-"}
     mergeDeliveryStatuses,
     parseDeliveryDate,
     formatDeliveryDateLabel,
+    explicitDeliveryDate,
+    inferredDeliveryDate,
+    isPreviousRoundOrder,
+    isCurrentRoundOrder,
     resolveDeliveryDate,
     groupItemsByCategory,
     buildConfirmMessage,
