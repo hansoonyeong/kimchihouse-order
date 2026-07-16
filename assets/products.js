@@ -87,7 +87,8 @@ window.KH_PRODUCTS = {
               [3, 30],
               [5, 50],
             ],
-            image: "assets/images/products/a16.png",
+            image: "assets/images/products/jaecheop.jpg",
+            detailImage: "assets/images/products/detail-jaecheop/01.jpg",
           },
           {
             id: "extra-myeongtaecho",
