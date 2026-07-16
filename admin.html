@@ -169,6 +169,7 @@
                 <p class="admin-stock-note">이번 차수 판매 품목(숨김 제외)만 표시됩니다. 예약 수량은 이번 차수 배송일(8월 23일~) 주문만 반영하며, 이전 차수 주문은 재고에 영향을 주지 않습니다. 준비 수량이 0이면 주문 제한을 하지 않습니다. 워커힐 세트 주문은 배추(w1)·총각(w2) 단품 재고에 반영됩니다. 포기김치 등 용량 상품은 7kg/3kg가 각각 따로 관리되며, 예전 재고(b1)는 자동으로 7kg로 연결됩니다.</p>
               </div>
               <div class="admin-toolbar" style="margin:0">
+                <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="stock-restore-btn">백업 재고 복구</button>
                 <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="stock-refresh-btn">새로고침</button>
                 <button type="button" class="shop-btn shop-btn-primary shop-btn-sm" id="stock-save-btn">재고 저장</button>
               </div>
@@ -874,6 +875,11 @@
 
     async function saveStock() {
       try {
+        const hasPrepared = Object.values(stockDraft).some((v) => Number(v) > 0);
+        if (!hasPrepared) {
+          const ok = confirm("준비 수량이 모두 0입니다. 저장하면 재고가 비게 됩니다. 계속할까요?");
+          if (!ok) return;
+        }
         const res = await fetch(STOCK_API, {
           method: "PATCH",
           headers: {
@@ -890,6 +896,29 @@
         showToast("재고가 저장되었습니다.");
       } catch (err) {
         alert(err.message || "재고 저장 중 오류가 발생했습니다.");
+      }
+    }
+
+    async function restoreStockBackup() {
+      if (!confirm("저장된 백업 재고로 복구할까요?\n(현재 재고가 덮어써집니다)")) return;
+      try {
+        const res = await fetch(STOCK_API, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${adminKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action: "restore_backup", force: true }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "재고 복구 실패");
+        stockRows = data.rows || [];
+        stockDraft = {};
+        for (const row of stockRows) stockDraft[row.id] = row.prepared;
+        renderStock();
+        showToast("백업 재고를 복구했습니다.");
+      } catch (err) {
+        alert(err.message || "재고 복구 실패");
       }
     }
 
@@ -1168,6 +1197,7 @@
         alert(err.message || "재고 새로고침 실패");
       }
     });
+    document.getElementById("stock-restore-btn")?.addEventListener("click", restoreStockBackup);
     document.getElementById("stock-save-btn").addEventListener("click", saveStock);
     document.getElementById("preorder-toggle").addEventListener("click", togglePreorder);
     document.getElementById("export-btn").addEventListener("click", exportCsv);

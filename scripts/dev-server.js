@@ -17,7 +17,7 @@ import {
 import { hasRedisEnv, readOrders, writeOrders } from "../api/_lib/orders-store.js";
 import { readSettings, writeSettings } from "../api/_lib/settings-store.js";
 import { buildStockRows, buildSalesRows, reservedByProduct, resolvePrepared, stockKeyFromItem, stockUnitsFromItem, productNameIndex, sellableProductIndex, SALE_CATEGORIES } from "../api/_lib/catalog.js";
-import { patchStockPrepared, readStock } from "../api/_lib/stock-store.js";
+import { patchStockPrepared, readStock, restoreStockFromBackup } from "../api/_lib/stock-store.js";
 import {
   IMPORTANT_PRODUCT_IDS,
   applyAutoSoldOutFromStock,
@@ -315,6 +315,18 @@ async function handleStock(req, res) {
       body = JSON.parse(await readBody(req));
     } catch {
       return sendJson(res, 400, { ok: false, error: "잘못된 요청입니다." });
+    }
+    if (body?.action === "restore_backup") {
+      const result = await restoreStockFromBackup({ force: body.force === true });
+      if (!result.ok) return sendJson(res, 400, result);
+      const orders = await readOrders();
+      await applyAutoSoldOutFromStock(result.stock, orders);
+      return sendJson(res, 200, {
+        ok: true,
+        restored: true,
+        stock: result.stock,
+        rows: buildStockRows(result.stock, orders),
+      });
     }
     const updates = {};
     if (body?.productId != null && body?.prepared != null) updates[String(body.productId)] = body.prepared;

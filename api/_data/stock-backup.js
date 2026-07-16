@@ -1,0 +1,71 @@
+export default {
+  "w1": {
+    "prepared": 340
+  },
+  "w2": {
+    "prepared": 256
+  },
+  "b1:7kg": {
+    "prepared": 70
+  },
+  "b2:7kg": {
+    "prepared": 60
+  },
+  "b3:7kg": {
+    "prepared": 10
+  },
+  "b1:3.5kg": {
+    "prepared": 70
+  },
+  "b2:3.5kg": {
+    "prepared": 90
+  },
+  "b3:3.5kg": {
+    "prepared": 20
+  },
+  "b4": {
+    "prepared": 60
+  },
+  "b5": {
+    "prepared": 32
+  },
+  "b6": {
+    "prepared": 52
+  },
+  "b7": {
+    "prepared": 32
+  },
+  "a9": {
+    "prepared": 180
+  },
+  "a10": {
+    "prepared": 32
+  },
+  "a3": {
+    "prepared": 65
+  },
+  "a4": {
+    "prepared": 38
+  },
+  "extra-jaecheop": {
+    "prepared": 40
+  },
+  "b10": {
+    "prepared": 60
+  },
+  "extra-myeongtaecho": {
+    "prepared": 190
+  },
+  "b11": {
+    "prepared": 75
+  },
+  "b12": {
+    "prepared": 70
+  },
+  "b8": {
+    "prepared": 50
+  },
+  "a2": {
+    "prepared": 1
+  }
+};

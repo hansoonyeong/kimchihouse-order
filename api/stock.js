@@ -2,7 +2,7 @@ import { getAdminKey, json, optionsResponse, requireEnv } from "./_lib/http.js";
 import { buildStockRows } from "./_lib/catalog.js";
 import { readOrders } from "./_lib/orders-store.js";
 import { applyAutoSoldOutFromStock } from "./_lib/sales-store.js";
-import { patchStockPrepared, readStock } from "./_lib/stock-store.js";
+import { patchStockPrepared, readStock, restoreStockFromBackup } from "./_lib/stock-store.js";
 
 export async function OPTIONS() {
   return optionsResponse();
@@ -38,6 +38,15 @@ export async function PATCH(request) {
       body = await request.json();
     } catch {
       return json({ ok: false, error: "잘못된 요청입니다." }, 400);
+    }
+
+    if (body?.action === "restore_backup") {
+      const result = await restoreStockFromBackup({ force: body.force === true });
+      if (!result.ok) return json(result, 400);
+      const orders = await readOrders();
+      await applyAutoSoldOutFromStock(result.stock, orders);
+      const rows = buildStockRows(result.stock, orders);
+      return json({ ok: true, restored: true, stock: result.stock, rows });
     }
 
     const updates = {};
