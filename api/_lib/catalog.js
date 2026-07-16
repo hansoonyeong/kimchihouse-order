@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { DEFAULT_DELIVERY_DATE, parseDeliveryDate } from "./order-utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "../..");
@@ -227,10 +228,35 @@ export function stockUnitsFromItem(item, nameIndex) {
   return [{ key, qty }];
 }
 
+/** 주문에 명시된 배송일 (없으면 null — 기본 회차일로 추정하지 않음) */
+export function explicitDeliveryDate(order) {
+  const candidates = [
+    order?.deliveryDate,
+    order?.delivery?.date,
+    order?.shippingBreakdown?.kimchi?.delivery,
+    order?.shippingBreakdown?.frozen?.delivery,
+    order?.shippingBreakdown?.walkerhill?.delivery,
+  ];
+  for (const value of candidates) {
+    const parsed = parseDeliveryDate(value);
+    if (parsed) return parsed;
+  }
+  return null;
+}
+
+/** 이번 차수(기본 배송일 이상) 주문만 재고 예약에 반영 */
+export function ordersForStockReservation(orders, minDeliveryDate = DEFAULT_DELIVERY_DATE) {
+  const minDate = parseDeliveryDate(minDeliveryDate) || DEFAULT_DELIVERY_DATE;
+  return (orders || []).filter((order) => {
+    const date = explicitDeliveryDate(order);
+    return Boolean(date && date >= minDate);
+  });
+}
+
 export function reservedByProduct(orders) {
   const nameIndex = productNameIndex();
   const reserved = {};
-  for (const order of orders || []) {
+  for (const order of ordersForStockReservation(orders)) {
     for (const item of order.items || []) {
       for (const unit of stockUnitsFromItem(item, nameIndex)) {
         reserved[unit.key] = (reserved[unit.key] || 0) + unit.qty;
