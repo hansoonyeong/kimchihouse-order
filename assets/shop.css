@@ -2551,6 +2551,18 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   color: var(--text-muted);
 }
 
+.shop-schedule-date-caution {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff8ee;
+  border: 1px solid #e8d4a8;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #6b4f1d;
+}
+
 .shop-schedule-points {
   list-style: none;
   display: grid;
@@ -5009,9 +5021,20 @@ button.shop-product-cta {
   max-width: 300px;
   white-space: normal;
   text-align: center;
+  vertical-align: middle;
 }
 
 .shop-admin-page .admin-orders-table th:nth-child(4) {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.shop-admin-page .admin-card-fact-address {
+  text-align: center;
+}
+
+.shop-admin-page .admin-card-fact-address dt,
+.shop-admin-page .admin-card-fact-address dd {
   text-align: center;
 }
 

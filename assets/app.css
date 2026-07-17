@@ -1341,6 +1341,7 @@ footer.site a {
   white-space: normal;
   word-break: keep-all;
   text-align: center;
+  vertical-align: middle;
 }
 
 .admin-table .col-items {

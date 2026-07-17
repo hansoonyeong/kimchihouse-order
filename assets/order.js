@@ -967,7 +967,7 @@
     }
 
     function renderDeliveryNote() {
-      return "Kimchi House · 8월 23일 일괄 배송 · 워커힐은 Premium Line";
+      return "Kimchi House · 8월 23일경 배송 예정 · 일정 변경 시 사전 안내";
     }
 
     function renderCatalog() {
