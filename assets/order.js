@@ -1504,9 +1504,44 @@
         const bank = cfg.bank;
         bankInfo.innerHTML = `
         은행 <strong>${bank.bank}</strong> · BSB <strong>${bank.bsb}</strong><br>
-        계좌 <strong>${bank.account}</strong> · ${bank.holder}<br>
-        ※ 입금자명을 <strong>주문자 성함과 동일하게</strong> 해주세요.`;
+        계좌 <strong>${bank.account}</strong> · ${bank.holder}
+        ${bankDepositGuideHtml()}`;
       }
+    }
+
+    function phoneLast4(phone) {
+      const digits = String(phone || "").replace(/\D/g, "");
+      return digits.length >= 4 ? digits.slice(-4) : "";
+    }
+
+    function transferReferenceExample(name, phone) {
+      const last4 = phoneLast4(phone);
+      const safeName = String(name || "").trim().replace(/\s+/g, "");
+      if (safeName && last4) return `${safeName}${last4}`;
+      return "";
+    }
+
+    function bankDepositGuideHtml(opts = {}) {
+      const personal = opts.personalExample
+        ? `<p class="bank-deposit-guide-foot">이번 주문 Reference 예시: <code>${opts.personalExample}</code></p>`
+        : "";
+      return `
+        <div class="bank-deposit-guide">
+          <strong class="bank-deposit-guide-title">계좌입금 안내</strong>
+          <p>입금하실 때 반드시 은행 송금 화면의</p>
+          <span class="bank-highlight">Reference(Description)</span>
+          <p>란에</p>
+          <span class="bank-highlight">주문자 이름 + 연락처 뒤 4자리</span>
+          <p>를 입력해주세요.</p>
+          <div class="bank-examples">
+            <span class="bank-examples-label">예시</span>
+            <code>홍길동1234</code>
+            <code>김영희5678</code>
+          </div>
+          <p>입금 후에는 반드시 이체 완료 화면(영수증)을 캡처하여 카카오톡으로 보내주세요.</p>
+          <p class="bank-deposit-guide-foot">입금 확인 후 예약이 확정됩니다.</p>
+          ${personal}
+        </div>`;
     }
 
     function openCheckout() {
@@ -1601,6 +1636,23 @@
         document.getElementById("order-mobile-cart")?.classList.add("hidden");
         document.getElementById("success-screen")?.classList.add("show");
         document.getElementById("order-id").textContent = data.orderId;
+
+        const successBank = document.getElementById("success-bank-box");
+        if (successBank) {
+          if (state.payment === "cash") {
+            successBank.classList.add("hidden");
+            successBank.innerHTML = "";
+          } else {
+            const bank = cfg.bank;
+            const personal = transferReferenceExample(name, phone);
+            successBank.classList.remove("hidden");
+            successBank.innerHTML = `
+              은행 <strong>${bank.bank}</strong> · BSB <strong>${bank.bsb}</strong><br>
+              계좌 <strong>${bank.account}</strong> · ${bank.holder}
+              ${bankDepositGuideHtml({ personalExample: personal })}`;
+          }
+        }
+
         state.cart = {};
         clearPersistedCart();
         closeCheckout();

@@ -375,6 +375,19 @@
       return payment === "cash" ? "현금" : "계좌이체";
     }
 
+    function orderAddress(o) {
+      const c = o.customer || {};
+      return [c.address, c.suburb].filter(Boolean).join(", ") || "-";
+    }
+
+    function itemsSummaryHtml(o) {
+      const items = o.items || [];
+      if (!items.length) return '<span class="admin-items-empty">-</span>';
+      return `<ul class="admin-items-inline">${items
+        .map((i) => `<li><span class="admin-item-name">${i.name}</span><span class="admin-item-qty">${i.qty}</span></li>`)
+        .join("")}</ul>`;
+    }
+
     function orderSearchText(o) {
       const c = o.customer || {};
       return [o.id, c.name, c.phone, c.kakao, c.address, c.suburb, o.note]
@@ -446,18 +459,17 @@
 
       const renderBlock = (blockList) => `
         <div class="admin-table-wrap">
-          <table class="admin-table">
+          <table class="admin-table admin-orders-table">
             <thead>
               <tr>
                 <th>주문번호</th>
-                <th>배송 예정일</th>
                 <th>주문자명</th>
                 <th>연락처</th>
+                <th>배송 주소</th>
+                <th>주문 상품</th>
                 <th>결제방법</th>
-                <th>총 금액</th>
-                <th>배송상태</th>
-                <th>메시지</th>
-                <th>상세보기</th>
+                <th>주문상태</th>
+                <th>상세</th>
               </tr>
             </thead>
             <tbody>${renderTableRows(blockList)}</tbody>
@@ -526,30 +538,22 @@
 
     function renderDetailContent(o) {
       const c = o.customer || {};
-      const address = [c.address, c.suburb].filter(Boolean).join(", ");
 
       return `<div class="admin-detail-grid">
         <div class="admin-detail-block">
-          <div class="admin-detail-title">주문자 · 배송</div>
-          <p><strong>${c.name || "-"}</strong></p>
-          <p>${c.phone || "-"}</p>
-          ${c.kakao ? `<p>카톡: ${c.kakao}</p>` : ""}
-          <p>${address || "-"}</p>
+          <div class="admin-detail-title">추가 정보</div>
+          ${c.kakao ? `<p>카톡: ${c.kakao}</p>` : "<p>카톡: -</p>"}
           <p>배송 예정일: <strong>${deliveryLabel(o)}</strong></p>
-          <p>결제: ${payLabel(o.payment)}</p>
+          <p>접수: ${formatDateShort(o.createdAt)}</p>
+          <p class="admin-detail-total">${shippingSummary(o)}</p>
           ${messageFlags(o)}
         </div>
         <div class="admin-detail-block">
-          <div class="admin-detail-title">주문 상품</div>
+          <div class="admin-detail-title">주문 상품 (상세)</div>
           ${renderGroupedItems(o)}
-          <p class="admin-detail-total">${shippingSummary(o)}</p>
         </div>
         <div class="admin-detail-block">
-          <div class="admin-detail-title">배송 상태 · 메시지</div>
-          <div class="admin-card-status-row" style="margin-bottom:12px">
-            <span class="admin-card-status-label">배송 상태</span>
-            ${renderStatusSelect(o)}
-          </div>
+          <div class="admin-detail-title">메시지 · 관리</div>
           <div class="admin-msg-actions">
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-msg-confirm="${o.id}">예약 확인 메시지 발송</button>
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-msg-ship="${o.id}">배송 안내 메시지 발송</button>
@@ -569,21 +573,20 @@
           const c = o.customer || {};
           return `<tr class="admin-table-row">
             <td class="col-id">${o.id}</td>
-            <td class="col-date">${deliveryLabel(o)}</td>
             <td class="col-name">${c.name || "-"}</td>
             <td class="col-phone">${c.phone || "-"}</td>
+            <td class="col-address">${orderAddress(o)}</td>
+            <td class="col-items">${itemsSummaryHtml(o)}</td>
             <td class="col-pay">${payLabel(o.payment)}</td>
-            <td class="col-total">$${o.total}</td>
             <td class="col-status">${renderStatusSelect(o)}</td>
-            <td class="col-msg">${messageFlags(o)}</td>
             <td class="col-action">
               <button type="button" class="admin-detail-btn${expanded ? " open" : ""}" data-toggle-detail="${o.id}" aria-expanded="${expanded}">
-                ${expanded ? "접기" : "상세보기"}
+                ${expanded ? "접기" : "상세"}
               </button>
             </td>
           </tr>
           <tr class="admin-detail-row${expanded ? " open" : ""}" data-detail-for="${o.id}">
-            <td colspan="9">${renderDetailContent(o)}</td>
+            <td colspan="8">${renderDetailContent(o)}</td>
           </tr>`;
         })
         .join("");
@@ -593,30 +596,28 @@
       return list
         .map((o) => {
           const expanded = expandedIds.has(o.id);
-          const status = orderStatus(o);
           const c = o.customer || {};
           return `<article class="admin-order-card${expanded ? " open" : ""}">
             <div class="admin-card-summary">
               <div class="admin-card-top">
                 <span class="admin-card-id">${o.id}</span>
-                <span class="admin-status-pill admin-status-${statusCls(status)}">${status}</span>
+                ${renderStatusSelect(o)}
               </div>
-              <div class="admin-card-main">
-                <strong>${c.name || "-"}</strong>
-                <span>${c.phone || "-"}</span>
-              </div>
+              <dl class="admin-card-facts">
+                <div><dt>주문자</dt><dd><strong>${c.name || "-"}</strong></dd></div>
+                <div><dt>연락처</dt><dd>${c.phone || "-"}</dd></div>
+                <div class="admin-card-fact-wide"><dt>배송 주소</dt><dd>${orderAddress(o)}</dd></div>
+                <div class="admin-card-fact-wide"><dt>주문 상품</dt><dd>${itemsSummaryHtml(o)}</dd></div>
+                <div><dt>결제</dt><dd>${payLabel(o.payment)}</dd></div>
+                <div><dt>합계</dt><dd><strong>$${o.total}</strong></dd></div>
+              </dl>
               <div class="admin-card-bottom">
-                <span>${deliveryLabel(o)} · $${o.total}</span>
                 <button type="button" class="admin-detail-btn${expanded ? " open" : ""}" data-toggle-detail="${o.id}" aria-expanded="${expanded}">
-                  ${expanded ? "접기" : "상세보기"}
+                  ${expanded ? "접기" : "상세 · 메시지"}
                 </button>
               </div>
             </div>
             <div class="admin-card-detail">
-              <div class="admin-card-detail-meta">
-                <span>${formatDateShort(o.createdAt)}</span>
-                <span>${payLabel(o.payment)}</span>
-              </div>
               ${renderDetailContent(o)}
             </div>
           </article>`;
