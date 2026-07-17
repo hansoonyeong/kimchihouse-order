@@ -4912,6 +4912,35 @@ button.shop-product-cta {
   font-weight: 800;
 }
 
+.shop-admin-page .admin-note-details {
+  margin: 0;
+}
+
+.shop-admin-page .admin-note-details summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--text-muted);
+  list-style: none;
+}
+
+.shop-admin-page .admin-note-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.shop-admin-page .admin-note-details[open] summary {
+  margin-bottom: 6px;
+}
+
+@media (min-width: 768px) {
+  .shop-admin-page .admin-note-details summary {
+    display: none;
+  }
+
+  .shop-admin-page .admin-note-details {
+    display: block;
+  }
+}
+
 .shop-admin-page .admin-round-panel,
 .shop-admin-page .admin-stock-panel {
   padding: 18px 16px;
@@ -4919,6 +4948,7 @@ button.shop-product-cta {
   border-radius: 12px;
   background: var(--white);
 }
+
 
 .shop-admin-page .admin-round-title {
   margin: 4px 0 0;
@@ -5453,6 +5483,7 @@ button.shop-product-cta {
     overflow: visible;
     border: none;
     background: transparent;
+    border-radius: 0;
   }
 
   .shop-admin-page #stock-list .admin-table,
@@ -5468,169 +5499,329 @@ button.shop-product-cta {
     display: none;
   }
 
-  .shop-admin-page #stock-list .admin-table tr,
-  .shop-admin-page #sales-list .admin-table tr {
-    display: grid;
-    gap: 8px 10px;
-    margin-bottom: 10px;
-    padding: 12px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--white);
+  /* 패널 크롬 단순화 */
+  .shop-admin-page #stock-view .admin-stock-panel,
+  .shop-admin-page #sales-view .admin-stock-panel {
+    padding: 12px 0 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
   }
 
-  .shop-admin-page #stock-list .admin-table td,
-  .shop-admin-page #sales-list .admin-table td {
+  .shop-admin-page #stock-view .admin-round-head,
+  .shop-admin-page #sales-view .admin-round-head {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 0 2px;
+  }
+
+  .shop-admin-page #stock-view .admin-round-title,
+  .shop-admin-page #sales-view .admin-round-title {
+    font-size: 20px;
+  }
+
+  .shop-admin-page #stock-view .admin-stock-note,
+  .shop-admin-page #sales-view .admin-stock-note {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-muted);
+  }
+
+  .shop-admin-page #stock-view .admin-toolbar,
+  .shop-admin-page #sales-view .admin-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .shop-admin-page #stock-view .admin-toolbar .shop-btn,
+  .shop-admin-page #sales-view .admin-toolbar .shop-btn {
+    flex: 1 1 auto;
+    min-height: 40px;
+  }
+
+  .shop-admin-page #stock-view .filter-tabs,
+  .shop-admin-page #sales-view .filter-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+
+  .shop-admin-page #stock-view .filter-tab,
+  .shop-admin-page #sales-view .filter-tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .shop-admin-page #sales-view .admin-sales-presets,
+  .shop-admin-page #sales-view .admin-sales-logs {
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .shop-admin-page #sales-view .admin-sales-presets {
+    margin-bottom: 4px;
+  }
+
+  .shop-admin-page #sales-view .admin-sales-logs {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .shop-admin-page #sales-view .admin-sales-bulk {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+  }
+
+  .shop-admin-page #sales-view .admin-sales-bulk .shop-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .shop-admin-page #sales-view .admin-sales-group {
+    margin-bottom: 18px;
+  }
+
+  .shop-admin-page #sales-view .admin-sales-group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 4px;
+    padding: 0 2px 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .shop-admin-page #sales-view .admin-sales-group-head h3 {
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .shop-admin-page #sales-view .admin-sales-group-actions {
+    display: none;
+  }
+
+  /* ===== 재고: flat list ===== */
+  .shop-admin-page #stock-list .admin-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) auto auto;
+    grid-template-areas:
+      "name name name"
+      "meta meta meta"
+      "prep reserved remaining";
+    gap: 4px 10px;
+    align-items: center;
+    margin: 0;
+    padding: 12px 2px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .shop-admin-page #stock-list .admin-table td {
     border: 0;
     padding: 0;
+    background: transparent !important;
   }
 
-  /* 재고: 상품 / 카테고리 / 준비 / 예약 / 잔여 */
-  .shop-admin-page #stock-list .admin-table tr {
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-    padding: 14px;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
-  }
   .shop-admin-page #stock-list .admin-table td:nth-child(1) {
-    grid-column: 1 / -1;
-    font-size: 16px;
+    grid-area: name;
+    font-size: 15px;
     font-weight: 800;
     color: #1a1a1a;
     line-height: 1.35;
   }
-  .shop-admin-page #stock-list .admin-table td:nth-child(2) {
-    grid-column: 1 / -1;
-    color: #555;
-    font-size: 13px;
+
+  .shop-admin-page #stock-list .admin-table td:nth-child(1) .admin-stock-id {
+    margin-top: 2px;
+    font-size: 11px;
     font-weight: 600;
+    color: #8a8a8a;
   }
-  .shop-admin-page #stock-list .admin-table td:nth-child(3),
-  .shop-admin-page #stock-list .admin-table td:nth-child(4),
-  .shop-admin-page #stock-list .admin-table td:nth-child(5) {
+
+  .shop-admin-page #stock-list .admin-table td:nth-child(2) {
+    grid-area: meta;
+    color: #6b6b6b;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .shop-admin-page #stock-list .admin-table td:nth-child(3) {
+    grid-area: prep;
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 10px;
-    border-radius: 10px;
-    background: #f5f2ec;
+    align-items: center;
+    gap: 8px;
     min-width: 0;
   }
+
   .shop-admin-page #stock-list .admin-table td:nth-child(3)::before {
     content: "준비";
-    color: #444;
+    flex: 0 0 auto;
+    color: #6b6b6b;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 700;
   }
+
+  .shop-admin-page #stock-list .admin-table td:nth-child(4) {
+    grid-area: reserved;
+    display: block;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 700;
+    color: #444;
+    white-space: nowrap;
+  }
+
   .shop-admin-page #stock-list .admin-table td:nth-child(4)::before {
-    content: "예약";
-    color: #444;
-    font-size: 12px;
-    font-weight: 800;
+    content: "예약 ";
+    font-weight: 600;
+    color: #8a8a8a;
   }
+
+  .shop-admin-page #stock-list .admin-table td:nth-child(5) {
+    grid-area: remaining;
+    display: block;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
   .shop-admin-page #stock-list .admin-table td:nth-child(5)::before {
-    content: "잔여";
-    color: #444;
-    font-size: 12px;
-    font-weight: 800;
+    content: "잔여 ";
+    font-weight: 600;
+    color: #8a8a8a;
   }
+
   .shop-admin-page #stock-list .admin-stock-input {
-    width: 100%;
-    min-height: 44px;
-    font-size: 17px;
+    width: 84px;
+    min-height: 40px;
+    font-size: 16px;
     font-weight: 800;
-    border: 1.5px solid #b8b0a4;
+    border: 1.5px solid #cfc8bc;
+    border-radius: 8px;
     color: #1a1a1a;
     background: #fff;
+    text-align: center;
   }
+
   .shop-admin-page #stock-list .admin-stock-remaining {
-    font-size: 22px;
+    font-size: 14px;
     font-weight: 800;
     color: var(--primary);
     line-height: 1.2;
   }
 
-  /* 판매: 체크 / 상품 / 카테고리 / 가격 / 입고 / 주문 / 잔여 / 상태 */
+  /* ===== 판매: flat list ===== */
   .shop-admin-page #sales-list .admin-table tr {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    align-items: stretch;
-    gap: 10px;
-    padding: 14px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "check product rem"
+      "status status status";
+    gap: 6px 10px;
+    align-items: center;
+    margin: 0;
+    padding: 12px 2px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
+
+  .shop-admin-page #sales-list .admin-table td {
+    border: 0;
+    padding: 0;
+    background: transparent !important;
+  }
+
   .shop-admin-page #sales-list .admin-table td:nth-child(1) {
-    grid-column: 1;
-    grid-row: 1;
-    padding-top: 4px;
-    align-self: start;
+    grid-area: check;
+    align-self: center;
   }
+
   .shop-admin-page #sales-list .admin-table td:nth-child(2) {
-    grid-column: 2 / -1;
-    grid-row: 1;
-    font-size: 16px;
+    grid-area: product;
+    font-size: 15px;
     font-weight: 800;
     color: #1a1a1a;
     line-height: 1.35;
-  }
-  .shop-admin-page #sales-list .admin-table td:nth-child(3) {
-    display: none;
-  }
-  .shop-admin-page #sales-list .admin-table td:nth-child(4),
-  .shop-admin-page #sales-list .admin-table td:nth-child(5),
-  .shop-admin-page #sales-list .admin-table td:nth-child(6),
-  .shop-admin-page #sales-list .admin-table td:nth-child(7) {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px;
-    border-radius: 10px;
-    background: #f5f2ec;
-    font-size: 16px;
-    font-weight: 800;
-    color: #1a1a1a;
     min-width: 0;
   }
-  .shop-admin-page #sales-list .admin-table td:nth-child(4)::before {
-    content: "가격";
-    font-size: 12px;
-    font-weight: 800;
-    color: #444;
+
+  .shop-admin-page #sales-list .admin-sales-product {
+    display: flex;
+    gap: 10px;
+    align-items: center;
   }
-  .shop-admin-page #sales-list .admin-table td:nth-child(5)::before {
-    content: "입고";
-    font-size: 12px;
-    font-weight: 800;
-    color: #444;
+
+  .shop-admin-page #sales-list .admin-sales-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
   }
-  .shop-admin-page #sales-list .admin-table td:nth-child(6)::before {
-    content: "주문";
-    font-size: 12px;
-    font-weight: 800;
-    color: #444;
+
+  .shop-admin-page #sales-list .admin-stock-id {
+    margin-top: 2px;
+    font-size: 11px;
+    color: #8a8a8a;
   }
+
+  .shop-admin-page #sales-list .admin-table td:nth-child(3),
+  .shop-admin-page #sales-list .admin-table td:nth-child(4),
+  .shop-admin-page #sales-list .admin-table td:nth-child(5),
+  .shop-admin-page #sales-list .admin-table td:nth-child(6) {
+    display: none;
+  }
+
+  .shop-admin-page #sales-list .admin-table td:nth-child(7) {
+    grid-area: rem;
+    display: block;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b6b6b;
+    white-space: nowrap;
+  }
+
   .shop-admin-page #sales-list .admin-table td:nth-child(7)::before {
-    content: "잔여";
-    font-size: 12px;
-    font-weight: 800;
-    color: #444;
+    content: "잔여 ";
+    font-weight: 600;
+    color: #8a8a8a;
   }
+
   .shop-admin-page #sales-list .admin-table td:nth-child(8) {
-    grid-column: 1 / -1;
+    grid-area: status;
   }
+
   .shop-admin-page #sales-list .admin-sale-status {
     width: 100%;
-    min-height: 44px;
+    min-height: 42px;
     font-size: 15px;
     font-weight: 700;
     color: #1a1a1a;
     background: #fff;
-    border: 1.5px solid #b8b0a4;
-  }
-
-  .shop-admin-page .admin-sales-group-actions {
-    width: 100%;
-  }
-  .shop-admin-page .admin-sales-group-actions .shop-btn {
-    flex: 1 1 calc(50% - 4px);
+    border: 1.5px solid #cfc8bc;
+    border-radius: 8px;
   }
 }
 
