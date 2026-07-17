@@ -78,6 +78,13 @@
     return `${Number(parts[1])}월 ${Number(parts[2])}일`;
   }
 
+  /** 고객 안내용: 확정일이 아닌 예정일(경) */
+  function formatDeliveryDateApproxLabel(isoDate) {
+    const label = formatDeliveryDateLabel(isoDate);
+    if (!label || label === "-") return label;
+    return /경$/.test(label) ? label : `${label}경`;
+  }
+
   function explicitDeliveryDate(order) {
     const candidates = [
       order?.deliveryDate,
@@ -171,7 +178,7 @@
   }
 
   function buildConfirmMessage(order) {
-    const dateLabel = formatDeliveryDateLabel(resolveDeliveryDate(order));
+    const dateLabel = formatDeliveryDateApproxLabel(resolveDeliveryDate(order));
     const lines = (order.items || [])
       .map((i) => `• ${i.name} × ${i.qty}`)
       .join("\n");
@@ -221,7 +228,7 @@ ${transferBlock}
   }
 
   function buildShipNoticeMessage(order) {
-    const dateLabel = formatDeliveryDateLabel(resolveDeliveryDate(order));
+    const dateLabel = formatDeliveryDateApproxLabel(resolveDeliveryDate(order));
     const status = orderStatus(order);
     return `[김치하우스 배송 안내]
 
@@ -327,6 +334,7 @@ ${transferBlock}
     mergeDeliveryStatuses,
     parseDeliveryDate,
     formatDeliveryDateLabel,
+    formatDeliveryDateApproxLabel,
     explicitDeliveryDate,
     inferredDeliveryDate,
     isPreviousRoundOrder,
