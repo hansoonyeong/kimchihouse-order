@@ -162,20 +162,62 @@
     return "$" + Number(n || 0).toFixed(0);
   }
 
+  function transferReferenceExample(order) {
+    const name = String(order?.customer?.name || "").trim().replace(/\s+/g, "");
+    const digits = String(order?.customer?.phone || "").replace(/\D/g, "");
+    const last4 = digits.length >= 4 ? digits.slice(-4) : "";
+    if (name && last4) return `${name}${last4}`;
+    return "홍길동1234";
+  }
+
   function buildConfirmMessage(order) {
     const dateLabel = formatDeliveryDateLabel(resolveDeliveryDate(order));
-    const lines = (order.items || []).map((i) => `- ${i.name} ${i.qty}개`).join("\n");
+    const lines = (order.items || [])
+      .map((i) => `• ${i.name} × ${i.qty}`)
+      .join("\n");
+    const transferBlock =
+      order.payment === "cash"
+        ? ""
+        : `
+
+💳 계좌이체를 선택하신 경우
+
+입금 시 반드시 Reference(Description)란에
+'주문자 이름 + 연락처 뒤 4자리'를 입력해주세요.
+
+예) ${transferReferenceExample(order)}
+
+입금 후에는 이체 완료 화면을 캡처하여 카카오톡으로 보내주시면 됩니다.`;
+
     return `[김치하우스 예약 확인]
 
-주문번호: ${order.id}
+안녕하세요.
+김치하우스를 이용해 주셔서 감사합니다. 😊
 
-주문 상품:
-${lines || "-"}
+고객님의 예약이 정상적으로 접수되었습니다.
 
-총 주문금액: ${money(order.total)}
-배송 예정일: ${dateLabel}
+━━━━━━━━━━━━━━━
 
-김치와 냉동·반찬 상품은 함께 배송됩니다.`;
+📦 주문번호
+${order.id}
+
+🛒 주문상품
+${lines || "• -"}
+
+💰 총 주문금액
+${money(order.total)}
+
+🚚 배송 예정일
+${dateLabel}
+📢 김치와 냉동·반찬 상품은 함께 배송됩니다.
+해운 사정에 따라 일정이 변동될 수 있으며, 변경 시 미리 안내드립니다.
+━━━━━━━━━━━━━━━
+${transferBlock}
+
+궁금한 사항은 언제든지 카카오톡 채널로 문의해주세요.
+
+감사합니다.
+김치하우스 드림`;
   }
 
   function buildShipNoticeMessage(order) {

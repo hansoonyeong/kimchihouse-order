@@ -967,7 +967,7 @@
     }
 
     function renderDeliveryNote() {
-      return "Kimchi House · 8월 23일경 배송 예정 · 일정 변경 시 사전 안내";
+      return "Kimchi House · 8월 23일경 배송 예정 · 해운 사정에 따라 변동 가능";
     }
 
     function renderCatalog() {
