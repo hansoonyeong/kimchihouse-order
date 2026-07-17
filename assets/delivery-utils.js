@@ -229,15 +229,39 @@ ${transferBlock}
 
   function buildShipNoticeMessage(order) {
     const dateLabel = formatDeliveryDateApproxLabel(resolveDeliveryDate(order));
-    const status = orderStatus(order);
     return `[김치하우스 배송 안내]
 
-주문번호: ${order.id}
+안녕하세요.
+김치하우스입니다. 😊
 
-주문하신 김치와 냉동·반찬 상품이 함께 배송될 예정입니다.
+고객님께서 예약하신 상품의 배송 일정을 안내드립니다.
 
-배송 예정일: ${dateLabel}
-배송 상태: ${status}`;
+━━━━━━━━━━━━━━━
+
+📦 주문번호
+${order.id}
+
+🚚 배송 예정일
+${dateLabel}
+
+🕒 예상 배송시간
+배송 당일 순차적으로 배송될 예정입니다.
+출발 전 또는 배송이 가까워지면 다시 안내드리겠습니다.
+
+━━━━━━━━━━━━━━━
+
+김치와 냉동·반찬 상품은 함께 배송됩니다.
+
+교통 상황과 당일 배송 순서에 따라 도착 시간이 조금 달라질 수 있는 점 양해 부탁드립니다.
+
+부재 예정이시거나 배송과 관련해 전달하실 내용이 있으시면 미리 카카오톡으로 알려주세요.
+
+상품 수령 후에는 김치와 냉동·냉장 상품을 가능한 한 빠르게 냉장고 또는 냉동고에 보관해 주세요.
+
+정성껏 준비하여 안전하게 배송해드리겠습니다.
+
+감사합니다.
+김치하우스 드림`;
   }
 
   function normalizeAddressKey(order) {
