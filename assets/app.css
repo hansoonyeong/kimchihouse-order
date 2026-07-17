@@ -1340,6 +1340,7 @@ footer.site a {
   font-weight: 600;
   white-space: normal;
   word-break: keep-all;
+  text-align: center;
 }
 
 .admin-table .col-items {

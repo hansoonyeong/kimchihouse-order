@@ -1523,24 +1523,32 @@
 
     function bankDepositGuideHtml(opts = {}) {
       const personal = opts.personalExample
-        ? `<p class="bank-deposit-guide-foot">이번 주문 Reference 예시: <code>${opts.personalExample}</code></p>`
+        ? `<p class="bank-deposit-personal">이번 주문: <strong>${opts.personalExample}</strong></p>`
         : "";
       return `
         <div class="bank-deposit-guide">
           <strong class="bank-deposit-guide-title">계좌입금 안내</strong>
-          <p>입금하실 때 반드시 은행 송금 화면의</p>
-          <span class="bank-highlight">Reference(Description)</span>
-          <p>란에</p>
-          <span class="bank-highlight">주문자 이름 + 연락처 뒤 4자리</span>
-          <p>를 입력해주세요.</p>
-          <div class="bank-examples">
-            <span class="bank-examples-label">예시</span>
-            <code>홍길동1234</code>
-            <code>김영희5678</code>
+          <p class="bank-deposit-lead">입금할 때 은행 송금 화면의 Reference에 아래 형식으로 입력해 주세요.</p>
+          <div class="bank-rule-card">
+            <div class="bank-rule-row">
+              <span class="bank-rule-label">입력란</span>
+              <strong class="bank-rule-value">Reference (Description)</strong>
+            </div>
+            <div class="bank-rule-row">
+              <span class="bank-rule-label">입력값</span>
+              <strong class="bank-rule-value">주문자 이름 + 연락처 뒤 4자리</strong>
+            </div>
+            <div class="bank-rule-examples">
+              <span>예</span>
+              <code>홍길동1234</code>
+              <code>김영희5678</code>
+            </div>
+            ${personal}
           </div>
-          <p>입금 후에는 반드시 이체 완료 화면(영수증)을 캡처하여 카카오톡으로 보내주세요.</p>
-          <p class="bank-deposit-guide-foot">입금 확인 후 예약이 확정됩니다.</p>
-          ${personal}
+          <ul class="bank-deposit-notes">
+            <li>입금 후 이체 완료 화면(영수증)을 캡처해 카카오톡으로 보내주세요.</li>
+            <li><strong>입금 확인 후 예약이 확정됩니다.</strong></li>
+          </ul>
         </div>`;
     }
 

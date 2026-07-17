@@ -1882,61 +1882,101 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   display: block;
   font-size: 14px;
   font-weight: 800;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: var(--text);
 }
 
-.bank-deposit-guide p {
-  margin: 0 0 6px;
+.bank-deposit-lead {
+  margin: 0 0 10px;
   color: var(--text);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
-.bank-highlight {
-  display: block;
-  margin: 8px 0;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: #fff7e8;
+.bank-rule-card {
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff8ee;
   border: 1.5px solid #e8c27a;
-  color: #1a1a1a;
-  font-weight: 800;
-  font-size: 14px;
-  line-height: 1.4;
-  text-align: center;
 }
 
-.bank-examples {
-  margin: 10px 0 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: #fff;
-  border: 1px solid var(--border);
+.bank-rule-row {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 8px;
+  align-items: baseline;
 }
 
-.bank-examples-label {
-  display: block;
+.bank-rule-row + .bank-rule-row {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(184, 134, 40, 0.35);
+}
+
+.bank-rule-label {
   font-size: 12px;
   font-weight: 700;
-  color: var(--text-muted);
-  margin-bottom: 6px;
+  color: #8a6a2b;
 }
 
-.bank-examples code {
-  display: inline-block;
-  margin: 0 6px 4px 0;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: #f3f0eb;
-  font-family: inherit;
+.bank-rule-value {
+  font-size: 14px;
   font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.bank-rule-examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(184, 134, 40, 0.35);
+  font-size: 12px;
+  font-weight: 700;
+  color: #8a6a2b;
+}
+
+.bank-rule-examples code {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #e8d4a8;
+  font-family: inherit;
   font-size: 13px;
+  font-weight: 800;
   color: #1a1a1a;
 }
 
-.bank-deposit-guide-foot {
-  margin-top: 8px !important;
-  font-weight: 700;
+.bank-deposit-personal {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e8d4a8;
+  font-size: 13px;
   color: var(--text);
+}
+
+.bank-deposit-personal strong {
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.bank-deposit-notes {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.bank-deposit-notes li + li {
+  margin-top: 4px;
 }
 
 .success-bank-box {
@@ -4968,6 +5008,11 @@ button.shop-product-cta {
   min-width: 200px;
   max-width: 300px;
   white-space: normal;
+  text-align: center;
+}
+
+.shop-admin-page .admin-orders-table th:nth-child(4) {
+  text-align: center;
 }
 
 .shop-admin-page .admin-orders-table .col-items {
