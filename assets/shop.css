@@ -1826,6 +1826,185 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   margin-top: 4px;
 }
 
+.checkout-pay-summary {
+  margin: 8px 0 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fff8ee;
+  border: 1.5px solid #e8c27a;
+}
+
+.checkout-pay-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.checkout-pay-row strong {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.checkout-pay-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(184, 134, 40, 0.4);
+}
+
+.checkout-pay-total span {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.checkout-pay-total strong {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--primary, #1a4d2e);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.success-pay-summary {
+  margin: 16px auto 18px;
+  max-width: 360px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: #fff8ee;
+  border: 1.5px solid #e8c27a;
+  text-align: center;
+}
+
+.success-pay-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b4f1d;
+  margin-bottom: 4px;
+}
+
+.success-pay-amount {
+  display: block;
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--primary, #1a4d2e);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.success-pay-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.success-bank-pay {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e8d4a8;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+}
+
+.success-bank-pay strong {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary, #1a4d2e);
+  margin-left: 6px;
+}
+
+.order-guide {
+  margin: 0 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+  overflow: hidden;
+}
+
+.order-guide-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.order-guide-summary::-webkit-details-marker {
+  display: none;
+}
+
+.order-guide-summary-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.order-guide-summary-hint {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.order-guide-summary-hint::after {
+  content: " ▾";
+}
+
+.order-guide[open] .order-guide-summary-hint::after {
+  content: " ▴";
+}
+
+.order-guide-steps {
+  margin: 0;
+  padding: 0 16px 16px;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.order-guide-steps li {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--bg-soft, #f7f4ef);
+}
+
+.order-guide-steps strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.order-guide-steps span {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+@media (min-width: 768px) {
+  .order-guide-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .checkout-row2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4667,6 +4846,34 @@ button.shop-product-cta {
 .lookup-total strong {
   color: var(--primary);
   font-size: 18px;
+}
+
+.lookup-edit-help {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f7f4ef;
+  border: 1px solid var(--border);
+}
+
+.lookup-edit-help-title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.lookup-edit-help-desc {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.lookup-edit-help-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 @media (max-width: 767px) {

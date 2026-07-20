@@ -54,6 +54,13 @@
         <ul>${itemsHtml}</ul>
       </div>
       <div class="lookup-total">총 주문금액 <strong>${money(order.total)}</strong></div>
+      <div class="lookup-edit-help">
+        <p class="lookup-edit-help-title">주문 변경·취소가 필요하신가요?</p>
+        <p class="lookup-edit-help-desc">고객 화면에서는 직접 수정할 수 없습니다. 주문번호 <strong>${order.id}</strong>를 알려주시면 확인해 드립니다.</p>
+        <div class="lookup-edit-help-actions">
+          <a class="shop-btn shop-btn-kakao shop-btn-block" href="https://pf.kakao.com/_alkDxb/chat" target="_blank" rel="noopener">카카오톡 채팅으로 문의하기</a>
+        </div>
+      </div>
     </article>`;
   }
 

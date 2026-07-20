@@ -308,6 +308,7 @@
     let searchQuery = "";
     let preorderOpen = true;
     let expandedIds = new Set();
+    let editingIds = new Set();
     let routeOpen = false;
     let dataStore = "local";
 
@@ -379,6 +380,21 @@
 
     function payLabel(payment) {
       return payment === "cash" ? "현금" : "계좌이체";
+    }
+
+    function escAttr(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function escHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
     }
 
     function orderAddress(o) {
@@ -533,22 +549,114 @@
       </div>`;
     }
 
-    function renderStatusSelect(o) {
-      const status = orderStatus(o);
-      return `<div class="admin-status-wrap admin-status-${statusCls(status)}">
-        <select id="status-${o.id}" class="admin-status-select" data-order-status="${o.id}" aria-label="배송 상태">
-          ${statusOptions(status)}
-        </select>
+    function renderEditItemRow(item = {}, index = 0) {
+      const id = item.id || item.productId || "";
+      const productId = item.productId || item.id || "";
+      return `<div class="admin-order-edit-item" data-edit-item>
+        <input type="hidden" data-edit-field="id" value="${escAttr(id)}" />
+        <input type="hidden" data-edit-field="productId" value="${escAttr(productId)}" />
+        <input type="hidden" data-edit-field="category" value="${escAttr(item.category || "")}" />
+        <input type="hidden" data-edit-field="variantKey" value="${escAttr(item.variantKey || "")}" />
+        <label class="admin-order-edit-field admin-order-edit-name">
+          <span>상품명</span>
+          <input type="text" data-edit-field="name" value="${escAttr(item.name || "")}" placeholder="상품명" />
+        </label>
+        <label class="admin-order-edit-field admin-order-edit-qty">
+          <span>수량</span>
+          <input type="number" min="1" step="1" data-edit-field="qty" value="${escAttr(item.qty || 1)}" />
+        </label>
+        <label class="admin-order-edit-field admin-order-edit-price">
+          <span>금액($)</span>
+          <input type="number" min="0" step="0.01" data-edit-field="price" value="${escAttr(item.price ?? 0)}" />
+        </label>
+        <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-edit-item-remove aria-label="품목 삭제">삭제</button>
       </div>`;
+    }
+
+    function renderOrderEditForm(o) {
+      const c = o.customer || {};
+      const items = o.items?.length ? o.items : [{}];
+      return `<form class="admin-order-edit" data-order-edit-form="${o.id}">
+        <div class="admin-detail-title">주문 수정</div>
+        <div class="admin-order-edit-grid">
+          <label class="admin-order-edit-field">
+            <span>주문자</span>
+            <input type="text" data-edit-customer="name" value="${escAttr(c.name || "")}" required />
+          </label>
+          <label class="admin-order-edit-field">
+            <span>연락처</span>
+            <input type="text" data-edit-customer="phone" value="${escAttr(c.phone || "")}" required />
+          </label>
+          <label class="admin-order-edit-field admin-order-edit-wide">
+            <span>주소</span>
+            <input type="text" data-edit-customer="address" value="${escAttr(c.address || "")}" required />
+          </label>
+          <label class="admin-order-edit-field">
+            <span>Suburb</span>
+            <input type="text" data-edit-customer="suburb" value="${escAttr(c.suburb || "")}" />
+          </label>
+          <label class="admin-order-edit-field">
+            <span>카톡</span>
+            <input type="text" data-edit-customer="kakao" value="${escAttr(c.kakao || "")}" />
+          </label>
+          <label class="admin-order-edit-field">
+            <span>결제</span>
+            <select data-edit-payment>
+              <option value="transfer"${o.payment !== "cash" ? " selected" : ""}>계좌이체</option>
+              <option value="cash"${o.payment === "cash" ? " selected" : ""}>현금</option>
+            </select>
+          </label>
+          <label class="admin-order-edit-field">
+            <span>배송비($)</span>
+            <input type="number" min="0" step="0.01" data-edit-shipping value="${escAttr(o.shippingFee ?? 0)}" />
+          </label>
+          <label class="admin-order-edit-field admin-order-edit-wide">
+            <span>요청사항</span>
+            <textarea data-edit-note rows="2">${escHtml(o.note || "")}</textarea>
+          </label>
+        </div>
+        <div class="admin-order-edit-items-head">
+          <div class="admin-detail-title">품목</div>
+          <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-edit-item-add="${o.id}">품목 추가</button>
+        </div>
+        <div class="admin-order-edit-items" data-edit-items="${o.id}">
+          ${items.map((item, i) => renderEditItemRow(item, i)).join("")}
+        </div>
+        <p class="admin-order-edit-totals" data-edit-totals="${o.id}">소계 $0 + 배송 $0 = $0</p>
+        <div class="admin-order-edit-actions">
+          <button type="submit" class="shop-btn shop-btn-primary shop-btn-sm">저장</button>
+          <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-order-edit-cancel="${o.id}">취소</button>
+        </div>
+      </form>`;
     }
 
     function renderDetailContent(o) {
       const c = o.customer || {};
+      const editing = editingIds.has(o.id);
+
+      if (editing) {
+        return `<div class="admin-detail-grid admin-detail-grid-edit">
+          <div class="admin-detail-block admin-detail-block-edit">
+            ${renderOrderEditForm(o)}
+          </div>
+          <div class="admin-detail-block">
+            <div class="admin-detail-title">메시지 · 관리</div>
+            <div class="admin-msg-actions">
+              <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-msg-confirm="${o.id}">예약 확인 메시지 발송</button>
+              <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-msg-ship="${o.id}">배송 안내 메시지 발송</button>
+            </div>
+            ${messageFlags(o)}
+            <div class="admin-detail-actions">
+              <button type="button" class="shop-btn shop-btn-sm admin-btn-delete" data-order-delete="${o.id}">주문 삭제</button>
+            </div>
+          </div>
+        </div>`;
+      }
 
       return `<div class="admin-detail-grid">
         <div class="admin-detail-block">
           <div class="admin-detail-title">추가 정보</div>
-          ${c.kakao ? `<p>카톡: ${c.kakao}</p>` : "<p>카톡: -</p>"}
+          ${c.kakao ? `<p>카톡: ${escHtml(c.kakao)}</p>` : "<p>카톡: -</p>"}
           <p>배송 예정일: <strong>${deliveryLabel(o)}</strong></p>
           <p>접수: ${formatDateShort(o.createdAt)}</p>
           <p class="admin-detail-total">${shippingSummary(o)}</p>
@@ -564,11 +672,21 @@
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-msg-confirm="${o.id}">예약 확인 메시지 발송</button>
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-msg-ship="${o.id}">배송 안내 메시지 발송</button>
           </div>
-          <p class="admin-detail-note">요청사항: ${o.note || "없음"}</p>
+          <p class="admin-detail-note">요청사항: ${escHtml(o.note || "없음")}</p>
           <div class="admin-detail-actions">
+            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-order-edit="${o.id}">주문 수정</button>
             <button type="button" class="shop-btn shop-btn-sm admin-btn-delete" data-order-delete="${o.id}">주문 삭제</button>
           </div>
         </div>
+      </div>`;
+    }
+
+    function renderStatusSelect(o) {
+      const status = orderStatus(o);
+      return `<div class="admin-status-wrap admin-status-${statusCls(status)}">
+        <select id="status-${o.id}" class="admin-status-select" data-order-status="${o.id}" aria-label="배송 상태">
+          ${statusOptions(status)}
+        </select>
       </div>`;
     }
 
@@ -975,6 +1093,7 @@
       const deliveryRoot = document.getElementById("delivery-order-list");
       if (orderRoot) orderRoot.innerHTML = buildOrderListHtml(orderList);
       if (deliveryRoot) deliveryRoot.innerHTML = buildOrderListHtml(deliveryList);
+      syncAllEditTotals();
     }
 
     function showPanel() {
@@ -1113,11 +1232,99 @@
         if (!res.ok || !data.ok) throw new Error(data.error || "삭제 실패");
 
         expandedIds.delete(orderId);
+        editingIds.delete(orderId);
         await fetchOrders();
         renderOrders();
         showToast("주문이 삭제되었습니다.");
       } catch (err) {
         alert(err.message || "주문 삭제 중 오류가 발생했습니다.");
+      }
+    }
+
+    function startOrderEdit(orderId) {
+      editingIds.add(orderId);
+      expandedIds.add(orderId);
+      renderOrders();
+    }
+
+    function cancelOrderEdit(orderId) {
+      editingIds.delete(orderId);
+      renderOrders();
+    }
+
+    function getEditForm(orderId) {
+      return document.querySelector(`[data-order-edit-form="${CSS.escape(orderId)}"]`);
+    }
+
+    function collectOrderEditPayload(form) {
+      const customer = {
+        name: form.querySelector('[data-edit-customer="name"]')?.value.trim() || "",
+        phone: form.querySelector('[data-edit-customer="phone"]')?.value.trim() || "",
+        address: form.querySelector('[data-edit-customer="address"]')?.value.trim() || "",
+        suburb: form.querySelector('[data-edit-customer="suburb"]')?.value.trim() || "",
+        kakao: form.querySelector('[data-edit-customer="kakao"]')?.value.trim() || "",
+      };
+      const items = Array.from(form.querySelectorAll("[data-edit-item]")).map((row) => {
+        const field = (name) => row.querySelector(`[data-edit-field="${name}"]`)?.value ?? "";
+        const id = String(field("id") || field("productId") || "").trim();
+        const productId = String(field("productId") || id).trim();
+        const category = String(field("category") || "").trim();
+        const variantKey = String(field("variantKey") || "").trim();
+        return {
+          ...(id ? { id } : {}),
+          ...(productId ? { productId } : {}),
+          ...(category ? { category } : {}),
+          ...(variantKey ? { variantKey } : {}),
+          name: String(field("name") || "").trim(),
+          qty: Math.max(0, Math.floor(Number(field("qty")) || 0)),
+          price: Math.max(0, Number(field("price")) || 0),
+        };
+      });
+      const shippingFee = Math.max(0, Number(form.querySelector("[data-edit-shipping]")?.value) || 0);
+      const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0), 0);
+      return {
+        customer,
+        items,
+        payment: form.querySelector("[data-edit-payment]")?.value || "transfer",
+        note: form.querySelector("[data-edit-note]")?.value || "",
+        shippingFee,
+        subtotal,
+        total: subtotal + shippingFee,
+      };
+    }
+
+    function updateEditTotals(form) {
+      if (!form) return;
+      const orderId = form.dataset.orderEditForm;
+      const payload = collectOrderEditPayload(form);
+      const el = form.querySelector(`[data-edit-totals="${CSS.escape(orderId)}"]`)
+        || document.querySelector(`[data-edit-totals="${CSS.escape(orderId)}"]`);
+      if (el) {
+        el.textContent = `소계 $${payload.subtotal} + 배송 $${payload.shippingFee} = $${payload.total}`;
+      }
+    }
+
+    function syncAllEditTotals() {
+      document.querySelectorAll("[data-order-edit-form]").forEach((form) => updateEditTotals(form));
+    }
+
+    async function saveOrderEdit(orderId, form) {
+      const payload = collectOrderEditPayload(form);
+      if (!payload.customer.name || !payload.customer.phone || !payload.customer.address) {
+        alert("주문자 이름·연락처·주소는 필수입니다.");
+        return;
+      }
+      if (!payload.items.length || payload.items.some((item) => !item.name || item.qty <= 0)) {
+        alert("품목의 상품명과 수량을 확인해 주세요.");
+        return;
+      }
+      try {
+        await patchOrder(orderId, payload);
+        editingIds.delete(orderId);
+        renderOrders();
+        showToast("주문이 수정되었습니다.");
+      } catch (err) {
+        alert(err.message || "주문 수정 중 오류가 발생했습니다.");
       }
     }
 
@@ -1291,6 +1498,41 @@
           toggleDetail(toggleBtn.dataset.toggleDetail);
           return;
         }
+        const editBtn = e.target.closest("[data-order-edit]");
+        if (editBtn) {
+          startOrderEdit(editBtn.dataset.orderEdit);
+          return;
+        }
+        const cancelBtn = e.target.closest("[data-order-edit-cancel]");
+        if (cancelBtn) {
+          cancelOrderEdit(cancelBtn.dataset.orderEditCancel);
+          return;
+        }
+        const addItemBtn = e.target.closest("[data-edit-item-add]");
+        if (addItemBtn) {
+          const orderId = addItemBtn.dataset.editItemAdd;
+          const wrap = document.querySelector(`[data-edit-items="${CSS.escape(orderId)}"]`);
+          if (wrap) {
+            wrap.insertAdjacentHTML("beforeend", renderEditItemRow({}, wrap.children.length));
+            updateEditTotals(getEditForm(orderId));
+          }
+          return;
+        }
+        const removeItemBtn = e.target.closest("[data-edit-item-remove]");
+        if (removeItemBtn) {
+          const form = removeItemBtn.closest("[data-order-edit-form]");
+          const row = removeItemBtn.closest("[data-edit-item]");
+          const wrap = form?.querySelector("[data-edit-items]");
+          if (row && wrap) {
+            if (wrap.querySelectorAll("[data-edit-item]").length <= 1) {
+              alert("품목은 최소 1개 이상 있어야 합니다.");
+              return;
+            }
+            row.remove();
+            updateEditTotals(form);
+          }
+          return;
+        }
         const confirmBtn = e.target.closest("[data-msg-confirm]");
         if (confirmBtn) {
           sendConfirmMessage(confirmBtn.dataset.msgConfirm);
@@ -1303,6 +1545,21 @@
         }
         const deleteBtn = e.target.closest("[data-order-delete]");
         if (deleteBtn) deleteOrder(deleteBtn.dataset.orderDelete);
+      });
+      root.addEventListener("submit", (e) => {
+        const form = e.target.closest("[data-order-edit-form]");
+        if (!form) return;
+        e.preventDefault();
+        saveOrderEdit(form.dataset.orderEditForm, form);
+      });
+      root.addEventListener("input", (e) => {
+        const form = e.target.closest("[data-order-edit-form]");
+        if (!form) return;
+        if (
+          e.target.matches("[data-edit-field], [data-edit-shipping]")
+        ) {
+          updateEditTotals(form);
+        }
       });
       root.addEventListener("change", (e) => {
         const select = e.target.closest("[data-order-status]");

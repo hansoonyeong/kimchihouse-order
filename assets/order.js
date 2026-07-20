@@ -1494,6 +1494,7 @@
       const barTotalMobile = document.getElementById("bar-total-mobile");
       if (barTotalMobile) barTotalMobile.textContent = totalStr;
 
+      updateCheckoutPaySummary();
       updateCheckoutButtons(hasItems);
       updateCartBadge(count);
       updateMobileCartBar(hasItems);
@@ -1507,6 +1508,17 @@
         계좌 <strong>${bank.account}</strong> · ${bank.holder}
         ${bankDepositGuideHtml()}`;
       }
+    }
+
+    function updateCheckoutPaySummary() {
+      const subEl = document.getElementById("checkout-subtotal");
+      const shipEl = document.getElementById("checkout-shipping");
+      const totalEl = document.getElementById("checkout-total");
+      if (!subEl || !shipEl || !totalEl) return;
+      const ship = shippingFee();
+      subEl.textContent = money(subtotal());
+      shipEl.textContent = ship === 0 ? "무료" : money(ship);
+      totalEl.textContent = money(total());
     }
 
     function phoneLast4(phone) {
@@ -1557,6 +1569,7 @@
         alert("품목을 1개 이상 선택해 주세요.");
         return;
       }
+      updateCheckoutPaySummary();
       document.getElementById("cart-sheet-overlay")?.classList.remove("open");
       document.getElementById("checkout-overlay").classList.add("open");
       lockPageScroll();
@@ -1626,6 +1639,7 @@
       const btn = document.getElementById("submit-btn");
       btn.disabled = true;
       btn.textContent = "접수 중...";
+      const payTotal = total();
 
       try {
         const res = await fetch(cfg.orderEndpoint, {
@@ -1645,6 +1659,9 @@
         document.getElementById("success-screen")?.classList.add("show");
         document.getElementById("order-id").textContent = data.orderId;
 
+        const successTotal = document.getElementById("success-total");
+        if (successTotal) successTotal.textContent = money(payTotal);
+
         const successBank = document.getElementById("success-bank-box");
         if (successBank) {
           if (state.payment === "cash") {
@@ -1655,6 +1672,7 @@
             const personal = transferReferenceExample(name, phone);
             successBank.classList.remove("hidden");
             successBank.innerHTML = `
+              <div class="success-bank-pay">입금할 금액 <strong>${money(payTotal)}</strong></div>
               은행 <strong>${bank.bank}</strong> · BSB <strong>${bank.bsb}</strong><br>
               계좌 <strong>${bank.account}</strong> · ${bank.holder}
               ${bankDepositGuideHtml({ personalExample: personal })}`;

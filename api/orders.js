@@ -18,10 +18,13 @@ import {
 import { readSettings } from "./_lib/settings-store.js";
 import { readStock } from "./_lib/stock-store.js";
 
-async function assertStockAvailable(items) {
+async function assertStockAvailable(items, { excludeOrderId } = {}) {
   const stock = await readStock();
   const orders = await readOrders();
-  const reserved = reservedByProduct(orders);
+  const scoped = excludeOrderId
+    ? orders.filter((o) => o.id !== excludeOrderId)
+    : orders;
+  const reserved = reservedByProduct(scoped);
   const nameIndex = productNameIndex();
   const needed = {};
   for (const item of items || []) {
@@ -229,12 +232,97 @@ export async function PATCH(request) {
       if (body.shipNoticeSent) patch.shipNoticeSentAt = new Date().toISOString();
     }
 
+    const wantsOrderEdit =
+      body.customer != null ||
+      body.items != null ||
+      body.payment != null ||
+      body.note != null ||
+      body.subtotal != null ||
+      body.shippingFee != null ||
+      body.total != null;
+
+    if (wantsOrderEdit) {
+      const nextCustomer = body.customer
+        ? {
+            name: String(body.customer.name || current.customer?.name || "").trim(),
+            phone: String(body.customer.phone || current.customer?.phone || "").trim(),
+            address: String(body.customer.address || current.customer?.address || "").trim(),
+            suburb: String(body.customer.suburb || current.customer?.suburb || "").trim(),
+            kakao: String(body.customer.kakao ?? current.customer?.kakao ?? "").trim(),
+          }
+        : current.customer;
+
+      if (!nextCustomer?.name || !nextCustomer?.phone || !nextCustomer?.address) {
+        return json({ ok: false, error: "주문자 이름·연락처·주소는 필수입니다." }, 400);
+      }
+
+      let nextItems = current.items;
+      if (body.items != null) {
+        if (!Array.isArray(body.items) || !body.items.length) {
+          return json({ ok: false, error: "주문 품목을 1개 이상 입력해 주세요." }, 400);
+        }
+        nextItems = [];
+        for (let i = 0; i < body.items.length; i += 1) {
+          const item = body.items[i];
+          const name = String(item?.name || "").trim();
+          const qty = Math.max(0, Math.floor(Number(item?.qty) || 0));
+          const price = Math.max(0, Number(item?.price) || 0);
+          if (!name || qty <= 0) {
+            return json({ ok: false, error: `품목 ${i + 1}: 상품명과 수량을 확인해 주세요.` }, 400);
+          }
+          const id = String(item?.id || item?.productId || `custom-${i + 1}`);
+          nextItems.push({
+            id,
+            ...(item?.productId || item?.id ? { productId: String(item.productId || item.id) } : {}),
+            name,
+            qty,
+            price,
+            ...(item?.category ? { category: item.category } : {}),
+            ...(item?.variantKey ? { variantKey: item.variantKey } : {}),
+          });
+        }
+      }
+
+      const stockCheck = await assertStockAvailable(nextItems, { excludeOrderId: orderId });
+      if (!stockCheck.ok) return json(stockCheck, 409);
+
+      const subtotal = body.subtotal != null
+        ? Number(body.subtotal) || 0
+        : nextItems.reduce((sum, item) => sum + Number(item.price || 0), 0);
+      const shippingFee = body.shippingFee != null
+        ? Number(body.shippingFee) || 0
+        : Number(current.shippingFee) || 0;
+      const total = body.total != null
+        ? Number(body.total) || 0
+        : subtotal + shippingFee;
+
+      patch.customer = nextCustomer;
+      patch.items = nextItems;
+      patch.subtotal = subtotal;
+      patch.shippingFee = shippingFee;
+      patch.total = total;
+      if (body.payment != null) {
+        const payment = String(body.payment).trim();
+        if (payment !== "cash" && payment !== "transfer") {
+          return json({ ok: false, error: "결제 방법이 올바르지 않습니다." }, 400);
+        }
+        patch.payment = payment;
+      }
+      if (body.note != null) patch.note = String(body.note);
+      patch.updatedAt = new Date().toISOString();
+    }
+
     if (!Object.keys(patch).length) {
       return json({ ok: false, error: "변경할 항목이 없습니다." }, 400);
     }
 
     orders[index] = { ...current, ...patch };
     await writeOrders(orders);
+
+    if (wantsOrderEdit) {
+      const stock = await readStock();
+      await applyAutoSoldOutFromStock(stock, orders);
+    }
 
     return json({ ok: true, orderId, order: normalizeOrderDelivery(orders[index]) });
   } catch (err) {

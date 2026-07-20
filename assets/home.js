@@ -869,6 +869,13 @@
       <p style="font-size:13px;color:var(--text-muted);margin:4px 0 8px">${order.orderDate} · ${order.customer.name}</p>
       <ul style="font-size:13px;color:var(--text-muted);list-style:none">${itemsHtml}</ul>
       <p style="font-size:14px;font-weight:800;margin-top:8px">$${order.total}</p>
+      <div class="lookup-edit-help" style="margin-top:12px">
+        <p class="lookup-edit-help-title">주문 변경·취소</p>
+        <p class="lookup-edit-help-desc">주문번호 <strong>${order.id}</strong>를 알려주시면 확인해 드립니다.</p>
+        <div class="lookup-edit-help-actions">
+          <a class="shop-btn shop-btn-kakao shop-btn-block" href="https://pf.kakao.com/_alkDxb/chat" target="_blank" rel="noopener">카카오톡 채팅으로 문의하기</a>
+        </div>
+      </div>
     </article>`;
   }
 
