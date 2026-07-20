@@ -30,6 +30,13 @@ import {
   savePreset,
   updateSalesSettings,
 } from "../api/_lib/sales-store.js";
+import {
+  DEFAULT_OPS_STATUS,
+  OPS_STATUSES,
+  normalizeOpsEntry,
+  readDeliveryOps,
+  writeDeliveryOps,
+} from "../api/_lib/delivery-ops-store.js";
 import { loadEnvFiles } from "./load-env.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -672,6 +679,76 @@ async function handleSales(req, res) {
   return sendJson(res, 405, { ok: false, error: "Method not allowed" });
 }
 
+async function handleDeliveryOps(req, res) {
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Key",
+    });
+    return res.end();
+  }
+
+  if (getAdminKey(req) !== ADMIN_PASSWORD) {
+    return sendJson(res, 401, { ok: false, error: "관리자 인증이 필요합니다." });
+  }
+
+  if (req.method === "GET") {
+    const doc = await readDeliveryOps();
+    return sendJson(res, 200, {
+      ok: true,
+      ops: doc,
+      statuses: OPS_STATUSES,
+      defaultStatus: DEFAULT_OPS_STATUS,
+      store: hasRedisEnv() ? "redis" : "local",
+    });
+  }
+
+  if (req.method === "PATCH") {
+    let body;
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      return sendJson(res, 400, { ok: false, error: "잘못된 요청입니다." });
+    }
+
+    const updates = Array.isArray(body?.updates) ? body.updates : body?.orderId ? [body] : [];
+    if (!updates.length) {
+      return sendJson(res, 400, { ok: false, error: "변경할 배송 작업 항목이 없습니다." });
+    }
+
+    const doc = await readDeliveryOps();
+    const byOrderId = { ...doc.byOrderId };
+
+    for (const item of updates) {
+      const orderId = String(item?.orderId || "").trim();
+      if (!orderId) continue;
+      const prev = normalizeOpsEntry(byOrderId[orderId]);
+      const next = { ...prev };
+      if (item.status != null) {
+        const status = String(item.status).trim();
+        if (!OPS_STATUSES.includes(status)) {
+          return sendJson(res, 400, { ok: false, error: `유효하지 않은 배송 작업 상태: ${status}` });
+        }
+        next.status = status;
+      }
+      if (item.routeIndex !== undefined) {
+        next.routeIndex =
+          item.routeIndex == null || item.routeIndex === ""
+            ? null
+            : Math.max(0, Math.floor(Number(item.routeIndex) || 0));
+      }
+      if (item.note != null) next.note = String(item.note);
+      byOrderId[orderId] = next;
+    }
+
+    const saved = await writeDeliveryOps({ ...doc, byOrderId });
+    return sendJson(res, 200, { ok: true, ops: saved });
+  }
+
+  return sendJson(res, 405, { ok: false, error: "Method not allowed" });
+}
+
 function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split("?")[0]);
   if (urlPath === "/") urlPath = "/index.html";
@@ -736,6 +813,15 @@ const server = http.createServer(async (req, res) => {
   if (urlPath.startsWith("/api/sales")) {
     try {
       await handleSales(req, res);
+    } catch (err) {
+      sendJson(res, 500, { ok: false, error: err.message || "Server error" });
+    }
+    return;
+  }
+
+  if (urlPath.startsWith("/api/delivery-ops")) {
+    try {
+      await handleDeliveryOps(req, res);
     } catch (err) {
       sendJson(res, 500, { ok: false, error: err.message || "Server error" });
     }
