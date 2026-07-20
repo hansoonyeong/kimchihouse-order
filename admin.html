@@ -73,7 +73,6 @@
         <div class="admin-view-tabs" role="tablist">
           <button type="button" class="admin-view-tab active" data-admin-view="orders">주문 관리</button>
           <button type="button" class="admin-view-tab" data-admin-view="delivery">배송 관련</button>
-          <button type="button" class="admin-view-tab" data-admin-view="deliveryCenter">배송관리</button>
           <button type="button" class="admin-view-tab" data-admin-view="stock">재고 관리</button>
           <button type="button" class="admin-view-tab" data-admin-view="sales">판매 품목 관리</button>
         </div>
@@ -157,63 +156,6 @@
           <p class="admin-stock-note" id="previous-rounds-hint-delivery"></p>
 
           <div id="delivery-order-list"></div>
-        </section>
-      </div>
-
-      <div id="delivery-center-view" hidden>
-        <section class="shop-section">
-          <div class="admin-round-panel">
-            <div class="admin-round-head">
-              <div>
-                <div class="admin-filter-label">Delivery Center</div>
-                <h2 class="admin-round-title">배송관리</h2>
-                <p class="admin-stock-note" style="margin-top:6px">
-                  주문 원본 데이터는 변경하지 않습니다. 배송 작업 상태(배송준비·배송중·배송완료)만 별도 저장됩니다.
-                  주문 수정·예약 확인 발송 표시는 「주문 관리」에서 하세요.
-                </p>
-              </div>
-              <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="dc-route-btn">배송 순서 생성</button>
-            </div>
-            <div class="admin-route-panel" id="dc-route-panel" hidden></div>
-          </div>
-        </section>
-
-        <section class="shop-section">
-          <div class="admin-search-wrap">
-            <input type="search" id="dc-search" class="admin-search shop-lookup-input" placeholder="이름, 연락처, 주문번호, 주소, suburb 검색..." autocomplete="off" />
-            <p class="admin-search-meta" id="dc-list-meta"></p>
-          </div>
-
-          <div class="admin-filters">
-            <div class="admin-filter-group">
-              <div class="admin-filter-label">차수</div>
-              <div class="filter-tabs">
-                <button type="button" class="filter-tab active" data-dc-round-scope="current">이번 차수</button>
-                <button type="button" class="filter-tab" data-dc-round-scope="previous">이전 차수</button>
-              </div>
-            </div>
-            <div class="admin-filter-group">
-              <div class="admin-filter-label">배송 예정일</div>
-              <div class="filter-tabs" id="dc-date-tabs"></div>
-            </div>
-            <div class="admin-filter-group">
-              <div class="admin-filter-label">배송 작업 상태</div>
-              <div class="filter-tabs" id="dc-ops-status-tabs"></div>
-            </div>
-          </div>
-
-          <div class="admin-toolbar admin-delivery-toolbar">
-            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="dc-refresh-btn">새로고침</button>
-            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="dc-select-all-btn">전체 선택</button>
-            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="dc-clear-selection-btn">선택 해제</button>
-            <span class="admin-delivery-selected" id="dc-selected-count">선택 0건</span>
-            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="dc-bulk-ready-btn">선택→배송준비</button>
-            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="dc-bulk-shipping-btn">선택→배송중</button>
-            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="dc-bulk-done-btn">선택→배송완료</button>
-            <button type="button" class="shop-btn shop-btn-primary shop-btn-sm" id="dc-csv-btn">배송 CSV</button>
-          </div>
-
-          <div id="dc-order-list"></div>
         </section>
       </div>
 
@@ -338,12 +280,10 @@
   <script src="assets/products.js"></script>
   <script src="assets/delivery-utils.js"></script>
   <script src="assets/admin-sales.js"></script>
-  <script src="assets/admin-delivery.js"></script>
   <script>
     const API = "/api/orders";
     const STOCK_API = "/api/stock";
     const SALES_API = "/api/sales";
-    const DELIVERY_OPS_API = "/api/delivery-ops";
     const CONFIG_API = "/api/config";
     const D = window.KH_DELIVERY;
     const DELIVERY_STATUSES = D.DELIVERY_STATUSES;
@@ -392,23 +332,6 @@
       },
     });
     salesAdmin.bind();
-
-    const deliveryCenter = window.KHAdminDelivery.create({
-      deliveryOpsApi: DELIVERY_OPS_API,
-      deliveryUtils: D,
-      getAdminKey: () => adminKey,
-      getOrders: () => orders,
-      showToast: (msg) => showToast(msg),
-      copyText: (text) => copyText(text),
-      setStore: (store) => {
-        dataStore = store;
-        renderStoreBadge();
-      },
-      refreshOrders: async () => {
-        await fetchOrders();
-      },
-    });
-    deliveryCenter.bind();
 
     function orderStatus(o) {
       return D.orderStatus(o);
@@ -548,7 +471,7 @@
       return orders.filter((o) => matchesFilter(o, opts) && orderMatchesSearch(o, query));
     }
 
-    function buildOrderListHtml(list) {
+    function buildOrderListHtml(list, mode = "orders") {
       if (!list.length) {
         const query = searchQuery.trim();
         const emptyScope = roundScope === "previous" ? "이전 차수 주문이 없습니다." : "이번 차수 주문이 없습니다.";
@@ -571,10 +494,10 @@
                 <th>상세</th>
               </tr>
             </thead>
-            <tbody>${renderTableRows(blockList)}</tbody>
+            <tbody>${renderTableRows(blockList, mode)}</tbody>
           </table>
         </div>
-        <div class="admin-card-list">${renderMobileCards(blockList)}</div>`;
+        <div class="admin-card-list">${renderMobileCards(blockList, mode)}</div>`;
 
       // 이전 차수 + 전체: 배송일별 섹션으로 분류
       if (roundScope === "previous" && roundFilter === "all") {
@@ -707,9 +630,13 @@
       </form>`;
     }
 
-    function renderDetailContent(o) {
+    function renderDetailContent(o, mode = "orders") {
       const c = o.customer || {};
-      const editing = editingIds.has(o.id);
+      const editing = mode === "orders" && editingIds.has(o.id);
+      const isDelivery = mode === "delivery";
+      const msgActions = isDelivery
+        ? `<button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-msg-ship="${o.id}">배송 안내 메시지 발송</button>`
+        : `<button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-msg-confirm="${o.id}">예약 확인 메시지 발송</button>`;
 
       if (editing) {
         return `<div class="admin-detail-grid admin-detail-grid-edit">
@@ -719,8 +646,7 @@
           <div class="admin-detail-block">
             <div class="admin-detail-title">메시지 · 관리</div>
             <div class="admin-msg-actions">
-              <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-msg-confirm="${o.id}">예약 확인 메시지 발송</button>
-              <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-msg-ship="${o.id}">배송 안내 메시지 발송</button>
+              ${msgActions}
             </div>
             ${messageFlags(o)}
             <div class="admin-detail-actions">
@@ -746,14 +672,17 @@
         <div class="admin-detail-block">
           <div class="admin-detail-title">메시지 · 관리</div>
           <div class="admin-msg-actions">
-            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-msg-confirm="${o.id}">예약 확인 메시지 발송</button>
-            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-msg-ship="${o.id}">배송 안내 메시지 발송</button>
+            ${msgActions}
           </div>
           <p class="admin-detail-note">요청사항: ${escHtml(o.note || "없음")}</p>
-          <div class="admin-detail-actions">
+          ${
+            isDelivery
+              ? ""
+              : `<div class="admin-detail-actions">
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-order-edit="${o.id}">주문 수정</button>
             <button type="button" class="shop-btn shop-btn-sm admin-btn-delete" data-order-delete="${o.id}">주문 삭제</button>
-          </div>
+          </div>`
+          }
         </div>
       </div>`;
     }
@@ -767,7 +696,7 @@
       </div>`;
     }
 
-    function renderTableRows(list) {
+    function renderTableRows(list, mode = "orders") {
       return list
         .map((o) => {
           const expanded = expandedIds.has(o.id);
@@ -782,18 +711,18 @@
             <td class="col-status">${renderStatusSelect(o)}</td>
             <td class="col-action">
               <button type="button" class="admin-detail-btn${expanded ? " open" : ""}" data-toggle-detail="${o.id}" aria-expanded="${expanded}">
-                ${expanded ? "접기" : "상세"}
+                ${expanded ? "접기" : mode === "delivery" ? "배송 작업" : "상세"}
               </button>
             </td>
           </tr>
           <tr class="admin-detail-row${expanded ? " open" : ""}" data-detail-for="${o.id}">
-            <td colspan="8">${renderDetailContent(o)}</td>
+            <td colspan="8">${renderDetailContent(o, mode)}</td>
           </tr>`;
         })
         .join("");
     }
 
-    function renderMobileCards(list) {
+    function renderMobileCards(list, mode = "orders") {
       return list
         .map((o) => {
           const expanded = expandedIds.has(o.id);
@@ -814,12 +743,12 @@
               </dl>
               <div class="admin-card-bottom">
                 <button type="button" class="admin-detail-btn${expanded ? " open" : ""}" data-toggle-detail="${o.id}" aria-expanded="${expanded}">
-                  ${expanded ? "접기" : "상세 · 메시지"}
+                  ${expanded ? "접기" : mode === "delivery" ? "배송 작업" : "상세 · 메시지"}
                 </button>
               </div>
             </div>
             <div class="admin-card-detail">
-              ${renderDetailContent(o)}
+              ${renderDetailContent(o, mode)}
             </div>
           </article>`;
         })
@@ -1013,13 +942,11 @@
       });
       document.getElementById("orders-view").hidden = view !== "orders";
       document.getElementById("delivery-view").hidden = view !== "delivery";
-      document.getElementById("delivery-center-view").hidden = view !== "deliveryCenter";
       document.getElementById("stock-view").hidden = view !== "stock";
       document.getElementById("sales-view").hidden = view !== "sales";
       if (view === "stock") renderStock();
       if (view === "sales") salesAdmin.render();
       if (view === "orders" || view === "delivery") renderOrders();
-      if (view === "deliveryCenter") deliveryCenter.render();
     }
 
     function stockBaseId(row) {
@@ -1170,8 +1097,8 @@
 
       const orderRoot = document.getElementById("order-list");
       const deliveryRoot = document.getElementById("delivery-order-list");
-      if (orderRoot) orderRoot.innerHTML = buildOrderListHtml(orderList);
-      if (deliveryRoot) deliveryRoot.innerHTML = buildOrderListHtml(deliveryList);
+      if (orderRoot) orderRoot.innerHTML = buildOrderListHtml(orderList, "orders");
+      if (deliveryRoot) deliveryRoot.innerHTML = buildOrderListHtml(deliveryList, "delivery");
       syncAllEditTotals();
     }
 
@@ -1188,7 +1115,6 @@
         await fetchConfig();
         await fetchStock();
         await salesAdmin.fetchSales();
-        await deliveryCenter.load();
         sessionStorage.setItem("kh_admin_key", adminKey);
         showPanel();
         renderOrders();
@@ -1205,11 +1131,9 @@
         await fetchConfig();
         await fetchStock();
         await salesAdmin.fetchSales();
-        await deliveryCenter.fetchOps();
         renderOrders();
         if (adminView === "stock") renderStock();
         if (adminView === "sales") salesAdmin.render();
-        if (adminView === "deliveryCenter") deliveryCenter.render();
       } catch (err) {
         alert(err.message || "새로고침 실패");
       }
@@ -1665,7 +1589,7 @@
     });
 
     if (adminKey) {
-      Promise.all([fetchOrders(), fetchConfig(), fetchStock(), salesAdmin.fetchSales(), deliveryCenter.load()])
+      Promise.all([fetchOrders(), fetchConfig(), fetchStock(), salesAdmin.fetchSales()])
         .then(() => {
           showPanel();
           renderOrders();
