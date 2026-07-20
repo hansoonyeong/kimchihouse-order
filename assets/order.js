@@ -452,8 +452,8 @@
 
     const WH_SET_TIERS = [
       { id: "set2", label: "2 SET", note: "무료배송 + 세트 할인" },
-      { id: "set3", label: "3 SET", note: "BEST · 무료배송 + 세트 할인" },
-      { id: "set5", label: "5 SET", note: "무료배송 + 세트 할인" },
+      { id: "set3", label: "3 SET", note: "BEST · 무료배송 + $10 추가할인" },
+      { id: "set5", label: "5 SET", note: "무료배송 + $15 추가할인" },
     ];
 
     const KH_CAT_IMAGES = {
