@@ -39,7 +39,7 @@
       payment: "transfer",
       sectionFilters: {},
       brand: "kimchi-house",
-      activeCategory: "premium",
+      activeCategory: "all",
       selectedVariant: {},
       detail: null,
     };
@@ -127,7 +127,7 @@
         }
         if (data.activeCategory) {
           const mapped = normalizeCategoryParam("kimchi-house", data.activeCategory) || data.activeCategory;
-          state.activeCategory = validCategory("kimchi-house", mapped) || "premium";
+          state.activeCategory = validCategory("kimchi-house", mapped) || "all";
         }
         document.querySelectorAll(".pay-opt-shop").forEach((el) => {
           el.classList.toggle("sel", el.dataset.pay === state.payment);
@@ -427,9 +427,9 @@
     }
 
     const KH_CATEGORIES = [
-      { id: "premium", label: "워커힐 프리미엄", sections: [] },
       { id: "pogi", label: "포기김치", sections: [{ cat: "kimchi", sid: "pogi" }] },
       { id: "special", label: "별미김치", sections: [{ cat: "kimchi", sid: "special" }] },
+      { id: "premium", label: "워커힐 프리미엄", sections: [] },
       {
         id: "seafood",
         label: "프리미엄 수산·반찬",
@@ -816,7 +816,7 @@
       }
 
       const valid = validCategory(state.brand, catParam);
-      state.activeCategory = valid || "premium";
+      state.activeCategory = valid || "all";
       state.pendingScrollItem = itemParam || null;
     }
 
@@ -874,21 +874,21 @@
 
     function renderKimchiHouseCatalog() {
       if (state.activeCategory === "all") {
-        const walkerhill = walkerhillFlatCards();
-        const rest = KH_CATEGORIES.filter((c) => c.id !== "premium").flatMap((catDef) => {
+        const kimchiFirst = KH_CATEGORIES.filter((c) => c.id !== "premium").flatMap((catDef) => {
           const sections = sectionsForCategory(catDef);
           return sections.flatMap(({ section, cat }) =>
             section.items.map((item) => renderKurlyProduct(item, section, cat))
           );
         });
-        return `<div class="kurly-product-grid">${[...walkerhill, ...rest].join("")}</div>`;
+        const walkerhill = walkerhillFlatCards();
+        return `<div class="kurly-product-grid">${[...kimchiFirst, ...walkerhill].join("")}</div>`;
       }
 
       if (state.activeCategory === "premium" || WH_SET_CATS.includes(state.activeCategory)) {
         return `<div class="wh-premium-block">${renderWalkerhillCatalog(state.activeCategory)}</div>`;
       }
 
-      const catDef = KH_CATEGORIES.find((c) => c.id === state.activeCategory) || KH_CATEGORIES[1];
+      const catDef = KH_CATEGORIES.find((c) => c.id === state.activeCategory) || KH_CATEGORIES[0];
       const sections = sectionsForCategory(catDef);
       const cards = sections.flatMap(({ section, cat }) =>
         section.items.map((item) => renderKurlyProduct(item, section, cat))
@@ -1920,7 +1920,7 @@
       state.brand = "kimchi-house";
       document.body.dataset.brand = "kimchi-house";
       if (!cartOnly) {
-        state.activeCategory = brand === "walkerhill" ? "premium" : state.activeCategory || "premium";
+        state.activeCategory = brand === "walkerhill" ? "premium" : state.activeCategory || "all";
       }
       render();
       persistCart();

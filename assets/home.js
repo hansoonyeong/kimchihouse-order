@@ -10,7 +10,7 @@
     "w_set5a", "w_set5b", "w_set5c", "w_set5d",
   ];
   const WALKERHILL_ITEM_IDS = new Set(["w1", "w2", ...WALKERHILL_SET_IDS]);
-  const POPULAR_IDS = ["w1", "w2", "w_set2b", "b1", "b4", "a9", "a3", "b8"];
+  const POPULAR_IDS = ["b1", "b2", "b3", "b4", "b5", "a9", "a3", "b8"];
   const WALKERHILL_POPULAR_IDS = ["w1", "w2", "w_set2b", "w_set3a", "w_set5a", "w_set3b", "w_set5b", "w_set2a"];
 
   const BROWSE_CATEGORIES = [
@@ -24,17 +24,6 @@
       itemIds: POPULAR_IDS,
       theme: "kh",
       isAll: true,
-    },
-    {
-      id: "premium",
-      label: "워커힐 프리미엄",
-      image: "assets/images/walkerhill/pogi.jpg",
-      brand: "kimchi-house",
-      orderCat: "premium",
-      linkBrand: "kimchihouse",
-      linkCategory: "premium",
-      itemIds: ["w1", "w2", "w_set2b", "w_set3a"],
-      theme: "wh",
     },
     {
       id: "pogi",
@@ -57,6 +46,17 @@
       linkCategory: "special-kimchi",
       itemIds: ["b4", "b5", "b6", "b7"],
       theme: "kh",
+    },
+    {
+      id: "premium",
+      label: "워커힐 프리미엄",
+      image: "assets/images/walkerhill/pogi.jpg",
+      brand: "kimchi-house",
+      orderCat: "premium",
+      linkBrand: "kimchihouse",
+      linkCategory: "premium",
+      itemIds: ["w1", "w2", "w_set2b", "w_set3a"],
+      theme: "wh",
     },
     {
       id: "seafood",
@@ -96,9 +96,9 @@
   const CATEGORIES = {
     "kimchi-house": [
       { id: "all", label: "전체", href: "#shop" },
-      { id: "premium", label: "워커힐 프리미엄", image: "assets/images/walkerhill/pogi.jpg", href: "#shop", itemIds: ["w1", "w2", ...WALKERHILL_SET_IDS] },
       { id: "pogi", label: "포기김치", image: "assets/images/products/b1.png", href: "#shop", itemIds: ["b1", "b2", "b3"] },
       { id: "special", label: "별미김치", image: "assets/images/browse/special.png", href: "#shop", itemIds: ["b4", "b5", "b6", "b7"] },
+      { id: "premium", label: "워커힐 프리미엄", image: "assets/images/walkerhill/pogi.jpg", href: "#shop", itemIds: ["w1", "w2", ...WALKERHILL_SET_IDS] },
       { id: "seafood", label: "프리미엄 수산·반찬", image: "assets/images/browse/jeotgal.png", href: "#shop", itemIds: ["a9", "a10", "b10"] },
       { id: "frozen", label: "냉동·간편식", image: "assets/images/browse/frozen.png", href: "#shop", itemIds: ["a3", "a4", "extra-jaecheop", "extra-myeongtaecho"] },
       { id: "jang", label: "전통 장류·김", image: "assets/images/browse/jang.png", href: "#shop", itemIds: ["b11", "b12", "b8"] },
@@ -403,8 +403,11 @@
 
   function syncOrderLinks() {
     document.querySelectorAll(".shop-hero-slide").forEach((slide) => {
-      const cat = slide.id === "premium" ? "premium" : "pogi";
-      slide.querySelectorAll("[data-order-link]").forEach((a) => {
+      const cat =
+        slide.id === "premium" || slide.dataset.heroBrand === "walkerhill"
+          ? "premium"
+          : "pogi";
+      slide.querySelectorAll("[data-order-link], a[data-order-cat]").forEach((a) => {
         a.href = "#shop";
         if (!a.dataset.orderCat) a.dataset.orderCat = cat;
       });
@@ -684,6 +687,7 @@
   }
 
   function bindHero() {
+    if (!document.querySelector(".shop-hero-slider")) return;
     document.getElementById("hero-prev")?.addEventListener("click", () => {
       stepHero(-1);
       startHeroAutoplay();

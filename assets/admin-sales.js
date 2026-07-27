@@ -84,9 +84,8 @@
           if (state.filters.status !== "all" && r.saleStatus !== state.filters.status) return false;
           if (state.filters.soldOutOnly && r.saleStatus !== "sold_out") return false;
           if (state.filters.lowStock) {
-            const prepared = Number(r.prepared || 0);
             const remaining = Number(r.remaining || 0);
-            if (!(prepared > 0 && remaining <= 5)) return false;
+            if (!(r.tracked && remaining <= 5)) return false;
           }
           if (q) {
             const hay = `${r.name} ${r.saleCategoryLabel || ""} ${r.id}`.toLowerCase();

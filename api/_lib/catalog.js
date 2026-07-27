@@ -292,6 +292,23 @@ function rawPrepared(stockMap, id) {
   return Number(stockMap?.[id]?.prepared ?? stockMap?.[id] ?? 0) || 0;
 }
 
+function hasExplicitRemaining(stockMap, id) {
+  const entry = stockMap?.[id];
+  if (!entry || typeof entry !== "object") return false;
+  return entry.remaining != null && entry.remaining !== "";
+}
+
+function rawRemaining(stockMap, id) {
+  if (!hasExplicitRemaining(stockMap, id)) return null;
+  return Math.max(0, Math.floor(Number(stockMap[id].remaining) || 0));
+}
+
+function isTrackedEntry(stockMap, id) {
+  if (!id) return false;
+  if (hasExplicitRemaining(stockMap, id)) return true;
+  return rawPrepared(stockMap, id) > 0;
+}
+
 function variantsByBaseId() {
   const map = new Map();
   for (const p of listCatalogProducts()) {
@@ -326,7 +343,15 @@ export function migrateLegacyVariantStock(stockMap) {
 
     const primaryId = primaryVariantId(variants);
     if (!primaryId) continue;
-    current[primaryId] = { prepared: basePrepared };
+    const baseEntry = current[baseId];
+    const remaining =
+      baseEntry && typeof baseEntry === "object" && baseEntry.remaining != null
+        ? Math.max(0, Math.floor(Number(baseEntry.remaining) || 0))
+        : null;
+    current[primaryId] = {
+      prepared: basePrepared,
+      ...(remaining != null ? { remaining } : {}),
+    };
     changed = true;
   }
 
@@ -360,6 +385,37 @@ export function resolvePrepared(stockMap, productOrId) {
   return direct;
 }
 
+/**
+ * 판매 가능 남은 재고.
+ * remaining 필드가 있으면 그 값을 쓰고, 없으면 prepared(레거시)를 쓴다.
+ * 추적 중이 아니면 null.
+ */
+export function resolveRemaining(stockMap, productOrId) {
+  const id = typeof productOrId === "string" ? productOrId : productOrId?.id;
+  const baseId =
+    typeof productOrId === "string"
+      ? String(productOrId).split(":")[0]
+      : productOrId?.baseId || String(id || "").split(":")[0];
+
+  if (hasExplicitRemaining(stockMap, id)) return rawRemaining(stockMap, id);
+
+  if (isTrackedEntry(stockMap, id)) return rawPrepared(stockMap, id);
+
+  if (!baseId || baseId === id) return null;
+
+  const byBase = variantsByBaseId();
+  const variants = byBase.get(baseId) || [];
+  const anyVariantTracked = variants.some((v) => isTrackedEntry(stockMap, v.id));
+  if (anyVariantTracked) return null;
+
+  const primaryId = primaryVariantId(variants);
+  if (primaryId && id === primaryId) {
+    if (hasExplicitRemaining(stockMap, baseId)) return rawRemaining(stockMap, baseId);
+    if (isTrackedEntry(stockMap, baseId)) return rawPrepared(stockMap, baseId);
+  }
+  return null;
+}
+
 function resolveReserved(reservedMap, product) {
   let reserved = Number(reservedMap[product.id] || 0);
   if (product.baseId && product.baseId !== product.id) {
@@ -382,13 +438,16 @@ export function buildStockRows(stockMap, orders) {
     .map((p) => {
       const prepared = resolvePrepared(hydrated, p);
       const reserved = resolveReserved(reservedMap, p);
-      const remaining = prepared - reserved;
+      const storedRemaining = resolveRemaining(hydrated, p);
+      const remaining = storedRemaining != null ? storedRemaining : Math.max(0, prepared - reserved);
+      const tracked = storedRemaining != null || prepared > 0 || reserved > 0;
       return {
         ...p,
         prepared,
         reserved,
         remaining,
-        tracked: prepared > 0 || reserved > 0,
+        tracked,
+        remainingManaged: hasExplicitRemaining(hydrated, p.id),
       };
     });
 }
@@ -402,12 +461,13 @@ export function buildSalesRows(stockMap, orders, salesDoc) {
       prepared: Number(row.prepared || 0),
       reserved: Number(row.reserved || 0),
       remaining: Number(row.remaining || 0),
+      tracked: Boolean(row.tracked),
     };
   }
 
   const products = salesDoc?.products || {};
   return listSellableProducts().map((p, index) => {
-    const stock = stockById[p.id] || { prepared: 0, reserved: 0, remaining: 0 };
+    const stock = stockById[p.id] || { prepared: 0, reserved: 0, remaining: 0, tracked: false };
     const stored = products[p.id] || products[p.baseId];
     let saleStatus = "active";
     if (products[p.id]?.saleStatus) saleStatus = products[p.id].saleStatus;
@@ -424,6 +484,7 @@ export function buildSalesRows(stockMap, orders, salesDoc) {
       prepared: stock.prepared,
       reserved: stock.reserved,
       remaining: stock.remaining,
+      tracked: stock.tracked,
       saleStatus,
       sortOrder,
       priceOverride,

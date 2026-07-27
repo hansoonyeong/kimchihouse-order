@@ -58,8 +58,22 @@ function legacyStatuses(order) {
 }
 
 export function orderStatus(order) {
-  const direct = pickValidStatus(order?.status) || pickValidStatus(order?.deliveryStatus) || pickValidStatus(order?.delivery?.status);
-  if (direct) return direct;
+  const direct =
+    pickValidStatus(order?.status) ||
+    pickValidStatus(order?.deliveryStatus) ||
+    pickValidStatus(order?.delivery?.status);
+  if (direct) {
+    // confirmMessageSent / shipNoticeSent는 "상태 승격" 근거로 사용합니다.
+    // (과거에 상태 값만 누락된 데이터가 있어도, 읽기 시 일관되게 표시되도록 보정)
+    if (direct === "예약 접수" && order?.confirmMessageSent) return "주문 확인 완료";
+    if (
+      (direct === "주문 확인 완료" || direct === "배송 준비 중") &&
+      order?.shipNoticeSent
+    ) {
+      return "배송 안내 완료";
+    }
+    return direct;
+  }
   const legacy = legacyStatuses(order);
   if (legacy.length) return mergeDeliveryStatuses(...legacy);
   return DEFAULT_DELIVERY_STATUS;

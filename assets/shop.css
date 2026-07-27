@@ -6220,3 +6220,46 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
   gap: 4px;
   justify-self: end;
 }
+
+.shop-hero-scrim-kh {
+  background: linear-gradient(
+    180deg,
+    rgba(8, 28, 20, 0.42) 0%,
+    rgba(8, 28, 20, 0.5) 48%,
+    rgba(6, 20, 14, 0.62) 100%
+  );
+}
+
+.home-order-help {
+  padding-top: 8px;
+}
+
+.home-order-help-card {
+  max-width: var(--shop-max);
+  margin: 0 auto;
+  padding: 28px 20px;
+  border-radius: 18px;
+  border: 2px solid rgba(15, 74, 53, 0.18);
+  background: #f4f8f5;
+}
+
+.home-order-help-title {
+  margin: 0 0 14px;
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.home-order-help-desc {
+  margin: 0 0 20px;
+  font-size: 17px;
+  line-height: 1.7;
+  color: #333;
+}
+
+.home-order-help-cta {
+  min-height: 52px;
+  font-size: 16px;
+  font-weight: 700;
+}

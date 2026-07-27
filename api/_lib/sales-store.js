@@ -292,7 +292,7 @@ export async function deletePreset(presetId, meta = {}) {
   return { doc, deleted: true };
 }
 
-/** 재고 0(준비>0 & 잔여<=0)이면 sold_out — 용량 변형은 SKU별(예: b1:7kg)로 처리 */
+/** 재고 0이면 sold_out, 1 이상이면 active로 복구 — 남은 재고(remaining) 기준 */
 export async function applyAutoSoldOutFromStock(stockMap, orders) {
   const doc = await readSales();
   if (!doc.settings.autoSoldOutOnZero) return { doc, changed: [] };
@@ -301,13 +301,15 @@ export async function applyAutoSoldOutFromStock(stockMap, orders) {
   const updates = {};
   const names = {};
   for (const row of rows) {
-    const prepared = Number(row.prepared || 0);
+    if (!row.tracked) continue;
     const remaining = Number(row.remaining || 0);
-    if (!(prepared > 0 && remaining <= 0)) continue;
     const id = row.id;
     const current = resolveSaleStatus(doc, id, row.soldOut);
-    if (current === "active") {
+    if (remaining <= 0 && current === "active") {
       updates[id] = "sold_out";
+      names[id] = row.name;
+    } else if (remaining >= 1 && current === "sold_out") {
+      updates[id] = "active";
       names[id] = row.name;
     }
   }

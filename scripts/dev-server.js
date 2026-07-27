@@ -7,6 +7,7 @@ import {
   DEFAULT_DELIVERY_DATE,
   DEFAULT_DELIVERY_STATUS,
   DELIVERY_STATUSES,
+  isCurrentRoundOrder,
   normalizeOrderDelivery,
   orderStatus,
   parseDeliveryDate,
@@ -16,8 +17,8 @@ import {
 } from "../api/_lib/order-utils.js";
 import { hasRedisEnv, readOrders, writeOrders } from "../api/_lib/orders-store.js";
 import { readSettings, writeSettings } from "../api/_lib/settings-store.js";
-import { buildStockRows, buildSalesRows, reservedByProduct, resolvePrepared, stockKeyFromItem, stockUnitsFromItem, productNameIndex, sellableProductIndex, SALE_CATEGORIES } from "../api/_lib/catalog.js";
-import { patchStockPrepared, readStock, restoreStockFromBackup } from "../api/_lib/stock-store.js";
+import { buildStockRows, buildSalesRows, listCatalogProducts, productNameIndex, sellableProductIndex, SALE_CATEGORIES } from "../api/_lib/catalog.js";
+import { patchStockFields, patchStockPrepared, readStock, readStockLogs, restoreStockFromBackup, ensureStockMigrated, applyRemainingDeltas, assertRemainingAvailable, unitsNeededFromItems, remainingDeltaBetweenItems } from "../api/_lib/stock-store.js";
 import {
   IMPORTANT_PRODUCT_IDS,
   applyAutoSoldOutFromStock,
@@ -37,6 +38,10 @@ import {
   readDeliveryOps,
   writeDeliveryOps,
 } from "../api/_lib/delivery-ops-store.js";
+import {
+  buildOrderTemplateExport,
+  EXPORT_FILENAME,
+} from "../api/_lib/build-order-template-export.js";
 import { loadEnvFiles } from "./load-env.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -87,29 +92,31 @@ function readBody(req) {
   });
 }
 
-async function assertStockAvailable(items, { excludeOrderId } = {}) {
-  const stock = await readStock();
+async function assertStockAvailable(items, { excludeOrderId, excludeItems } = {}) {
   const orders = await readOrders();
-  const scoped = excludeOrderId
-    ? orders.filter((o) => o.id !== excludeOrderId)
-    : orders;
-  const reserved = reservedByProduct(scoped);
-  const nameIndex = productNameIndex();
-  const needed = {};
-  for (const item of items || []) {
-    for (const unit of stockUnitsFromItem(item, nameIndex)) {
-      needed[unit.key] = (needed[unit.key] || 0) + unit.qty;
+  const stock = await ensureStockMigrated(orders);
+  const needed = unitsNeededFromItems(items);
+  if (excludeItems) {
+    const excluded = unitsNeededFromItems(excludeItems);
+    for (const [id, qty] of Object.entries(excluded)) {
+      needed[id] = (needed[id] || 0) - qty;
+      if (needed[id] <= 0) delete needed[id];
+    }
+  } else if (excludeOrderId) {
+    const prev = orders.find((o) => o.id === excludeOrderId);
+    if (prev) {
+      const excluded = unitsNeededFromItems(prev.items);
+      for (const [id, qty] of Object.entries(excluded)) {
+        needed[id] = (needed[id] || 0) - qty;
+        if (needed[id] <= 0) delete needed[id];
+      }
     }
   }
+  const demand = {};
   for (const [id, qty] of Object.entries(needed)) {
-    const prepared = resolvePrepared(stock, id);
-    if (prepared <= 0) continue; // 준비수량 미설정 상품은 제한하지 않음
-    const left = prepared - (reserved[id] || 0);
-    if (qty > left) {
-      return { ok: false, error: `재고 부족: ${id} (잔여 ${Math.max(0, left)} / 요청 ${qty})` };
-    }
+    if (qty > 0) demand[id] = qty;
   }
-  return { ok: true };
+  return assertRemainingAvailable(stock, demand);
 }
 
 async function handleOrders(req, res) {
@@ -199,8 +206,12 @@ async function handleOrders(req, res) {
     const orders = await readOrders();
     orders.unshift(order);
     await writeOrders(orders);
-    const stockAfter = await readStock();
-    await applyAutoSoldOutFromStock(stockAfter, orders);
+    const needed = unitsNeededFromItems(items);
+    const { stock } = await applyRemainingDeltas(needed, {
+      admin: "system:order",
+      note: `온라인 주문 ${orderId}`,
+    });
+    await applyAutoSoldOutFromStock(stock, orders);
     return sendJson(res, 201, { ok: true, orderId: order.id });
   }
 
@@ -260,12 +271,43 @@ async function handleOrders(req, res) {
 
     if (typeof body.confirmMessageSent === "boolean") {
       patch.confirmMessageSent = body.confirmMessageSent;
-      if (body.confirmMessageSent) patch.confirmMessageSentAt = new Date().toISOString();
+      if (body.confirmMessageSent) {
+        patch.confirmMessageSentAt = new Date().toISOString();
+        // UI에서 status를 같이 보내지 않아도, "예약 접수" -> "주문 확인 완료"로 자동 승격
+        if (!patch.status && orderStatus(current) === "예약 접수") {
+          const status = "주문 확인 완료";
+          patch.status = status;
+          patch.deliveryStatus = status;
+          patch.delivery = {
+            ...(patch.delivery ||
+              (typeof current.delivery === "object" && current.delivery ? current.delivery : {})),
+            date: patch.delivery?.date || resolveDeliveryDate(current),
+            status,
+          };
+        }
+      }
     }
 
     if (typeof body.shipNoticeSent === "boolean") {
       patch.shipNoticeSent = body.shipNoticeSent;
-      if (body.shipNoticeSent) patch.shipNoticeSentAt = new Date().toISOString();
+      if (body.shipNoticeSent) {
+        patch.shipNoticeSentAt = new Date().toISOString();
+        // UI에서 status를 같이 보내지 않아도, "주문 확인 완료" 계열로부터 "배송 안내 완료"로 자동 승격
+        if (
+          !patch.status &&
+          (orderStatus(current) === "주문 확인 완료" || orderStatus(current) === "배송 준비 중")
+        ) {
+          const status = "배송 안내 완료";
+          patch.status = status;
+          patch.deliveryStatus = status;
+          patch.delivery = {
+            ...(patch.delivery ||
+              (typeof current.delivery === "object" && current.delivery ? current.delivery : {})),
+            date: patch.delivery?.date || resolveDeliveryDate(current),
+            status,
+          };
+        }
+      }
     }
 
     const wantsOrderEdit =
@@ -298,6 +340,8 @@ async function handleOrders(req, res) {
           return sendJson(res, 400, { ok: false, error: "주문 품목을 1개 이상 입력해 주세요." });
         }
         nextItems = [];
+        const catalogById = sellableProductIndex();
+        const catalogByName = productNameIndex();
         for (let i = 0; i < body.items.length; i += 1) {
           const item = body.items[i];
           const name = String(item?.name || "").trim();
@@ -306,20 +350,34 @@ async function handleOrders(req, res) {
           if (!name || qty <= 0) {
             return sendJson(res, 400, { ok: false, error: `품목 ${i + 1}: 상품명과 수량을 확인해 주세요.` });
           }
-          const id = String(item?.id || item?.productId || `custom-${i + 1}`);
+          const requestedProductId = String(item?.productId || item?.id || "").trim();
+          const requestedVariantKey = String(item?.variantKey || "").trim();
+          const requestedKey =
+            requestedProductId && requestedVariantKey
+              ? `${requestedProductId.split(":")[0]}:${requestedVariantKey}`
+              : requestedProductId;
+          const nameKey = catalogByName.get(name) || catalogByName.get(name.replace(/\s+/g, ""));
+          const catalogItem = catalogById.get(requestedKey) || catalogById.get(nameKey);
+          const id = catalogItem?.id || requestedProductId || `custom-${i + 1}`;
+          const productId = catalogItem?.baseId || requestedProductId || "";
+          const variantKey = catalogItem?.variantKey || requestedVariantKey;
+          const category = catalogItem?.category || String(item?.category || "").trim();
           nextItems.push({
             id,
-            ...(item?.productId || item?.id ? { productId: String(item.productId || item.id) } : {}),
-            name,
+            ...(productId ? { productId } : {}),
+            name: catalogItem?.name || name,
             qty,
             price,
-            ...(item?.category ? { category: item.category } : {}),
-            ...(item?.variantKey ? { variantKey: item.variantKey } : {}),
+            ...(category ? { category } : {}),
+            ...(variantKey ? { variantKey } : {}),
           });
         }
       }
 
-      const stockCheck = await assertStockAvailable(nextItems, { excludeOrderId: orderId });
+      const stockCheck = await assertStockAvailable(nextItems, {
+        excludeOrderId: orderId,
+        excludeItems: current.items,
+      });
       if (!stockCheck.ok) return sendJson(res, 409, stockCheck);
 
       const subtotal = body.subtotal != null
@@ -355,8 +413,12 @@ async function handleOrders(req, res) {
     orders[index] = { ...current, ...patch };
     await writeOrders(orders);
 
-    if (wantsOrderEdit) {
-      const stock = await readStock();
+    if (wantsOrderEdit && patch.items) {
+      const deltas = remainingDeltaBetweenItems(current.items, patch.items);
+      const { stock } = await applyRemainingDeltas(deltas, {
+        admin: "system:order-edit",
+        note: `주문 수정 ${orderId}`,
+      });
       await applyAutoSoldOutFromStock(stock, orders);
     }
 
@@ -374,12 +436,23 @@ async function handleOrders(req, res) {
     }
 
     const orders = await readOrders();
+    const target = orders.find((o) => o.id === orderId);
     const nextOrders = orders.filter((o) => o.id !== orderId);
     if (nextOrders.length === orders.length) {
       return sendJson(res, 404, { ok: false, error: "주문을 찾을 수 없습니다." });
     }
 
     await writeOrders(nextOrders);
+    if (target?.items?.length) {
+      const restore = unitsNeededFromItems(target.items);
+      const deltas = {};
+      for (const [id, qty] of Object.entries(restore)) deltas[id] = -qty;
+      const { stock } = await applyRemainingDeltas(deltas, {
+        admin: "system:order-delete",
+        note: `주문 삭제 ${orderId}`,
+      });
+      await applyAutoSoldOutFromStock(stock, nextOrders);
+    }
     return sendJson(res, 200, { ok: true, orderId });
   }
 
@@ -401,8 +474,16 @@ async function handleStock(req, res) {
   }
 
   if (req.method === "GET") {
-    const [stock, orders] = await Promise.all([readStock(), readOrders()]);
-    return sendJson(res, 200, { ok: true, stock, rows: buildStockRows(stock, orders), store: hasRedisEnv() ? "redis" : "local" });
+    const orders = await readOrders();
+    const stock = await ensureStockMigrated(orders);
+    const logs = await readStockLogs(80);
+    return sendJson(res, 200, {
+      ok: true,
+      stock,
+      rows: buildStockRows(stock, orders),
+      logs,
+      store: hasRedisEnv() ? "redis" : "local",
+    });
   }
 
   if (req.method === "PATCH") {
@@ -412,28 +493,66 @@ async function handleStock(req, res) {
     } catch {
       return sendJson(res, 400, { ok: false, error: "잘못된 요청입니다." });
     }
+    const orders = await readOrders();
     if (body?.action === "restore_backup") {
-      const result = await restoreStockFromBackup({ force: body.force === true });
+      const result = await restoreStockFromBackup({ force: body.force === true, orders });
       if (!result.ok) return sendJson(res, 400, result);
-      const orders = await readOrders();
       await applyAutoSoldOutFromStock(result.stock, orders);
       return sendJson(res, 200, {
         ok: true,
         restored: true,
         stock: result.stock,
         rows: buildStockRows(result.stock, orders),
+        logs: await readStockLogs(80),
       });
     }
-    const updates = {};
-    if (body?.productId != null && body?.prepared != null) updates[String(body.productId)] = body.prepared;
-    if (body?.updates && typeof body.updates === "object") Object.assign(updates, body.updates);
-    if (!Object.keys(updates).length) {
+
+    const preparedUpdates = {};
+    const remainingUpdates = {};
+    if (body?.productId != null) {
+      const id = String(body.productId);
+      if (body.prepared != null) preparedUpdates[id] = body.prepared;
+      if (body.remaining != null) remainingUpdates[id] = body.remaining;
+    }
+    if (body?.updates && typeof body.updates === "object") {
+      for (const [id, value] of Object.entries(body.updates)) {
+        if (value == null) continue;
+        if (typeof value === "number" || typeof value === "string") {
+          preparedUpdates[id] = value;
+          continue;
+        }
+        if (typeof value === "object") {
+          if (value.prepared != null) preparedUpdates[id] = value.prepared;
+          if (value.remaining != null) remainingUpdates[id] = value.remaining;
+        }
+      }
+    }
+    if (body?.remainingUpdates && typeof body.remainingUpdates === "object") {
+      Object.assign(remainingUpdates, body.remainingUpdates);
+    }
+    if (body?.preparedUpdates && typeof body.preparedUpdates === "object") {
+      Object.assign(preparedUpdates, body.preparedUpdates);
+    }
+    if (!Object.keys(preparedUpdates).length && !Object.keys(remainingUpdates).length) {
       return sendJson(res, 400, { ok: false, error: "변경할 재고가 없습니다." });
     }
-    const stock = await patchStockPrepared(updates);
-    const orders = await readOrders();
+
+    await ensureStockMigrated(orders);
+    const names = Object.fromEntries(listCatalogProducts().map((p) => [p.id, p.name]));
+    const { stock } = await patchStockFields({
+      preparedUpdates,
+      remainingUpdates,
+      admin: body?.admin || "admin",
+      note: body?.note || body?.reason || "",
+      names,
+    });
     await applyAutoSoldOutFromStock(stock, orders);
-    return sendJson(res, 200, { ok: true, stock, rows: buildStockRows(stock, orders) });
+    return sendJson(res, 200, {
+      ok: true,
+      stock,
+      rows: buildStockRows(stock, orders),
+      logs: await readStockLogs(80),
+    });
   }
 
   return sendJson(res, 405, { ok: false, error: "Method not allowed" });
@@ -602,7 +721,10 @@ async function handleSales(req, res) {
         snapshot.products[id] = { ...entry };
       }
       for (const [id, row] of Object.entries(stock || {})) {
-        snapshot.stock[id] = Number(row?.prepared || 0);
+        snapshot.stock[id] = {
+          prepared: Number(row?.prepared || 0),
+          ...(row?.remaining != null ? { remaining: Number(row.remaining) } : {}),
+        };
       }
       for (const [id, p] of catalogIndex) {
         if (!snapshot.products[id]) {
@@ -635,7 +757,22 @@ async function handleSales(req, res) {
       if (!preset) return sendJson(res, 404, { ok: false, error: "프리셋을 찾을 수 없습니다." });
       await patchSaleStatuses(preset.snapshot?.products || {}, { names, admin: "admin:preset" });
       if (preset.snapshot?.stock && Object.keys(preset.snapshot.stock).length) {
-        await patchStockPrepared(preset.snapshot.stock);
+        const preparedUpdates = {};
+        const remainingUpdates = {};
+        for (const [id, value] of Object.entries(preset.snapshot.stock)) {
+          if (value != null && typeof value === "object") {
+            if (value.prepared != null) preparedUpdates[id] = value.prepared;
+            if (value.remaining != null) remainingUpdates[id] = value.remaining;
+          } else {
+            preparedUpdates[id] = value;
+          }
+        }
+        await patchStockFields({
+          preparedUpdates,
+          remainingUpdates,
+          admin: "admin:preset",
+          note: `프리셋 적용: ${preset.name}`,
+        });
       }
       const [stock, orders, latest] = await Promise.all([readStock(), readOrders(), readSales()]);
       return sendJson(res, 200, {
@@ -749,6 +886,46 @@ async function handleDeliveryOps(req, res) {
   return sendJson(res, 405, { ok: false, error: "Method not allowed" });
 }
 
+async function handleOrderTemplateExport(req, res) {
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Key",
+    });
+    return res.end();
+  }
+  if (req.method !== "POST") {
+    return sendJson(res, 405, { ok: false, error: "Method not allowed" });
+  }
+  if (getAdminKey(req) !== ADMIN_PASSWORD) {
+    return sendJson(res, 401, { ok: false, error: "관리자 인증이 필요합니다." });
+  }
+
+  let body = {};
+  try {
+    const raw = await readBody(req);
+    body = raw ? JSON.parse(raw) : {};
+  } catch {
+    return sendJson(res, 400, { ok: false, error: "잘못된 요청입니다." });
+  }
+
+  const preview = body?.preview === true;
+  const orders = (await readOrders()).filter(isCurrentRoundOrder);
+  const result = await buildOrderTemplateExport(orders, { preview });
+  if (preview) {
+    return sendJson(res, 200, { ok: true, scope: "current", summary: result.summary });
+  }
+
+  res.writeHead(200, {
+    "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "Content-Disposition": `attachment; filename="kimchi-house-august-orders.xlsx"; filename*=UTF-8''${encodeURIComponent(EXPORT_FILENAME)}`,
+    "Cache-Control": "no-store",
+    "Content-Length": String(result.buffer.length),
+  });
+  return res.end(result.buffer);
+}
+
 function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split("?")[0]);
   if (urlPath === "/") urlPath = "/index.html";
@@ -779,6 +956,15 @@ const server = http.createServer(async (req, res) => {
       await handleLookup(req, res);
     } catch (err) {
       sendJson(res, 500, { ok: false, error: err.message || "Server error" });
+    }
+    return;
+  }
+
+  if (urlPath.startsWith("/api/order-template-export")) {
+    try {
+      await handleOrderTemplateExport(req, res);
+    } catch (err) {
+      sendJson(res, 500, { ok: false, error: err.message || "Excel 생성 중 오류가 발생했습니다." });
     }
     return;
   }

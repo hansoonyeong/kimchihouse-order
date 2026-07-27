@@ -16,7 +16,7 @@ import {
   savePreset,
   updateSalesSettings,
 } from "./_lib/sales-store.js";
-import { patchStockPrepared, readStock } from "./_lib/stock-store.js";
+import { patchStockFields, patchStockPrepared, readStock } from "./_lib/stock-store.js";
 
 function storeLabel() {
   try {
@@ -125,7 +125,10 @@ export async function PATCH(request) {
         snapshot.products[id] = { ...entry };
       }
       for (const [id, row] of Object.entries(stock || {})) {
-        snapshot.stock[id] = Number(row?.prepared || 0);
+        snapshot.stock[id] = {
+          prepared: Number(row?.prepared || 0),
+          ...(row?.remaining != null ? { remaining: Number(row.remaining) } : {}),
+        };
       }
       // also capture current defaults for products without explicit entry
       for (const [id, p] of catalogIndex) {
@@ -167,7 +170,22 @@ export async function PATCH(request) {
       }
       await patchSaleStatuses(updates, { names, admin: `${admin}:preset` });
       if (Object.keys(snapStock).length) {
-        await patchStockPrepared(snapStock);
+        const preparedUpdates = {};
+        const remainingUpdates = {};
+        for (const [id, value] of Object.entries(snapStock)) {
+          if (value != null && typeof value === "object") {
+            if (value.prepared != null) preparedUpdates[id] = value.prepared;
+            if (value.remaining != null) remainingUpdates[id] = value.remaining;
+          } else {
+            preparedUpdates[id] = value;
+          }
+        }
+        await patchStockFields({
+          preparedUpdates,
+          remainingUpdates,
+          admin: `${admin}:preset`,
+          note: `프리셋 적용: ${preset.name}`,
+        });
       }
       const [stock, orders, latest] = await Promise.all([readStock(), readOrders(), readSales()]);
       return json({

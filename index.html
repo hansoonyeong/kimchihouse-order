@@ -21,9 +21,9 @@
       </a>
       <nav class="shop-header-cats" aria-label="카테고리">
         <a href="#shop" data-order-cat="all">ALL</a>
-        <a href="#shop" data-order-cat="premium">워커힐 프리미엄</a>
         <a href="#shop" data-order-cat="pogi">포기김치</a>
         <a href="#shop" data-order-cat="special">별미김치</a>
+        <a href="#shop" data-order-cat="premium">워커힐 프리미엄</a>
         <a href="#shop" data-order-cat="seafood">수산·반찬</a>
         <a href="#shop" data-order-cat="frozen">냉동·간편식</a>
         <a href="#shop" data-order-cat="jang">장류·김</a>
@@ -55,9 +55,9 @@
         <p class="shop-mobile-nav-label">예약주문</p>
         <div class="shop-mobile-nav-cats" id="mobile-nav-cats">
           <a href="#shop" data-order-cat="all">ALL</a>
-          <a href="#shop" data-order-cat="premium">워커힐 프리미엄</a>
           <a href="#shop" data-order-cat="pogi">포기김치</a>
           <a href="#shop" data-order-cat="special">별미김치</a>
+          <a href="#shop" data-order-cat="premium">워커힐 프리미엄</a>
           <a href="#shop" data-order-cat="seafood">프리미엄 수산·반찬</a>
           <a href="#shop" data-order-cat="frozen">냉동·간편식</a>
           <a href="#shop" data-order-cat="jang">전통 장류·김</a>
@@ -75,6 +75,27 @@
     <div class="shop-hero-slider">
       <button type="button" class="shop-hero-arrow prev" id="hero-prev" aria-label="이전">‹</button>
       <div class="shop-hero-track" id="hero-track">
+        <div class="shop-hero-slide" id="seoul-renewal" data-hero-brand="kimchi-house">
+          <div class="shop-hero-card">
+            <div class="shop-hero-visual">
+              <img
+                src="assets/images/hero.png"
+                alt="김치하우스 서울식 포기김치"
+                decoding="async"
+              />
+              <div class="shop-hero-scrim shop-hero-scrim-kh"></div>
+              <div class="shop-hero-body">
+                <p class="shop-hero-eyebrow">김치하우스 서울식 김치 리뉴얼</p>
+                <h1 class="shop-hero-title">매일 먹는 김치,<br>더 맛있게 새로워졌습니다</h1>
+                <p class="shop-hero-desc">깔끔하고 시원한 서울식의 매력은 그대로,<br>매일 밥상에 더 맛있게 어울리도록 새롭게 다듬었습니다.</p>
+                <div class="shop-hero-actions">
+                  <a class="shop-hero-cta" href="#shop" data-order-link="primary" data-order-cat="pogi">리뉴얼 서울식 김치 주문하기</a>
+                  <a class="shop-btn shop-btn-outline" href="#shop" data-order-cat="pogi">김치하우스 김치 전체 보기</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="shop-hero-slide" id="premium" data-hero-brand="walkerhill">
           <div class="shop-hero-card">
             <div class="shop-hero-visual">
@@ -126,6 +147,7 @@
       <div class="shop-hero-dots">
         <button type="button" class="shop-hero-dot active" data-index="0" aria-label="배너 1"></button>
         <button type="button" class="shop-hero-dot" data-index="1" aria-label="배너 2"></button>
+        <button type="button" class="shop-hero-dot" data-index="2" aria-label="배너 3"></button>
       </div>
     </div>
   </section>
@@ -221,7 +243,7 @@
 
     <section class="shop-section browse-category-section" id="browse-categories">
       <div class="shop-section-head">
-        <h2 class="shop-section-title">카테고리별로 둘러보세요</h2>
+        <h2 class="shop-section-title">우리 집 입맛에 맞는 김치를 골라보세요</h2>
         <a class="shop-section-more" href="#shop" id="browse-view-all" data-order-cat="all">전체 상품 보기 →</a>
       </div>
       <div class="browse-category-rail" id="browse-category-rail" role="list"></div>
@@ -274,6 +296,18 @@
             <div id="product-root"></div>
           </main>
         </div>
+      </div>
+    </section>
+
+    <section class="shop-section home-order-help" id="order-help">
+      <div class="home-order-help-card">
+        <h2 class="home-order-help-title">온라인 주문이 어려우신가요?</h2>
+        <p class="home-order-help-desc">
+          걱정하지 마세요. 기존처럼 카카오톡으로<br>
+          상품명, 수량, 성함, 연락처, 배송주소를 보내주시면<br>
+          편하게 주문을 도와드립니다.
+        </p>
+        <a class="shop-btn shop-btn-kakao shop-btn-block home-order-help-cta" href="https://pf.kakao.com/_alkDxb/chat" target="_blank" rel="noopener">카카오톡으로 주문 문의하기</a>
       </div>
     </section>
 
