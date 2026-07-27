@@ -314,6 +314,7 @@ window.KH_PRODUCTS = {
             id: "b11",
             name: "항아골 생청국장 (120g)",
             price: 25,
+            packOnly: true,
             tiers: [
               [4, 25],
               [8, 45],

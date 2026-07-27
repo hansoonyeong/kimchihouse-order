@@ -98,6 +98,33 @@
       return state.cart[id] || 0;
     }
 
+    function allowedQtysFor(item) {
+      if (!item?.packOnly) return null;
+      const tiers = getTierList(item);
+      if (!tiers?.length) return null;
+      return tiers.map(([n]) => Number(n)).filter((n) => n > 0).sort((a, b) => a - b);
+    }
+
+    function normalizePackQty(item, value) {
+      const allowed = allowedQtysFor(item);
+      if (!allowed?.length) return value;
+      const n = Math.floor(Number(value) || 0);
+      if (n <= 0) return 0;
+      if (allowed.includes(n)) return n;
+      return allowed.reduce((best, q) => (Math.abs(q - n) < Math.abs(best - n) ? q : best), allowed[0]);
+    }
+
+    function stepPackQty(item, current, delta) {
+      const allowed = allowedQtysFor(item);
+      if (!allowed?.length) return null;
+      if (current <= 0) return delta > 0 ? allowed[0] : 0;
+      const idx = allowed.indexOf(current);
+      if (idx < 0) return normalizePackQty(item, current);
+      if (delta > 0) return allowed[Math.min(allowed.length - 1, idx + 1)];
+      if (idx <= 0) return 0;
+      return allowed[idx - 1];
+    }
+
     function persistCart() {
       try {
         localStorage.setItem(
@@ -129,6 +156,14 @@
           const mapped = normalizeCategoryParam("kimchi-house", data.activeCategory) || data.activeCategory;
           state.activeCategory = validCategory("kimchi-house", mapped) || "all";
         }
+        Object.keys(state.cart).forEach((id) => {
+          const baseId = String(id).split(":")[0];
+          const found = findItemById(baseId);
+          if (!found || String(id).includes(":")) return;
+          const next = normalizePackQty(found.item, state.cart[id]);
+          if (next <= 0) delete state.cart[id];
+          else state.cart[id] = next;
+        });
         document.querySelectorAll(".pay-opt-shop").forEach((el) => {
           el.classList.toggle("sel", el.dataset.pay === state.payment);
         });
@@ -163,6 +198,9 @@
             alert(`${label}은(는) 현재 주문할 수 없습니다. (${window.KHSale.label(found.item, variantKey)})`);
             return;
           }
+        }
+        if (found && !variantKey) {
+          value = normalizePackQty(found.item, value);
         }
       }
       if (value <= 0) delete state.cart[id];
@@ -522,6 +560,9 @@
       if (item.desc) return item.desc;
       if (section.note && !item.tier) return section.note;
       if (item.group === "special" || item.group === "pa") return "수량별 할인 적용";
+      if (item.packOnly && item.tiers?.length) {
+        return item.tiers.map(([n]) => `${n}개`).join(" · ") + " 단위로 주문";
+      }
       if (item.tiers) return "수량별 할인 적용";
       return section.tab || "";
     }
@@ -984,20 +1025,27 @@
     }
 
     function renderBarItems(lines) {
-      const renderLine = (line) => `<li class="cart-line" data-cart-id="${line.id}">
+      const renderLine = (line) => {
+        const baseId = String(line.id).split(":")[0];
+        const found = findItemById(baseId);
+        const allowed = found && !String(line.id).includes(":") ? allowedQtysFor(found.item) : null;
+        const maxQty = allowed?.length ? allowed[allowed.length - 1] : null;
+        const decDisabled = allowed ? false : line.qty <= 1;
+        return `<li class="cart-line" data-cart-id="${line.id}">
         <div class="cart-line-top">
           <span class="cart-line-name">${line.name}</span>
           <button type="button" class="cart-line-delete" data-cart-delete="${line.id}" aria-label="삭제">삭제</button>
         </div>
         <div class="cart-line-bottom">
           <div class="cart-qty">
-            <button type="button" data-cart-dec="${line.id}" ${line.qty <= 1 ? "disabled" : ""}>−</button>
+            <button type="button" data-cart-dec="${line.id}" ${decDisabled ? "disabled" : ""}>−</button>
             <span>${line.qty}</span>
-            <button type="button" data-cart-inc="${line.id}">+</button>
+            <button type="button" data-cart-inc="${line.id}" ${maxQty != null && line.qty >= maxQty ? "disabled" : ""}>+</button>
           </div>
           <span class="cart-line-price">${money(line.price)}</span>
         </div>
       </li>`;
+      };
 
       const order = [...KH_CATEGORIES.map((c) => c.id), "other"];
       const present = order.filter((id) => lines.some((line) => line.shopCategory === id));
@@ -1700,12 +1748,30 @@
         const inc = e.target.closest("[data-cart-inc]");
         if (inc) {
           const id = inc.dataset.cartInc;
+          const baseId = String(id).split(":")[0];
+          const found = findItemById(baseId);
+          if (found && !String(id).includes(":")) {
+            const next = stepPackQty(found.item, qty(id), 1);
+            if (next != null) {
+              setQty(id, next);
+              return;
+            }
+          }
           setQty(id, qty(id) + 1);
           return;
         }
         const dec = e.target.closest("[data-cart-dec]");
         if (dec) {
           const id = dec.dataset.cartDec;
+          const baseId = String(id).split(":")[0];
+          const found = findItemById(baseId);
+          if (found && !String(id).includes(":")) {
+            const next = stepPackQty(found.item, qty(id), -1);
+            if (next != null) {
+              setQty(id, next);
+              return;
+            }
+          }
           setQty(id, Math.max(0, qty(id) - 1));
         }
       });
