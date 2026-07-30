@@ -199,7 +199,7 @@ window.KH_PRODUCTS = {
               "assets/images/products/detail-baekmyeongran/07.jpg",
               "assets/images/products/detail-baekmyeongran/08.jpg",
               "assets/images/products/detail-baekmyeongran/09.jpg",
-              "assets/images/products/detail-baekmyeongran/10.jpg",
+              "assets/images/products/detail-baekmyeongran/10.gif",
               "assets/images/products/detail-baekmyeongran/11.jpg",
               "assets/images/products/detail-baekmyeongran/12.jpg",
             ],
