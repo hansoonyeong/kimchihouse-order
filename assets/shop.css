@@ -4962,18 +4962,127 @@ button.shop-product-cta {
   }
 
   .shop-schedule-events-wrap {
+    display: grid;
     grid-template-columns: 1fr;
-    gap: 0;
+    gap: 8px;
+    padding-bottom: 10px;
+  }
+
+  .shop-schedule-events-wrap > .shop-section {
+    padding: 12px 0 0;
+    border-bottom: none;
+  }
+
+  .shop-schedule-events-wrap .shop-section-head {
+    margin-bottom: 6px;
+  }
+
+  .shop-schedule-events-wrap .shop-section-title {
+    font-size: 15px;
+  }
+
+  .shop-schedule-events-wrap .shop-section-more {
+    font-size: 12px;
+  }
+
+  .shop-schedule-events-wrap .shop-schedule-panel {
+    padding: 10px 12px;
+  }
+
+  .shop-schedule-block .shop-schedule-date {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 8px;
+    row-gap: 4px;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+    align-items: center;
+  }
+
+  .shop-schedule-block .shop-schedule-date-eyebrow {
+    margin: 0;
+    justify-self: start;
+  }
+
+  .shop-schedule-block .shop-schedule-date-day {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.3;
+  }
+
+  .shop-schedule-block .shop-schedule-date-note,
+  .shop-schedule-block .shop-schedule-date-caution {
+    grid-column: 1 / -1;
+  }
+
+  .shop-schedule-events-wrap .shop-schedule-date-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .shop-schedule-events-wrap .shop-schedule-date-caution {
+    margin: 2px 0 0;
+    padding: 6px 8px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  /* 요약과 겹치는 상세 포인트는 숨기고 핵심만 노출 */
+  .shop-schedule-block .shop-schedule-points {
+    display: none;
+  }
+
+  .shop-events-block .shop-schedule-date {
+    display: none;
+  }
+
+  .shop-events-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .shop-events-points li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    border-left: 1px solid var(--border);
+    background: #fafafa;
+  }
+
+  .shop-events-points li > span:not(.shop-event-tag) {
+    display: none;
+  }
+
+  .shop-events-points .shop-event-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-start;
+  }
+
+  .shop-events-points .shop-event-title strong {
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .shop-events-points .shop-event-tag {
+    margin-left: 0;
+    padding: 1px 5px;
+    font-size: 9px;
   }
 
   .shop-schedule-events-wrap .shop-events-block {
     border-left: none;
     padding-left: 0;
     padding-top: 0;
-  }
-
-  .shop-schedule-points {
-    gap: 12px;
   }
 
   .shop-events {
