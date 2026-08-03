@@ -2423,9 +2423,9 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   overflow: hidden;
   flex: 1;
   width: 100%;
-  min-height: 0;
-  height: auto;
-  aspect-ratio: 16 / 9;
+  min-height: min(72vw, 420px);
+  height: min(72vw, 520px);
+  aspect-ratio: auto;
 }
 
 .shop-hero-visual {
@@ -2446,30 +2446,14 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   pointer-events: none;
 }
 
-.shop-hero-card-video .shop-hero-video {
-  object-fit: contain;
+/* 영상 전용 슬라이드: 영상만 표시 (같은 히어로 높이 안에서 16:9 contain) */
+.shop-hero-card-video {
   background: #0a0602;
 }
 
-.shop-hero-scrim-video {
-  background: linear-gradient(
-    180deg,
-    rgba(10, 6, 2, 0.12) 0%,
-    rgba(10, 6, 2, 0.08) 55%,
-    rgba(10, 6, 2, 0.42) 100%
-  );
-  pointer-events: none;
-}
-
-.shop-hero-body-video {
-  justify-content: flex-end;
-  padding: 28px 24px 56px;
-  background: none;
-}
-
-.shop-hero-body-video .shop-hero-title {
-  font-size: clamp(22px, 4.5vw, 34px);
-  margin-bottom: 14px;
+.shop-hero-video-only {
+  object-fit: contain;
+  background: #0a0602;
 }
 
 .shop-hero-video-controls {
@@ -4489,18 +4473,13 @@ body.shop-preorder-off .shop-main {
 
   .shop-hero-card,
   .shop-hero-card-wh {
-    min-height: 0;
-    height: auto;
-    aspect-ratio: 16 / 9;
+    min-height: 420px;
+    height: min(52vw, 560px);
   }
 
   .shop-hero-body,
   .shop-hero-body-wh {
     padding: 56px 80px 72px;
-  }
-
-  .shop-hero-body-video {
-    padding: 40px 80px 64px;
   }
 
   .shop-hero-title {
@@ -4986,18 +4965,13 @@ button.shop-product-cta {
 
   .shop-hero-card,
   .shop-hero-card-wh {
-    min-height: 0;
-    height: auto;
-    aspect-ratio: 16 / 9;
+    min-height: 320px;
+    height: min(78vw, 420px);
   }
 
   .shop-hero-body,
   .shop-hero-body-wh {
     padding: 40px 20px 56px;
-  }
-
-  .shop-hero-body-video {
-    padding: 24px 16px 52px;
   }
 
   .shop-hero-video-controls {

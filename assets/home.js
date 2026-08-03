@@ -738,14 +738,17 @@
   function startHeroAutoplay() {
     clearInterval(heroTimer);
     const active = heroSlides()[heroIndex];
-    const video = active?.querySelector("video.shop-hero-video");
-    if (video?.paused) return;
+    const videoOnly = active?.querySelector("#hero-wh-video");
+    if (videoOnly?.paused) return;
+    const bannerVideo = active?.querySelector("video.shop-hero-video:not(#hero-wh-video)");
     let delay = 5000;
-    if (video) {
-      const durationMs = Number.isFinite(video.duration) && video.duration > 0
-        ? Math.round(video.duration * 1000)
+    if (videoOnly) {
+      const durationMs = Number.isFinite(videoOnly.duration) && videoOnly.duration > 0
+        ? Math.round(videoOnly.duration * 1000)
         : 30000;
       delay = Math.max(durationMs, 12000);
+    } else if (bannerVideo) {
+      delay = 12000;
     }
     heroTimer = setInterval(() => {
       if (heroSlides().length < 2) return;

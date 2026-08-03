@@ -97,10 +97,9 @@
           </div>
         </div>
         <div class="shop-hero-slide" id="premium" data-hero-brand="walkerhill">
-          <div class="shop-hero-card shop-hero-card-video">
+          <div class="shop-hero-card">
             <div class="shop-hero-visual">
               <video
-                id="hero-wh-video"
                 class="shop-hero-video"
                 src="assets/images/walkerhill/hero.mp4"
                 poster="assets/images/walkerhill/hero-poster.jpg"
@@ -109,16 +108,34 @@
                 loop
                 playsinline
                 preload="metadata"
-                aria-label="워커힐 호텔 김치 영상"
+                aria-label="워커힐 호텔 김치"
               ></video>
-              <div class="shop-hero-scrim shop-hero-scrim-wh shop-hero-scrim-video"></div>
-              <div class="shop-hero-body shop-hero-body-video">
+              <div class="shop-hero-scrim shop-hero-scrim-wh"></div>
+              <div class="shop-hero-body">
                 <p class="shop-hero-eyebrow">PREMIUM LINE · 워커힐 호텔 김치</p>
                 <h1 class="shop-hero-title">호텔 김치가<br>집에 도착하는 순간</h1>
                 <div class="shop-hero-actions">
                   <a class="shop-hero-cta" href="#shop" data-order-link="primary" data-order-cat="premium">워커힐 예약하기</a>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+        <div class="shop-hero-slide" id="walkerhill-video" data-hero-brand="walkerhill">
+          <div class="shop-hero-card shop-hero-card-video">
+            <div class="shop-hero-visual">
+              <video
+                id="hero-wh-video"
+                class="shop-hero-video shop-hero-video-only"
+                src="assets/images/walkerhill/hero-30s.mp4"
+                poster="assets/images/walkerhill/hero-poster-30s.jpg"
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="metadata"
+                aria-label="워커힐 호텔 김치 영상"
+              ></video>
               <div class="shop-hero-video-controls" aria-label="영상 컨트롤">
                 <button type="button" class="shop-hero-vbtn" id="hero-video-mute" aria-label="소리 켜기" aria-pressed="true" title="음소거">
                   <svg class="shop-hero-vicon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -161,6 +178,7 @@
         <button type="button" class="shop-hero-dot active" data-index="0" aria-label="배너 1"></button>
         <button type="button" class="shop-hero-dot" data-index="1" aria-label="배너 2"></button>
         <button type="button" class="shop-hero-dot" data-index="2" aria-label="배너 3"></button>
+        <button type="button" class="shop-hero-dot" data-index="3" aria-label="배너 4"></button>
       </div>
     </div>
   </section>
