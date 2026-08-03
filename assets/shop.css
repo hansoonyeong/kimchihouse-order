@@ -2423,9 +2423,9 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   overflow: hidden;
   flex: 1;
   width: 100%;
-  min-height: min(72vw, 420px);
-  height: min(72vw, 520px);
-  aspect-ratio: auto;
+  min-height: 0;
+  height: auto;
+  aspect-ratio: 16 / 9;
 }
 
 .shop-hero-visual {
@@ -2446,7 +2446,7 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   pointer-events: none;
 }
 
-/* 영상 전용 슬라이드: 영상만 표시 (같은 히어로 높이 안에서 16:9 contain) */
+/* 영상 전용 슬라이드 */
 .shop-hero-card-video {
   background: #0a0602;
 }
@@ -4473,8 +4473,9 @@ body.shop-preorder-off .shop-main {
 
   .shop-hero-card,
   .shop-hero-card-wh {
-    min-height: 420px;
-    height: min(52vw, 560px);
+    min-height: 0;
+    height: auto;
+    aspect-ratio: 16 / 9;
   }
 
   .shop-hero-body,
@@ -4965,8 +4966,9 @@ button.shop-product-cta {
 
   .shop-hero-card,
   .shop-hero-card-wh {
-    min-height: 320px;
-    height: min(78vw, 420px);
+    min-height: 0;
+    height: auto;
+    aspect-ratio: 16 / 9;
   }
 
   .shop-hero-body,

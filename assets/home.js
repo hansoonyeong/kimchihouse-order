@@ -1,7 +1,7 @@
 (function () {
   const BRANDS = {
-    "kimchi-house": { label: "김치하우스", heroIndex: 0 },
-    walkerhill: { label: "워커힐 호텔 김치", heroIndex: 1 },
+    "kimchi-house": { label: "김치하우스", heroIndex: 1 },
+    walkerhill: { label: "워커힐 호텔 김치", heroIndex: 0 },
   };
 
   const WALKERHILL_SET_IDS = [
