@@ -2423,9 +2423,9 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   overflow: hidden;
   flex: 1;
   width: 100%;
-  min-height: min(72vw, 420px);
-  height: min(72vw, 520px);
-  aspect-ratio: auto;
+  min-height: 0;
+  height: auto;
+  aspect-ratio: 16 / 9;
 }
 
 .shop-hero-visual {
@@ -2444,6 +2444,75 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 
 .shop-hero-video {
   pointer-events: none;
+}
+
+.shop-hero-card-video .shop-hero-video {
+  object-fit: contain;
+  background: #0a0602;
+}
+
+.shop-hero-scrim-video {
+  background: linear-gradient(
+    180deg,
+    rgba(10, 6, 2, 0.12) 0%,
+    rgba(10, 6, 2, 0.08) 55%,
+    rgba(10, 6, 2, 0.42) 100%
+  );
+  pointer-events: none;
+}
+
+.shop-hero-body-video {
+  justify-content: flex-end;
+  padding: 28px 24px 56px;
+  background: none;
+}
+
+.shop-hero-body-video .shop-hero-title {
+  font-size: clamp(22px, 4.5vw, 34px);
+  margin-bottom: 14px;
+}
+
+.shop-hero-video-controls {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.shop-hero-vbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(12, 10, 8, 0.58);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.shop-hero-vbtn:hover {
+  background: rgba(12, 10, 8, 0.78);
+  transform: translateY(-1px);
+}
+
+.shop-hero-vbtn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 2px;
+}
+
+.shop-hero-vicon {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .shop-hero-scrim {
@@ -4420,13 +4489,18 @@ body.shop-preorder-off .shop-main {
 
   .shop-hero-card,
   .shop-hero-card-wh {
-    min-height: 420px;
-    height: min(52vw, 560px);
+    min-height: 0;
+    height: auto;
+    aspect-ratio: 16 / 9;
   }
 
   .shop-hero-body,
   .shop-hero-body-wh {
     padding: 56px 80px 72px;
+  }
+
+  .shop-hero-body-video {
+    padding: 40px 80px 64px;
   }
 
   .shop-hero-title {
@@ -4912,13 +4986,28 @@ button.shop-product-cta {
 
   .shop-hero-card,
   .shop-hero-card-wh {
-    min-height: 320px;
-    height: min(78vw, 420px);
+    min-height: 0;
+    height: auto;
+    aspect-ratio: 16 / 9;
   }
 
   .shop-hero-body,
   .shop-hero-body-wh {
     padding: 40px 20px 56px;
+  }
+
+  .shop-hero-body-video {
+    padding: 24px 16px 52px;
+  }
+
+  .shop-hero-video-controls {
+    left: 10px;
+    bottom: 10px;
+  }
+
+  .shop-hero-vbtn {
+    width: 36px;
+    height: 36px;
   }
 
   .shop-hero-arrow {

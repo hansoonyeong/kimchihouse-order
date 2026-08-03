@@ -643,6 +643,66 @@
     return slider?.clientWidth || 0;
   }
 
+  function heroVideoIcons() {
+    return {
+      mute: `<svg class="shop-hero-vicon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M4 9.5v5h3.2L12 18.5v-13l-4.8 4H4zm11.2 1.3 1.4-1.4 1.5 1.4 1.4-1.4 1.4 1.4-1.4 1.5 1.4 1.4-1.4 1.4-1.4-1.4-1.5 1.4-1.4-1.4 1.4-1.4-1.4-1.5z"/></svg>`,
+      sound: `<svg class="shop-hero-vicon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M4 9.5v5h3.2L12 18.5v-13l-4.8 4H4zm10.7 1.1c.8.7 1.3 1.7 1.3 2.9s-.5 2.2-1.3 2.9l1.4 1.5c1.3-1.1 2.1-2.7 2.1-4.4s-.8-3.3-2.1-4.4l-1.4 1.5zm2.7-3C19.4 9 20.5 11.1 20.5 13.5s-1.1 4.5-3.1 5.9l1.4 1.5c2.6-1.8 4.2-4.5 4.2-7.4s-1.6-5.6-4.2-7.4l-1.4 1.5z"/></svg>`,
+      play: `<svg class="shop-hero-vicon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 5.8v12.4l10-6.2-10-6.2z"/></svg>`,
+      pause: `<svg class="shop-hero-vicon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 6h3.2v12H7V6zm6.8 0H17v12h-3.2V6z"/></svg>`,
+    };
+  }
+
+  function syncHeroVideoButtons() {
+    const video = document.getElementById("hero-wh-video");
+    const muteBtn = document.getElementById("hero-video-mute");
+    const pauseBtn = document.getElementById("hero-video-pause");
+    if (!video || !muteBtn || !pauseBtn) return;
+    const icons = heroVideoIcons();
+    const isMuted = video.muted || video.volume === 0;
+    muteBtn.setAttribute("aria-pressed", isMuted ? "true" : "false");
+    muteBtn.setAttribute("aria-label", isMuted ? "소리 켜기" : "음소거");
+    muteBtn.title = isMuted ? "소리 켜기" : "음소거";
+    muteBtn.innerHTML = isMuted ? icons.mute : icons.sound;
+    const isPaused = video.paused;
+    pauseBtn.setAttribute("aria-label", isPaused ? "재생" : "정지");
+    pauseBtn.title = isPaused ? "재생" : "정지";
+    pauseBtn.innerHTML = isPaused ? icons.play : icons.pause;
+  }
+
+  function bindHeroVideoControls() {
+    const video = document.getElementById("hero-wh-video");
+    const muteBtn = document.getElementById("hero-video-mute");
+    const pauseBtn = document.getElementById("hero-video-pause");
+    if (!video || !muteBtn || !pauseBtn || muteBtn.dataset.bound === "1") return;
+    muteBtn.dataset.bound = "1";
+
+    muteBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      video.muted = !video.muted;
+      if (!video.muted && video.volume === 0) video.volume = 1;
+      syncHeroVideoButtons();
+    });
+
+    pauseBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (video.paused) {
+        video.play().catch(() => {});
+        startHeroAutoplay();
+      } else {
+        video.pause();
+        clearInterval(heroTimer);
+      }
+      syncHeroVideoButtons();
+    });
+
+    video.addEventListener("play", syncHeroVideoButtons);
+    video.addEventListener("pause", syncHeroVideoButtons);
+    video.addEventListener("volumechange", syncHeroVideoButtons);
+    syncHeroVideoButtons();
+  }
+
   function syncHeroVideo() {
     const slides = heroSlides();
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -655,6 +715,7 @@
         video.pause();
       }
     });
+    syncHeroVideoButtons();
   }
 
   function goHero(index) {
@@ -677,8 +738,15 @@
   function startHeroAutoplay() {
     clearInterval(heroTimer);
     const active = heroSlides()[heroIndex];
-    const hasVideo = Boolean(active?.querySelector("video.shop-hero-video"));
-    const delay = hasVideo ? 12000 : 5000;
+    const video = active?.querySelector("video.shop-hero-video");
+    if (video?.paused) return;
+    let delay = 5000;
+    if (video) {
+      const durationMs = Number.isFinite(video.duration) && video.duration > 0
+        ? Math.round(video.duration * 1000)
+        : 30000;
+      delay = Math.max(durationMs, 12000);
+    }
     heroTimer = setInterval(() => {
       if (heroSlides().length < 2) return;
       goHero(heroIndex + 1);
@@ -715,6 +783,7 @@
       startHeroAutoplay();
     }, { passive: true });
 
+    bindHeroVideoControls();
     goHero(heroIndex);
     syncHeroDots();
     startHeroAutoplay();
