@@ -984,6 +984,25 @@ body[data-brand="walkerhill"] .shop-cat-icon.active .shop-cat-icon-label {
 }
 
 @media (max-width: 767px) {
+  .browse-category-section .shop-section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .browse-category-section .shop-section-title {
+    width: 100%;
+    font-size: 16px;
+    line-height: 1.35;
+    white-space: nowrap;
+  }
+
+  .browse-category-section .shop-section-more {
+    align-self: flex-end;
+    flex-shrink: 0;
+  }
+
   .browse-category-rail {
     gap: 16px;
     margin: 0 calc(-1 * var(--shop-pad));
