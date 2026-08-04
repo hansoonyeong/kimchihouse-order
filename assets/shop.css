@@ -6477,19 +6477,19 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 }
 
 .shop-faq-list {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--white);
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
 }
 
 .shop-faq-item {
   border-bottom: 1px solid var(--border);
-  background: var(--white);
+  background: transparent;
 }
 
 .shop-faq-item:last-child {
-  border-bottom: none;
+  border-bottom: 1px solid var(--border);
 }
 
 .shop-faq-q {
@@ -6499,7 +6499,7 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
   justify-content: space-between;
   gap: 12px;
   min-height: 48px;
-  padding: 12px 14px;
+  padding: 12px 2px;
   border: none;
   background: transparent;
   text-align: left;
@@ -6510,17 +6510,18 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
   color: var(--text);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: color 0.15s ease;
 }
 
 .shop-faq-q:hover {
   color: var(--primary);
-  background: #fafaf8;
+  background: transparent;
 }
 
 .shop-faq-q:focus-visible {
   outline: 2px solid var(--primary);
-  outline-offset: -2px;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .shop-faq-q-text {
@@ -6553,7 +6554,7 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 
 .shop-faq-item.is-open .shop-faq-q {
   color: var(--primary);
-  background: #f7faf8;
+  background: transparent;
 }
 
 .shop-faq-panel {
@@ -6568,7 +6569,7 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 
 .shop-faq-a {
   overflow: hidden;
-  padding: 0 14px;
+  padding: 0 2px;
   font-size: 13px;
   line-height: 1.65;
   color: #555;
@@ -6576,7 +6577,7 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 
 .shop-faq-item.is-open .shop-faq-a {
   padding-bottom: 14px;
-  border-top: 1px solid transparent;
+  border-top: none;
 }
 
 .shop-faq-a p {
@@ -6739,20 +6740,20 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
   }
 
   .shop-faq-list {
-    border-radius: 12px;
+    border-radius: 0;
   }
 
   .shop-faq-q {
     min-height: 46px;
     font-size: 14px;
     font-weight: 600;
-    padding: 13px 18px;
+    padding: 13px 2px;
   }
 
   .shop-faq-a {
     font-size: 13.5px;
     line-height: 1.7;
-    padding: 0 18px;
+    padding: 0 2px;
   }
 
   .shop-faq-item.is-open .shop-faq-a {
@@ -6825,9 +6826,5 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 
   .shop-faq-groups {
     gap: 24px 28px;
-  }
-
-  .shop-faq-q:hover {
-    background: #f6f8f6;
   }
 }
