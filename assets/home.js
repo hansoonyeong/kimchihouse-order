@@ -345,12 +345,6 @@
     }
     document.querySelector("#order-steps .shop-btn-primary")?.setAttribute("href", "#shop");
     document.querySelector(".shop-fixed-cta .shop-btn-primary")?.setAttribute("href", "#shop");
-
-    const eventsCta = document.getElementById("round-benefits-cta");
-    if (eventsCta) {
-      eventsCta.href = "#shop";
-      eventsCta.dataset.orderCat = "frozen";
-    }
   }
 
   function originalPrice(item) {
