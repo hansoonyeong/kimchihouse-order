@@ -2689,7 +2689,7 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 
 /* ===== Round (배송 일정 · 차수 혜택) ===== */
 .shop-round-wrap {
-  max-width: 920px;
+  max-width: 880px;
   margin: 0 auto;
   padding: 28px 0 32px;
   border-bottom: 1px solid var(--border);
@@ -2699,43 +2699,46 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 .shop-round-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
+  gap: 28px;
   align-items: start;
 }
 
 .shop-round-card {
   min-width: 0;
-  padding: 18px 16px 16px;
-  border: 1px solid rgba(15, 74, 53, 0.12);
-  border-radius: 12px;
-  background: #fbfaf7;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 
-.shop-round-card-schedule {
-  background: #f7faf8;
+.shop-round-card-schedule,
+.shop-round-card-benefits {
+  background: transparent;
 }
 
 .shop-round-head {
   margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
 }
 
 .shop-round-badge {
-  display: inline-flex;
-  align-items: center;
-  margin: 0 0 8px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  background: rgba(15, 74, 53, 0.12);
+  display: inline-block;
+  margin: 0 0 6px;
+  padding: 0;
+  border-radius: 0;
+  background: none;
   color: var(--primary);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.01em;
   line-height: 1.3;
 }
 
 .shop-round-badge-soft {
-  background: rgba(15, 74, 53, 0.08);
+  background: none;
+  color: var(--primary);
 }
 
 .shop-round-title {
@@ -2750,14 +2753,14 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 .shop-round-desc {
   margin: 0;
   font-size: 13.5px;
-  line-height: 1.5;
-  color: #4a4a4a;
+  line-height: 1.55;
+  color: #444;
 }
 
 .shop-round-info-list {
   list-style: none;
   display: grid;
-  gap: 8px;
+  gap: 0;
   margin: 0 0 12px;
   padding: 0;
 }
@@ -2765,10 +2768,16 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 .shop-round-info-item {
   display: grid;
   gap: 2px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(15, 74, 53, 0.08);
+  padding: 10px 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.shop-round-info-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .shop-round-info-label {
@@ -2780,32 +2789,38 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 
 .shop-round-info-text {
   font-size: 13px;
-  line-height: 1.45;
-  color: #3f3f3f;
+  line-height: 1.5;
+  color: #3a3a3a;
 }
 
 .shop-round-note {
-  margin: 0;
+  margin: 10px 0 0;
+  padding: 0;
   font-size: 12px;
-  line-height: 1.5;
-  color: #6a655c;
+  line-height: 1.55;
+  color: #5c5c5c;
 }
 
 .shop-round-benefit-list {
   list-style: none;
   display: grid;
-  gap: 8px;
-  margin: 0 0 14px;
+  gap: 0;
+  margin: 0 0 16px;
   padding: 0;
 }
 
 .shop-round-benefit-item {
   display: grid;
   gap: 3px;
-  padding: 11px 12px;
-  border-radius: 8px;
-  background: #fff;
-  border: 1px solid rgba(15, 74, 53, 0.1);
+  padding: 11px 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.shop-round-benefit-item:last-child {
+  border-bottom: none;
 }
 
 .shop-round-benefit-title {
@@ -2817,16 +2832,16 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 }
 
 .shop-round-benefit-title strong {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 800;
   line-height: 1.3;
   color: var(--text);
 }
 
 .shop-round-benefit-text {
-  font-size: 12.5px;
-  line-height: 1.45;
-  color: #3f3f3f;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #3a3a3a;
 }
 
 .shop-round-benefit-item .shop-event-tag {
@@ -2834,51 +2849,56 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   margin: 0;
   display: inline-flex;
   align-items: center;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   line-height: 1.3;
-}
-
-.shop-round-benefit-item .shop-event-tag-new {
-  background: rgba(196, 64, 32, 0.12);
-  color: #b53a1c;
-}
-
-.shop-round-benefit-item .shop-event-tag-free {
-  background: rgba(15, 74, 53, 0.12);
   color: var(--primary);
 }
 
+.shop-round-benefit-item .shop-event-tag-new,
+.shop-round-benefit-item .shop-event-tag-free,
 .shop-round-benefit-item .shop-event-tag-limit {
-  background: rgba(120, 90, 40, 0.12);
-  color: #7a5a28;
+  background: none;
+  color: var(--primary);
 }
 
 .shop-round-cta {
   display: inline-flex;
-  width: 100%;
-  min-height: 44px;
+  width: auto;
+  min-height: 42px;
   justify-content: center;
   font-size: 14px;
   font-weight: 700;
+  padding: 0 18px;
 }
 
 @media (min-width: 768px) {
   .shop-round-wrap {
-    max-width: 920px;
+    max-width: 880px;
     padding: 36px 0 40px;
   }
 
   .shop-round-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 16px;
+    gap: 0 40px;
+  }
+
+  .shop-round-card-schedule {
+    padding-right: 28px;
+    border-right: 1px solid var(--border);
+  }
+
+  .shop-round-card-benefits {
+    padding-left: 8px;
   }
 
   .shop-round-card {
-    padding: 20px 18px 18px;
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
   .shop-round-title {
@@ -2891,7 +2911,7 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 
   .shop-round-cta {
     width: auto;
-    min-width: 160px;
+    min-width: 0;
   }
 }
 
@@ -2903,27 +2923,21 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 .shop-event-tag {
   display: inline-flex;
   align-items: center;
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 10px;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  line-height: 1.4;
-}
-
-.shop-event-tag-new {
-  background: rgba(196, 64, 32, 0.12);
-  color: #b53a1c;
-}
-
-.shop-event-tag-free {
-  background: rgba(15, 74, 53, 0.12);
+  letter-spacing: 0.02em;
+  line-height: 1.3;
   color: var(--primary);
 }
 
+.shop-event-tag-new,
+.shop-event-tag-free,
 .shop-event-tag-limit {
-  background: rgba(120, 90, 40, 0.12);
-  color: #7a5a28;
+  background: none;
+  color: var(--primary);
 }
 
 .shop-schedule-lines {
