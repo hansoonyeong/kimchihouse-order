@@ -287,56 +287,6 @@
     return `#shop`;
   }
 
-  function browseRecommendProducts(catId) {
-    const cat = BROWSE_CATEGORIES.find((c) => c.id === catId) || BROWSE_CATEGORIES[0];
-    const all = collectProducts(cat.brand);
-    const picked = [];
-    const seen = new Set();
-
-    for (const id of cat.itemIds || []) {
-      const item = all.find((p) => p.id === id);
-      if (item && !seen.has(id) && itemSaleStatus(item) === "active") {
-        picked.push(item);
-        seen.add(id);
-      }
-      if (picked.length >= 4) break;
-    }
-
-    if (picked.length < 4) {
-      for (const item of all) {
-        if (seen.has(item.id) || itemSaleStatus(item) !== "active") continue;
-        picked.push(item);
-        seen.add(item.id);
-        if (picked.length >= 4) break;
-      }
-    }
-
-    return { cat, products: picked.slice(0, 4) };
-  }
-
-  function renderBrowseProductCard(item) {
-    const badge = item.badge
-      ? `<span class="shop-badge shop-badge-${item.badge.cls}">${item.badge.text}</span>`
-      : "";
-    const status = itemSaleStatus(item);
-    const action = status !== "active"
-      ? `<button type="button" class="browse-product-cta" disabled>${status === "coming_soon" ? "판매 예정" : "품절"}</button>`
-      : renderProductAction(item).replace("shop-product-cta", "browse-product-cta");
-
-    return `<article class="browse-product">
-      <button type="button" class="browse-product-media" data-home-modal="${item.id}">
-        <img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async" />
-        ${badge}
-      </button>
-      <div class="browse-product-body">
-        <div class="browse-product-name">${item.name}</div>
-        <div class="browse-product-desc">${item.desc}</div>
-        <div class="browse-product-price">${renderPriceHtml(item)}</div>
-        ${action}
-      </div>
-    </article>`;
-  }
-
   function renderBrowseCategories() {
     const rail = document.getElementById("browse-category-rail");
     if (!rail) return;
@@ -354,20 +304,8 @@
     }).join("");
   }
 
-  function renderBrowseRecommend(catId = activeBrowseCategory) {
+  function setBrowseCategoryActive(catId) {
     activeBrowseCategory = catId;
-    const { cat, products } = browseRecommendProducts(catId);
-    const grid = document.getElementById("browse-product-grid");
-    const title = document.getElementById("browse-recommend-title");
-    const more = document.getElementById("browse-recommend-more");
-
-    if (title) title.textContent = cat.isAll ? "전체 추천 상품" : `${cat.label} 추천 상품`;
-    if (more) {
-      more.href = browseCategoryHref(cat);
-      if (cat.orderCat) more.dataset.orderCat = cat.orderCat;
-    }
-    if (grid) grid.innerHTML = products.map(renderBrowseProductCard).join("");
-
     document.querySelectorAll("[data-browse-cat]").forEach((el) => {
       el.classList.toggle("is-active", el.dataset.browseCat === catId);
     });
@@ -377,25 +315,12 @@
     const rail = document.getElementById("browse-category-rail");
     if (!rail) return;
 
-    rail.addEventListener("mouseover", (e) => {
-      const item = e.target.closest("[data-browse-cat]");
-      if (!item) return;
-      if (item.dataset.browseCat !== activeBrowseCategory) {
-        renderBrowseRecommend(item.dataset.browseCat);
-      }
-    });
-
-    rail.addEventListener("focusin", (e) => {
-      const item = e.target.closest("[data-browse-cat]");
-      if (item) renderBrowseRecommend(item.dataset.browseCat);
-    });
-
     rail.addEventListener("click", (e) => {
       const item = e.target.closest("[data-browse-cat]");
       if (!item) return;
       e.preventDefault();
       const cat = BROWSE_CATEGORIES.find((c) => c.id === item.dataset.browseCat);
-      renderBrowseRecommend(item.dataset.browseCat);
+      setBrowseCategoryActive(item.dataset.browseCat);
       if (cat?.orderCat) window.shopApi?.setCategory(cat.orderCat);
       document.getElementById("shop")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
@@ -597,7 +522,6 @@
     currentBrand = "kimchi-house";
     document.body.dataset.brand = "kimchi-house";
     syncOrderLinks();
-    renderBrowseRecommend(activeBrowseCategory);
     renderPopular("kimchi-house");
     startHeroAutoplay();
   }
@@ -916,7 +840,6 @@
 
   async function loadSalesAndRefresh() {
     if (window.KHSale) await window.KHSale.load();
-    renderBrowseRecommend(activeBrowseCategory);
     renderPopular(currentBrand);
   }
 
@@ -1021,7 +944,6 @@
       refreshCategoryTabs();
     }
     renderBrowseCategories();
-    renderBrowseRecommend(activeBrowseCategory);
     bindBrowseCategories();
     syncNavCategoryLinks();
     syncOrderLinks();
