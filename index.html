@@ -339,7 +339,7 @@
           상품명, 수량, 성함, 연락처, 배송주소를 보내주시면<br>
           편하게 주문을 도와드립니다.
         </p>
-        <a class="shop-btn shop-btn-kakao shop-btn-block home-order-help-cta" href="https://pf.kakao.com/_alkDxb/chat" target="_blank" rel="noopener">카카오톡으로 주문 문의하기</a>
+        <a class="home-order-help-link" href="https://pf.kakao.com/_alkDxb/chat" target="_blank" rel="noopener">카카오톡으로 주문 문의하기 →</a>
       </div>
     </section>
 
@@ -589,37 +589,37 @@
         <div class="shop-faq-contact-copy">
           <h3 class="shop-faq-contact-title">찾으시는 답변이 없으신가요?</h3>
           <p class="shop-faq-contact-desc">
-            카카오톡 채팅으로 문의 내용을 남겨주시면 보다 빠르게 확인하고 안내해 드립니다.<br>
-            배송 가능 지역 문의 시 우편번호를 함께 보내주세요.
+            카카오톡 채팅으로 문의 내용을 남겨주시면 보다 빠르게 확인하고 안내해 드립니다.
+            배송 지역 문의 시 우편번호를 함께 보내주세요.
           </p>
         </div>
-        <a
-          class="shop-btn shop-btn-kakao shop-btn-block shop-faq-contact-cta"
-          href="https://pf.kakao.com/_alkDxb/chat"
-          target="_blank"
-          rel="noopener"
-        >카카오톡으로 문의하기</a>
+        <div class="shop-faq-contact-actions">
+          <a
+            class="shop-btn shop-btn-kakao shop-faq-contact-cta"
+            href="https://pf.kakao.com/_alkDxb/chat"
+            target="_blank"
+            rel="noopener"
+          >카카오톡으로 문의하기</a>
+          <a
+            class="shop-faq-channel-link"
+            href="http://pf.kakao.com/_alkDxb"
+            target="_blank"
+            rel="noopener"
+          >채널 추가하기</a>
+        </div>
       </div>
     </section>
 
-    <section class="shop-section shop-lookup-kakao">
-      <div class="shop-lookup-kakao-grid">
-        <div class="shop-lookup-block" id="lookup">
-          <div class="shop-section-head">
-            <h2 class="shop-section-title">주문 내역을 확인하세요</h2>
-          </div>
-          <p class="shop-lookup-desc">주문 시 입력하신 연락처로 조회할 수 있습니다.</p>
-          <div class="shop-lookup-form">
-            <input type="tel" class="shop-lookup-input" id="home-lookup-phone" placeholder="연락처 입력 (예: 0433 938 909)" autocomplete="tel" />
-            <button type="button" class="shop-btn shop-btn-primary" id="home-lookup-btn">조회하기</button>
-          </div>
-          <div class="shop-lookup-results" id="home-lookup-results"></div>
-        </div>
-        <div class="shop-kakao">
-          <p>예약일정 · 할인 · 신상품 소식을<br>가장 먼저 받아보세요.</p>
-          <a class="shop-btn-kakao" href="http://pf.kakao.com/_alkDxb" target="_blank" rel="noopener">카카오톡 채널 추가하기</a>
-        </div>
+    <section class="shop-section shop-lookup" id="lookup">
+      <div class="shop-section-head">
+        <h2 class="shop-section-title">주문 내역을 확인하세요</h2>
       </div>
+      <p class="shop-lookup-desc">주문 시 입력하신 연락처로 조회할 수 있습니다.</p>
+      <div class="shop-lookup-form shop-lookup-form-inline">
+        <input type="tel" class="shop-lookup-input" id="home-lookup-phone" placeholder="연락처 입력 (예: 0433 938 909)" autocomplete="tel" />
+        <button type="button" class="shop-btn shop-btn-primary" id="home-lookup-btn">조회하기</button>
+      </div>
+      <div class="shop-lookup-results" id="home-lookup-results"></div>
     </section>
   </main>
 

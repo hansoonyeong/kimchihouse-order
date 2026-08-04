@@ -6426,16 +6426,27 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 }
 
 .home-order-help-desc {
-  margin: 0 0 20px;
+  margin: 0 0 16px;
   font-size: 17px;
   line-height: 1.7;
   color: #333;
 }
 
-.home-order-help-cta {
-  min-height: 52px;
-  font-size: 16px;
+.home-order-help-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 15px;
   font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(15, 74, 53, 0.35);
+  padding-bottom: 2px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.home-order-help-link:hover {
+  color: var(--primary-dark);
+  border-color: var(--primary-dark);
 }
 
 /* ===== FAQ ===== */
@@ -6693,11 +6704,52 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
   color: #555;
 }
 
+.shop-faq-contact-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
 .shop-faq-contact-cta {
   max-width: 280px;
-  margin: 0 auto;
+  width: 100%;
   min-height: 44px;
   font-size: 14px;
+}
+
+.shop-faq-channel-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  padding-bottom: 1px;
+}
+
+.shop-faq-channel-link:hover {
+  color: var(--text);
+  border-color: rgba(0, 0, 0, 0.28);
+}
+
+/* 주문 조회 (단독 섹션) */
+.shop-lookup {
+  max-width: 560px;
+}
+
+.shop-lookup .shop-section-head {
+  margin-bottom: 10px;
+}
+
+.shop-lookup .shop-lookup-form-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: none;
+}
+
+.shop-lookup .shop-lookup-results {
+  margin-top: 16px;
 }
 
 @media (min-width: 768px) {
@@ -6805,17 +6857,40 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
     max-width: 460px;
   }
 
-  .shop-faq-contact-desc br {
-    display: none;
+  .shop-faq-contact-actions {
+    flex-direction: column;
+    align-items: stretch;
+    flex-shrink: 0;
+    gap: 8px;
+    min-width: 200px;
   }
 
   .shop-faq-contact-cta {
     margin: 0;
-    flex-shrink: 0;
     max-width: none;
-    width: auto;
+    width: 100%;
     min-width: 200px;
     padding: 0 20px;
+  }
+
+  .shop-faq-channel-link {
+    text-align: center;
+  }
+
+  .shop-lookup .shop-lookup-form-inline {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .shop-lookup .shop-lookup-form-inline .shop-lookup-input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .shop-lookup .shop-lookup-form-inline .shop-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 }
 
