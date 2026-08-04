@@ -6698,58 +6698,73 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 }
 
 .shop-faq-contact-desc {
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   font-size: 13px;
   line-height: 1.55;
   color: #555;
 }
 
-.shop-faq-contact-actions {
+.shop-faq-channel-line {
+  margin: 0 0 14px;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 6px 10px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.shop-faq-channel-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(15, 74, 53, 0.28);
+  padding-bottom: 1px;
+}
+
+.shop-faq-channel-link:hover {
+  border-color: var(--primary);
+}
+
+.shop-faq-channel-hint {
+  color: var(--text-muted);
+  font-size: 12.5px;
 }
 
 .shop-faq-contact-cta {
+  display: inline-flex;
   max-width: 280px;
   width: 100%;
   min-height: 44px;
   font-size: 14px;
 }
 
-.shop-faq-channel-link {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-decoration: none;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-  padding-bottom: 1px;
-}
-
-.shop-faq-channel-link:hover {
-  color: var(--text);
-  border-color: rgba(0, 0, 0, 0.28);
-}
-
-/* 주문 조회 (단독 섹션) */
+/* 주문 조회 */
 .shop-lookup {
-  max-width: 560px;
+  max-width: none;
+  width: 100%;
 }
 
 .shop-lookup .shop-section-head {
   margin-bottom: 10px;
 }
 
+.shop-lookup-desc {
+  max-width: none;
+}
+
 .shop-lookup .shop-lookup-form-inline {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-width: none;
+  max-width: 480px;
 }
 
 .shop-lookup .shop-lookup-results {
   margin-top: 16px;
+  max-width: 720px;
 }
 
 @media (min-width: 768px) {
@@ -6837,7 +6852,7 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 24px;
+    gap: 28px;
     text-align: left;
   }
 
@@ -6852,35 +6867,30 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
   }
 
   .shop-faq-contact-desc {
-    margin: 0;
+    margin: 0 0 8px;
     font-size: 13.5px;
-    max-width: 460px;
+    max-width: 480px;
   }
 
-  .shop-faq-contact-actions {
-    flex-direction: column;
-    align-items: stretch;
-    flex-shrink: 0;
-    gap: 8px;
-    min-width: 200px;
+  .shop-faq-channel-line {
+    justify-content: flex-start;
+    margin: 0;
   }
 
   .shop-faq-contact-cta {
     margin: 0;
+    flex-shrink: 0;
     max-width: none;
-    width: 100%;
+    width: auto;
     min-width: 200px;
-    padding: 0 20px;
-  }
-
-  .shop-faq-channel-link {
-    text-align: center;
+    padding: 0 22px;
   }
 
   .shop-lookup .shop-lookup-form-inline {
     flex-direction: row;
     align-items: stretch;
     gap: 10px;
+    max-width: 520px;
   }
 
   .shop-lookup .shop-lookup-form-inline .shop-lookup-input {
