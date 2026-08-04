@@ -991,6 +991,25 @@
     }
   }
 
+  function bindFaq() {
+    const root = document.getElementById("faq");
+    if (!root || root.dataset.bound === "1") return;
+    root.dataset.bound = "1";
+
+    root.querySelectorAll(".shop-faq-q").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const item = btn.closest(".shop-faq-item");
+        const panel = item?.querySelector(".shop-faq-panel");
+        if (!item || !panel) return;
+
+        const willOpen = !item.classList.contains("is-open");
+        item.classList.toggle("is-open", willOpen);
+        btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        panel.setAttribute("aria-hidden", willOpen ? "false" : "true");
+      });
+    });
+  }
+
   function init() {
     if (!window.KH_PRODUCTS) {
       console.error("KH_PRODUCTS를 불러오지 못했습니다. npm start로 서버를 실행했는지 확인해 주세요.");
@@ -1007,6 +1026,7 @@
     syncNavCategoryLinks();
     syncOrderLinks();
     bindHero();
+    bindFaq();
     bindMainNav();
     bindMobileNav();
     Promise.all([fetchConfig(), loadSalesAndRefresh()]);
