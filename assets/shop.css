@@ -2689,7 +2689,7 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 
 /* ===== Round (배송 일정 · 차수 혜택) ===== */
 .shop-round-wrap {
-  max-width: 880px;
+  max-width: 920px;
   margin: 0 auto;
   padding: 28px 0 32px;
   border-bottom: 1px solid var(--border);
@@ -2866,23 +2866,24 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   color: var(--primary);
 }
 
-/* 모바일: 설명·노트만 접고 일정·혜택 포인트는 유지 */
+/* 모바일: 한 줄 포인트만 — 부연·설명 숨김 */
 @media (max-width: 767px) {
   .shop-round-wrap {
-    padding: 18px 0 20px;
+    padding: 20px 0 22px;
   }
 
   .shop-round-grid {
-    gap: 18px;
+    gap: 22px;
   }
 
   .shop-round-head {
-    margin-bottom: 8px;
-    padding-bottom: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 0;
+    border-bottom: none;
   }
 
   .shop-round-badge {
-    margin: 0 0 3px;
+    margin: 0 0 4px;
     font-size: 11px;
   }
 
@@ -2893,80 +2894,134 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   }
 
   .shop-round-desc,
-  .shop-round-note {
+  .shop-round-note,
+  .shop-round-info-text,
+  .shop-round-benefit-text {
     display: none;
   }
 
-  .shop-round-info-list {
-    margin: 0;
-  }
-
-  .shop-round-info-item {
-    padding: 8px 0;
-  }
-
-  .shop-round-info-label {
-    font-size: 13px;
-  }
-
-  .shop-round-info-text {
-    font-size: 12.5px;
-    line-height: 1.4;
-  }
-
+  .shop-round-info-list,
   .shop-round-benefit-list {
     margin: 0;
   }
 
+  .shop-round-info-item {
+    display: block;
+    padding: 9px 0;
+  }
+
+  .shop-round-info-item:last-child {
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .shop-round-info-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
   .shop-round-benefit-item {
-    padding: 8px 0;
+    gap: 0;
+    padding: 9px 0;
+  }
+
+  .shop-round-benefit-item:last-child {
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--border);
   }
 
   .shop-round-benefit-title strong {
-    font-size: 13.5px;
-  }
-
-  .shop-round-benefit-text {
-    font-size: 12.5px;
-    line-height: 1.4;
+    font-size: 14px;
+    font-weight: 700;
   }
 
   .shop-round-benefit-item .shop-event-tag {
-    font-size: 10.5px;
+    font-size: 11px;
   }
 }
 
 @media (min-width: 768px) {
   .shop-round-wrap {
-    max-width: 880px;
-    padding: 36px 0 40px;
+    max-width: 960px;
+    padding: 48px 0 52px;
   }
 
   .shop-round-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 0 40px;
+    gap: 0 56px;
   }
 
   .shop-round-card-schedule {
-    padding-right: 28px;
+    padding-right: 40px;
     border-right: 1px solid var(--border);
   }
 
   .shop-round-card-benefits {
-    padding-left: 8px;
+    padding-left: 12px;
   }
 
-  .shop-round-card {
-    padding-top: 0;
-    padding-bottom: 0;
+  .shop-round-head {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+
+  .shop-round-badge {
+    margin-bottom: 8px;
+    font-size: 13px;
   }
 
   .shop-round-title {
-    font-size: 20px;
+    margin-bottom: 8px;
+    font-size: 22px;
+    line-height: 1.35;
   }
 
   .shop-round-desc {
+    font-size: 14.5px;
+    line-height: 1.6;
+  }
+
+  .shop-round-info-list {
+    margin-bottom: 16px;
+  }
+
+  .shop-round-info-item {
+    gap: 4px;
+    padding: 14px 0;
+  }
+
+  .shop-round-info-label {
+    font-size: 14.5px;
+  }
+
+  .shop-round-info-text {
     font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .shop-round-note {
+    margin-top: 14px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .shop-round-benefit-item {
+    gap: 5px;
+    padding: 14px 0;
+  }
+
+  .shop-round-benefit-title strong {
+    font-size: 15px;
+  }
+
+  .shop-round-benefit-text {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .shop-round-benefit-item .shop-event-tag {
+    font-size: 12px;
   }
 }
 
