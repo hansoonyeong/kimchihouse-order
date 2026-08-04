@@ -6440,39 +6440,47 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 
 /* ===== FAQ ===== */
 .shop-faq {
-  max-width: 720px;
+  max-width: 640px;
   margin-left: auto;
   margin-right: auto;
 }
 
+.shop-faq .shop-section-title {
+  font-size: 18px;
+}
+
 .shop-faq-head {
   display: block;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 }
 
 .shop-faq-lead {
-  margin: 8px 0 0;
-  font-size: 15px;
-  line-height: 1.55;
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--text-muted);
+  font-weight: 400;
 }
 
 .shop-faq-groups {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 22px;
 }
 
 .shop-faq-cat {
-  margin: 0 0 12px;
-  font-size: 16px;
-  font-weight: 800;
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--text);
+  color: var(--text-muted);
 }
 
 .shop-faq-list {
-  border-top: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--white);
 }
 
 .shop-faq-item {
@@ -6480,34 +6488,39 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
   background: var(--white);
 }
 
+.shop-faq-item:last-child {
+  border-bottom: none;
+}
+
 .shop-faq-q {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  min-height: 56px;
-  padding: 16px 4px;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px 14px;
   border: none;
   background: transparent;
   text-align: left;
   font-family: inherit;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.45;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
   color: var(--text);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .shop-faq-q:hover {
   color: var(--primary);
+  background: #fafaf8;
 }
 
 .shop-faq-q:focus-visible {
   outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline-offset: -2px;
 }
 
 .shop-faq-q-text {
@@ -6517,17 +6530,17 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 
 .shop-faq-chevron {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   position: relative;
 }
 
 .shop-faq-chevron::before {
   content: "";
   position: absolute;
-  inset: 4px;
-  border-right: 2px solid var(--text-muted);
-  border-bottom: 2px solid var(--text-muted);
+  inset: 3px;
+  border-right: 1.5px solid var(--text-muted);
+  border-bottom: 1.5px solid var(--text-muted);
   transform: rotate(45deg);
   transition: transform 0.22s ease, border-color 0.15s ease;
   transform-origin: 55% 55%;
@@ -6540,6 +6553,7 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 
 .shop-faq-item.is-open .shop-faq-q {
   color: var(--primary);
+  background: #f7faf8;
 }
 
 .shop-faq-panel {
@@ -6554,18 +6568,19 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 
 .shop-faq-a {
   overflow: hidden;
-  padding: 0 4px;
-  font-size: 15px;
-  line-height: 1.7;
-  color: #444;
+  padding: 0 14px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #555;
 }
 
 .shop-faq-item.is-open .shop-faq-a {
-  padding-bottom: 18px;
+  padding-bottom: 14px;
+  border-top: 1px solid transparent;
 }
 
 .shop-faq-a p {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
 }
 
 .shop-faq-a p:last-child {
@@ -6579,11 +6594,11 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 
 .shop-faq-bullets {
   margin: 0;
-  padding-left: 1.15em;
+  padding-left: 1.1em;
 }
 
 .shop-faq-bullets li {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
 }
 
 .shop-faq-bullets li:last-child {
@@ -6593,31 +6608,31 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 .shop-faq-areas {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
-  margin: 4px 0 16px;
+  gap: 10px;
+  margin: 2px 0 12px;
 }
 
 .shop-faq-area-card {
-  padding: 14px 14px 12px;
-  border-radius: 10px;
+  padding: 12px;
+  border-radius: 8px;
   background: var(--bg-soft);
   border: 1px solid var(--border);
 }
 
 .shop-faq-area-ok {
   background: #f4f8f5;
-  border-color: rgba(15, 74, 53, 0.12);
+  border-color: rgba(15, 74, 53, 0.1);
 }
 
 .shop-faq-area-no {
   background: #faf7f5;
-  border-color: rgba(229, 106, 45, 0.14);
+  border-color: rgba(229, 106, 45, 0.12);
 }
 
 .shop-faq-area-title {
-  margin: 0 0 10px;
-  font-size: 14px;
-  font-weight: 800;
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text);
 }
 
@@ -6628,7 +6643,7 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 .shop-faq-area-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -6637,13 +6652,13 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 .shop-faq-area-tags li {
   display: inline-flex;
   align-items: center;
-  min-height: 30px;
-  padding: 4px 10px;
+  min-height: 26px;
+  padding: 3px 8px;
   border-radius: 999px;
   background: var(--white);
   border: 1px solid var(--border);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   line-height: 1.3;
   color: var(--text);
 }
@@ -6654,56 +6669,165 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 }
 
 .shop-faq-contact {
-  margin-top: 32px;
-  padding: 24px 20px;
-  border-radius: 14px;
+  margin-top: 24px;
+  padding: 18px 16px;
+  border-radius: 12px;
   background: #f4f8f5;
-  border: 1px solid rgba(15, 74, 53, 0.14);
+  border: 1px solid rgba(15, 74, 53, 0.12);
   text-align: center;
 }
 
 .shop-faq-contact-title {
-  margin: 0 0 10px;
-  font-size: 18px;
-  font-weight: 800;
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
   color: var(--primary);
   line-height: 1.35;
 }
 
 .shop-faq-contact-desc {
-  margin: 0 0 18px;
-  font-size: 15px;
-  line-height: 1.65;
-  color: #333;
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #555;
 }
 
 .shop-faq-contact-cta {
-  max-width: 320px;
+  max-width: 280px;
   margin: 0 auto;
-  min-height: 48px;
+  min-height: 44px;
+  font-size: 14px;
 }
 
 @media (min-width: 768px) {
   .shop-faq {
-    max-width: 760px;
+    max-width: 880px;
+  }
+
+  .shop-faq .shop-section-title {
+    font-size: 20px;
+  }
+
+  .shop-faq-head {
+    margin-bottom: 28px;
+    text-align: center;
+  }
+
+  .shop-faq-lead {
+    font-size: 14px;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .shop-faq-groups {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px 24px;
+    align-items: start;
+  }
+
+  /* 배송 지역 안내는 한 줄 전체 폭 */
+  .shop-faq-group:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .shop-faq-cat {
+    font-size: 13px;
+    margin-bottom: 10px;
+    padding-left: 2px;
+  }
+
+  .shop-faq-list {
+    border-radius: 12px;
   }
 
   .shop-faq-q {
-    min-height: 60px;
-    font-size: 17px;
-    padding: 18px 6px;
+    min-height: 46px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 13px 18px;
   }
 
   .shop-faq-a {
-    font-size: 15.5px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    padding: 0 18px;
+  }
+
+  .shop-faq-item.is-open .shop-faq-a {
+    padding-bottom: 16px;
   }
 
   .shop-faq-areas {
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 12px;
+    margin: 4px 0 14px;
+  }
+
+  .shop-faq-area-card {
+    padding: 14px 16px;
+  }
+
+  .shop-faq-area-title {
+    font-size: 13px;
+  }
+
+  .shop-faq-area-tags li {
+    font-size: 12.5px;
+    min-height: 28px;
   }
 
   .shop-faq-contact {
-    padding: 28px 28px;
+    margin-top: 28px;
+    padding: 22px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    text-align: left;
+  }
+
+  .shop-faq-contact-copy {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .shop-faq-contact-title {
+    margin: 0 0 6px;
+    font-size: 16px;
+  }
+
+  .shop-faq-contact-desc {
+    margin: 0;
+    font-size: 13.5px;
+    max-width: 460px;
+  }
+
+  .shop-faq-contact-desc br {
+    display: none;
+  }
+
+  .shop-faq-contact-cta {
+    margin: 0;
+    flex-shrink: 0;
+    max-width: none;
+    width: auto;
+    min-width: 200px;
+    padding: 0 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .shop-faq {
+    max-width: 920px;
+  }
+
+  .shop-faq-groups {
+    gap: 24px 28px;
+  }
+
+  .shop-faq-q:hover {
+    background: #f6f8f6;
   }
 }
