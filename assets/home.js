@@ -346,13 +346,11 @@
     document.querySelector("#order-steps .shop-btn-primary")?.setAttribute("href", "#shop");
     document.querySelector(".shop-fixed-cta .shop-btn-primary")?.setAttribute("href", "#shop");
 
-    const eventsPanel = document.querySelector(".shop-events-panel");
-    if (eventsPanel) {
-      eventsPanel.href = "#shop";
-      eventsPanel.dataset.orderCat = "frozen";
+    const eventsCta = document.getElementById("round-benefits-cta");
+    if (eventsCta) {
+      eventsCta.href = "#shop";
+      eventsCta.dataset.orderCat = "frozen";
     }
-    const eventsMore = document.querySelector(".shop-events-block .shop-section-more");
-    if (eventsMore) eventsMore.href = "#shop";
   }
 
   function originalPrice(item) {

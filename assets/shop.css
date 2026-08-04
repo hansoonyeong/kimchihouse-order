@@ -2687,158 +2687,217 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   color: #1a1208;
 }
 
-.shop-schedule-events-wrap {
+/* ===== Round (배송 일정 · 차수 혜택) ===== */
+.shop-round-wrap {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 28px 0 32px;
   border-bottom: 1px solid var(--border);
+  box-sizing: border-box;
 }
 
-.shop-schedule-events-wrap > .shop-section {
-  border-bottom: none;
+.shop-round-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.shop-round-card {
   min-width: 0;
-}
-
-.shop-schedule-events-wrap .shop-schedule-panel {
-  width: 100%;
-  max-width: none;
-  box-sizing: border-box;
-}
-
-.shop-schedule-events-wrap .shop-events {
-  border-top: none;
-}
-
-@media (min-width: 768px) {
-  .shop-schedule-events-wrap {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 24px;
-    align-items: start;
-  }
-
-  .shop-schedule-events-wrap > .shop-section {
-    width: 100%;
-  }
-
-  .shop-schedule-events-wrap .shop-events-block {
-    border-left: none;
-    padding-left: 0;
-  }
-}
-
-.shop-schedule-panel {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
   padding: 18px 16px 16px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(15, 74, 53, 0.12);
   border-radius: 12px;
-  background: var(--white);
-  text-decoration: none;
-  color: inherit;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  background: #fbfaf7;
+  box-shadow: none;
 }
 
-.shop-schedule-panel:hover,
-.shop-schedule-panel:active {
-  border-color: rgba(0, 0, 0, 0.16);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+.shop-round-card-schedule {
+  background: #f7faf8;
 }
 
-.shop-events-panel:hover,
-.shop-events-panel:active {
-  border-color: rgba(0, 0, 0, 0.16);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-}
-
-.shop-schedule-date {
+.shop-round-head {
   margin-bottom: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border);
 }
 
-.shop-schedule-date-eyebrow {
-  display: inline-block;
-  margin-bottom: 6px;
+.shop-round-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 8px;
   padding: 3px 8px;
   border-radius: 4px;
-  background: rgba(26, 77, 46, 0.1);
-  color: var(--green, #1a4d2e);
+  background: rgba(15, 74, 53, 0.12);
+  color: var(--primary);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.02em;
+  line-height: 1.3;
 }
 
-.shop-schedule-date-day {
-  display: block;
-  font-size: 22px;
+.shop-round-badge-soft {
+  background: rgba(15, 74, 53, 0.08);
+}
+
+.shop-round-title {
+  margin: 0 0 6px;
+  font-size: 18px;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.3;
   letter-spacing: -0.02em;
   color: var(--text);
 }
 
-.shop-schedule-date-note {
-  margin: 6px 0 0;
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--text-muted);
+.shop-round-desc {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #4a4a4a;
 }
 
-.shop-schedule-date-caution {
-  margin: 10px 0 0;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: #fff8ee;
-  border: 1px solid #e8d4a8;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.45;
-  color: #6b4f1d;
-}
-
-.shop-schedule-points {
+.shop-round-info-list {
   list-style: none;
   display: grid;
-  gap: 10px;
-  margin: 0;
+  gap: 8px;
+  margin: 0 0 12px;
   padding: 0;
 }
 
-.shop-schedule-points li {
+.shop-round-info-item {
   display: grid;
   gap: 2px;
-  padding: 0 0 0 12px;
-  border-left: 2px solid rgba(26, 77, 46, 0.28);
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 74, 53, 0.08);
 }
 
-.shop-schedule-points strong {
-  font-size: 14px;
+.shop-round-info-label {
+  font-size: 13.5px;
   font-weight: 800;
-  color: var(--text);
-  line-height: 1.35;
+  line-height: 1.3;
+  color: var(--primary);
 }
 
-.shop-schedule-points span {
+.shop-round-info-text {
   font-size: 13px;
   line-height: 1.45;
-  color: var(--text-muted);
+  color: #3f3f3f;
 }
 
-.shop-events-points .shop-event-title {
+.shop-round-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6a655c;
+}
+
+.shop-round-benefit-list {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+}
+
+.shop-round-benefit-item {
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgba(15, 74, 53, 0.1);
+}
+
+.shop-round-benefit-title {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  justify-content: flex-start;
 }
 
-.shop-events-points .shop-event-title strong {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
+.shop-round-benefit-title strong {
+  font-size: 13.5px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--text);
 }
 
-.shop-events-points .shop-event-tag {
+.shop-round-benefit-text {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #3f3f3f;
+}
+
+.shop-round-benefit-item .shop-event-tag {
   flex: 0 0 auto;
-  margin-left: auto;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  line-height: 1.3;
+}
+
+.shop-round-benefit-item .shop-event-tag-new {
+  background: rgba(196, 64, 32, 0.12);
+  color: #b53a1c;
+}
+
+.shop-round-benefit-item .shop-event-tag-free {
+  background: rgba(15, 74, 53, 0.12);
+  color: var(--primary);
+}
+
+.shop-round-benefit-item .shop-event-tag-limit {
+  background: rgba(120, 90, 40, 0.12);
+  color: #7a5a28;
+}
+
+.shop-round-cta {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .shop-round-wrap {
+    max-width: 920px;
+    padding: 36px 0 40px;
+  }
+
+  .shop-round-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .shop-round-card {
+    padding: 20px 18px 18px;
+  }
+
+  .shop-round-title {
+    font-size: 20px;
+  }
+
+  .shop-round-desc {
+    font-size: 14px;
+  }
+
+  .shop-round-cta {
+    width: auto;
+    min-width: 160px;
+  }
+}
+
+/* legacy schedule/events selectors kept light for any residual use */
+.shop-schedule-events-wrap {
+  display: none;
 }
 
 .shop-event-tag {
@@ -2852,22 +2911,17 @@ body[data-brand="walkerhill"] .kurly-add-btn {
   line-height: 1.4;
 }
 
-.shop-events-points .shop-event-tag-sale {
+.shop-event-tag-new {
   background: rgba(196, 64, 32, 0.12);
   color: #b53a1c;
 }
 
-.shop-events-points .shop-event-tag-new {
-  background: rgba(196, 64, 32, 0.12);
-  color: #b53a1c;
+.shop-event-tag-free {
+  background: rgba(15, 74, 53, 0.12);
+  color: var(--primary);
 }
 
-.shop-events-points .shop-event-tag-free {
-  background: rgba(26, 77, 46, 0.12);
-  color: #1a4d2e;
-}
-
-.shop-events-points .shop-event-tag-limit {
+.shop-event-tag-limit {
   background: rgba(120, 90, 40, 0.12);
   color: #7a5a28;
 }
@@ -5027,131 +5081,7 @@ button.shop-product-cta {
   }
 
   .shop-schedule-events-wrap {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding-bottom: 10px;
-  }
-
-  .shop-schedule-events-wrap > .shop-section {
-    padding: 12px 0 0;
-    border-bottom: none;
-  }
-
-  .shop-schedule-events-wrap .shop-section-head {
-    margin-bottom: 6px;
-  }
-
-  .shop-schedule-events-wrap .shop-section-title {
-    font-size: 15px;
-  }
-
-  .shop-schedule-events-wrap .shop-section-more {
-    font-size: 12px;
-  }
-
-  .shop-schedule-events-wrap .shop-schedule-panel {
-    padding: 10px 12px;
-  }
-
-  .shop-schedule-block .shop-schedule-date {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    column-gap: 8px;
-    row-gap: 4px;
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-    align-items: center;
-  }
-
-  .shop-schedule-block .shop-schedule-date-eyebrow {
-    margin: 0;
-    justify-self: start;
-  }
-
-  .shop-schedule-block .shop-schedule-date-day {
-    margin: 0;
-    font-size: 15px;
-    line-height: 1.3;
-  }
-
-  .shop-schedule-block .shop-schedule-date-note,
-  .shop-schedule-block .shop-schedule-date-caution {
-    grid-column: 1 / -1;
-  }
-
-  .shop-schedule-events-wrap .shop-schedule-date-note {
-    margin: 0;
-    font-size: 12px;
-    line-height: 1.4;
-  }
-
-  .shop-schedule-events-wrap .shop-schedule-date-caution {
-    margin: 2px 0 0;
-    padding: 6px 8px;
-    font-size: 11px;
-    line-height: 1.4;
-  }
-
-  /* 요약과 겹치는 상세 포인트는 숨기고 핵심만 노출 */
-  .shop-schedule-block .shop-schedule-points {
     display: none;
-  }
-
-  .shop-events-block .shop-schedule-date {
-    display: none;
-  }
-
-  .shop-events-points {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .shop-events-points li {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin: 0;
-    padding: 6px 8px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    border-left: 1px solid var(--border);
-    background: #fafafa;
-  }
-
-  .shop-events-points li > span:not(.shop-event-tag) {
-    display: none;
-  }
-
-  .shop-events-points .shop-event-title {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    justify-content: flex-start;
-  }
-
-  .shop-events-points .shop-event-title strong {
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-
-  .shop-events-points .shop-event-tag {
-    margin-left: 0;
-    padding: 1px 5px;
-    font-size: 9px;
-  }
-
-  .shop-schedule-events-wrap .shop-events-block {
-    border-left: none;
-    padding-left: 0;
-    padding-top: 0;
-  }
-
-  .shop-events {
-    grid-template-columns: 1fr;
   }
 
   .checkout-panel {

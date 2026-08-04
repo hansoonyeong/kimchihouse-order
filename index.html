@@ -205,72 +205,63 @@
       </div>
     </div>
 
-    <div class="shop-schedule-events-wrap">
-      <section class="shop-section shop-schedule-block" id="schedule">
-        <div class="shop-section-head">
-          <h2 class="shop-section-title">이번 차수 배송 일정</h2>
-          <a class="shop-section-more" href="#shop">주문하기</a>
-        </div>
-        <a class="shop-schedule-panel" href="#shop">
-          <div class="shop-schedule-date">
-            <span class="shop-schedule-date-eyebrow">일괄 배송</span>
-            <strong class="shop-schedule-date-day">8월 23일경부터 배송 예정</strong>
-            <p class="shop-schedule-date-note">김치·반찬·워커힐 모두 한 번에 배송됩니다</p>
-            <p class="shop-schedule-date-caution">해운 사정에 따라 일정이 변동될 수 있으며, 변경 시 미리 안내드립니다.</p>
+    <div class="shop-round-wrap" id="schedule">
+      <div class="shop-round-grid">
+        <section class="shop-round-card shop-round-card-schedule" aria-labelledby="round-schedule-title">
+          <div class="shop-round-head">
+            <span class="shop-round-badge">일괄 배송</span>
+            <h2 class="shop-round-title" id="round-schedule-title">8월 23일경부터 순차 배송</h2>
+            <p class="shop-round-desc">김치와 반찬, 워커힐 상품을 한 번에 주문하고 함께 받아보세요.</p>
           </div>
-          <ul class="shop-schedule-points">
-            <li>
-              <strong>한 번에 주문</strong>
-              <span>브랜드 구분 없이 장바구니에 함께 담아 주문</span>
+          <ul class="shop-round-info-list">
+            <li class="shop-round-info-item">
+              <span class="shop-round-info-label">한 번에 주문</span>
+              <span class="shop-round-info-text">브랜드 구분 없이 장바구니에 함께 담아 주문</span>
             </li>
-            <li>
-              <strong>한 번에 배송</strong>
-              <span>8월 23일경부터 같은 일정으로 일괄 출고 예정</span>
+            <li class="shop-round-info-item">
+              <span class="shop-round-info-label">한 번에 배송</span>
+              <span class="shop-round-info-text">같은 일정으로 묶어 출고</span>
             </li>
-            <li>
-              <strong>일정 안내</strong>
-              <span>해운 사정으로 변동될 수 있으며, 변경 시 카카오톡으로 미리 안내드립니다</span>
+            <li class="shop-round-info-item">
+              <span class="shop-round-info-label">일정 안내</span>
+              <span class="shop-round-info-text">변경 시 카카오톡으로 미리 안내</span>
             </li>
           </ul>
-        </a>
-      </section>
+          <p class="shop-round-note">해운 사정에 따라 일정이 변경될 수 있으며, 변경 시 미리 안내드립니다.</p>
+        </section>
 
-      <section class="shop-section shop-events-block" id="events">
-        <div class="shop-section-head">
-          <h2 class="shop-section-title">이번 차수 한정 혜택</h2>
-          <a class="shop-section-more" href="#shop" data-order-cat="frozen">혜택 상품</a>
-        </div>
-        <a class="shop-schedule-panel shop-events-panel" href="#shop" data-order-cat="frozen">
-          <div class="shop-schedule-date">
-            <span class="shop-schedule-date-eyebrow">한정 혜택</span>
-            <strong class="shop-schedule-date-day">이번 차수에만 적용</strong>
-            <p class="shop-schedule-date-note">주문·배송과 함께 아래 혜택이 적용됩니다</p>
+        <section class="shop-round-card shop-round-card-benefits" id="events" aria-labelledby="round-benefits-title">
+          <div class="shop-round-head">
+            <span class="shop-round-badge shop-round-badge-soft">이번 차수 혜택</span>
+            <h2 class="shop-round-title" id="round-benefits-title">주문할수록 더 편리하게</h2>
+            <p class="shop-round-desc">이번 배송 차수에 적용되는 혜택을 확인하세요.</p>
           </div>
-          <ul class="shop-schedule-points shop-events-points">
-            <li class="shop-event-row" data-event="new">
-              <div class="shop-event-title">
+          <ul class="shop-round-benefit-list">
+            <li class="shop-round-benefit-item">
+              <div class="shop-round-benefit-title">
                 <strong>신메뉴 출시</strong>
                 <span class="shop-event-tag shop-event-tag-new">NEW</span>
               </div>
-              <span>재첩국 · 명태커틀렛 등 새 메뉴를 만나보세요</span>
+              <span class="shop-round-benefit-text">재첩국과 명태커틀렛 등 새 상품</span>
             </li>
-            <li class="shop-event-row" data-event="ship">
-              <div class="shop-event-title">
+            <li class="shop-round-benefit-item">
+              <div class="shop-round-benefit-title">
                 <strong>$100 이상 무료배송</strong>
                 <span class="shop-event-tag shop-event-tag-free">FREE</span>
               </div>
-              <span>한 번 주문 · 한 번 배송 기준으로 적용</span>
+              <span class="shop-round-benefit-text">한 번의 주문 및 배송 금액 기준</span>
             </li>
-            <li class="shop-event-row" data-event="limit">
-              <div class="shop-event-title">
+            <li class="shop-round-benefit-item">
+              <div class="shop-round-benefit-title">
                 <strong>수량 한정 예약</strong>
-                <span class="shop-event-tag shop-event-tag-limit">LIMIT</span>
+                <span class="shop-event-tag shop-event-tag-limit">한정</span>
               </div>
-              <span>조기 품절 시 마감 · 서둘러 주문하세요</span>
+              <span class="shop-round-benefit-text">인기 상품은 조기 품절될 수 있음</span>
             </li>
           </ul>
-        </a>
-      </section>
+          <a class="shop-btn shop-btn-primary shop-round-cta" href="#shop" data-order-cat="frozen" id="round-benefits-cta">혜택 상품 보기</a>
+        </section>
+      </div>
     </div>
 
     <section class="shop-section browse-category-section" id="browse-categories">
