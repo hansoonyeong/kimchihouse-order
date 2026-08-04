@@ -6525,8 +6525,14 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 }
 
 .home-order-help {
-  padding-top: 8px;
+  padding-top: 40px;
   text-align: left;
+}
+
+@media (min-width: 768px) {
+  .home-order-help {
+    padding-top: 48px;
+  }
 }
 
 .home-order-help .shop-section-head {
