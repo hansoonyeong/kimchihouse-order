@@ -8,8 +8,11 @@ export const DELIVERY_STATUSES = [
 
 export const DEFAULT_DELIVERY_STATUS = "예약 접수";
 
-/** 현재 회차 기본 배송일 (YYYY-MM-DD) */
-export const DEFAULT_DELIVERY_DATE = "2026-08-23";
+/** 현재 회차 기본 배송일 (YYYY-MM-DD) — 고객 안내·새 주문 폴백 */
+export const DEFAULT_DELIVERY_DATE = "2026-08-29";
+
+/** 이번 차수 주문 판별 하한 (일정 변경 전 예약 포함) */
+export const CURRENT_ROUND_MIN_DATE = "2026-08-23";
 
 export const CATEGORY_LABELS = {
   kimchi: "김치",
@@ -151,7 +154,7 @@ export function inferredDeliveryDate(order) {
 }
 
 /** 이번 차수(8/23~) 이전 배송 회차 주문 */
-export function isPreviousRoundOrder(order, minDate = DEFAULT_DELIVERY_DATE) {
+export function isPreviousRoundOrder(order, minDate = CURRENT_ROUND_MIN_DATE) {
   const inferred = inferredDeliveryDate(order);
   if (inferred && inferred < minDate) return true;
   if (inferred && inferred >= minDate) return false;
@@ -169,7 +172,7 @@ export function isPreviousRoundOrder(order, minDate = DEFAULT_DELIVERY_DATE) {
   return false;
 }
 
-export function isCurrentRoundOrder(order, minDate = DEFAULT_DELIVERY_DATE) {
+export function isCurrentRoundOrder(order, minDate = CURRENT_ROUND_MIN_DATE) {
   return !isPreviousRoundOrder(order, minDate);
 }
 

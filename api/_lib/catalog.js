@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { DEFAULT_DELIVERY_DATE, parseDeliveryDate } from "./order-utils.js";
+import { CURRENT_ROUND_MIN_DATE, parseDeliveryDate } from "./order-utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "../..");
@@ -265,9 +265,9 @@ export function explicitDeliveryDate(order) {
   return null;
 }
 
-/** 이번 차수(기본 배송일 이상) 주문만 재고 예약에 반영 */
-export function ordersForStockReservation(orders, minDeliveryDate = DEFAULT_DELIVERY_DATE) {
-  const minDate = parseDeliveryDate(minDeliveryDate) || DEFAULT_DELIVERY_DATE;
+/** 이번 차수(일정 변경 전 예약 포함) 주문만 재고 예약에 반영 */
+export function ordersForStockReservation(orders, minDeliveryDate = CURRENT_ROUND_MIN_DATE) {
+  const minDate = parseDeliveryDate(minDeliveryDate) || CURRENT_ROUND_MIN_DATE;
   return (orders || []).filter((order) => {
     const date = explicitDeliveryDate(order);
     return Boolean(date && date >= minDate);

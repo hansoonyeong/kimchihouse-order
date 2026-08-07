@@ -925,6 +925,49 @@
     });
   }
 
+  /* 공지 버전 바꾸면 다시 노출 (localStorage 키 변경) */
+  const SITE_NOTICE_KEY = "kh-notice-dismissed:delivery-aug29-30-2026";
+
+  function bindSiteNotice() {
+    const overlay = document.getElementById("site-notice-overlay");
+    if (!overlay || overlay.dataset.bound === "1") return;
+    overlay.dataset.bound = "1";
+
+    const closeBtn = document.getElementById("site-notice-close");
+
+    const close = () => {
+      overlay.classList.remove("open");
+      overlay.hidden = true;
+      document.body.classList.remove("site-notice-open");
+      try {
+        localStorage.setItem(SITE_NOTICE_KEY, "1");
+      } catch (_) {}
+    };
+
+    const open = () => {
+      overlay.hidden = false;
+      overlay.classList.add("open");
+      document.body.classList.add("site-notice-open");
+      closeBtn?.focus();
+    };
+
+    closeBtn?.addEventListener("click", close);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && overlay.classList.contains("open")) close();
+    });
+
+    let dismissed = false;
+    try {
+      dismissed = localStorage.getItem(SITE_NOTICE_KEY) === "1";
+    } catch (_) {}
+    if (!dismissed) {
+      window.setTimeout(open, 400);
+    }
+  }
+
   function init() {
     if (!window.KH_PRODUCTS) {
       console.error("KH_PRODUCTS를 불러오지 못했습니다. npm start로 서버를 실행했는지 확인해 주세요.");
@@ -941,6 +984,7 @@
     syncOrderLinks();
     bindHero();
     bindFaq();
+    bindSiteNotice();
     bindMainNav();
     bindMobileNav();
     Promise.all([fetchConfig(), loadSalesAndRefresh()]);

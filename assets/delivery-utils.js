@@ -7,7 +7,8 @@
     "배송 완료",
   ];
   const DEFAULT_DELIVERY_STATUS = "예약 접수";
-  const DEFAULT_DELIVERY_DATE = "2026-08-23";
+  const DEFAULT_DELIVERY_DATE = "2026-08-29";
+  const CURRENT_ROUND_MIN_DATE = "2026-08-23";
   const CATEGORY_LABELS = {
     kimchi: "김치",
     frozen: "냉동·반찬",
@@ -122,7 +123,7 @@
     return null;
   }
 
-  function isPreviousRoundOrder(order, minDate = DEFAULT_DELIVERY_DATE) {
+  function isPreviousRoundOrder(order, minDate = CURRENT_ROUND_MIN_DATE) {
     const inferred = inferredDeliveryDate(order);
     if (inferred && inferred < minDate) return true;
     if (inferred && inferred >= minDate) return false;
@@ -135,7 +136,7 @@
     return false;
   }
 
-  function isCurrentRoundOrder(order, minDate = DEFAULT_DELIVERY_DATE) {
+  function isCurrentRoundOrder(order, minDate = CURRENT_ROUND_MIN_DATE) {
     return !isPreviousRoundOrder(order, minDate);
   }
 
@@ -353,6 +354,7 @@ ${dateLabel}
     DELIVERY_STATUSES,
     DEFAULT_DELIVERY_STATUS,
     DEFAULT_DELIVERY_DATE,
+    CURRENT_ROUND_MIN_DATE,
     CATEGORY_LABELS,
     orderStatus,
     mergeDeliveryStatuses,

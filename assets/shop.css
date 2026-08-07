@@ -4071,6 +4071,106 @@ body.shop-scroll-lock {
   overscroll-behavior: none;
 }
 
+/* Site notice popup (배송 일정 변경 등) */
+.site-notice-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  align-items: center;
+  justify-content: center;
+  padding: 20px var(--shop-pad);
+  background: rgba(0, 0, 0, 0.48);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.site-notice-overlay.open {
+  display: flex;
+}
+
+body.site-notice-open {
+  overflow: hidden;
+}
+
+.site-notice-dialog {
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+  padding: 24px 20px 20px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+  text-align: left;
+}
+
+.site-notice-badge {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--primary);
+}
+
+.site-notice-title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.site-notice-date-box {
+  margin: 0 0 16px;
+  padding: 14px 14px;
+  border-radius: 10px;
+  background: #f4f8f5;
+  border: 1px solid rgba(15, 74, 53, 0.14);
+}
+
+.site-notice-date-label {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #444;
+}
+
+.site-notice-date-value {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--primary);
+}
+
+.site-notice-body {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #444;
+}
+
+.site-notice-dialog .shop-btn {
+  min-height: 46px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .site-notice-dialog {
+    padding: 28px 24px 22px;
+  }
+
+  .site-notice-title {
+    font-size: 20px;
+  }
+
+  .site-notice-date-value {
+    font-size: 18px;
+  }
+}
+
 /* Product modal */
 .product-modal-overlay {
   display: none;

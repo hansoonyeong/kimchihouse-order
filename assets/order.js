@@ -1008,7 +1008,7 @@
     }
 
     function renderDeliveryNote() {
-      return "Kimchi House · 8월 23일경 배송 예정 · 해운 사정에 따라 변동 가능";
+      return "Kimchi House · 8월 29일~30일경 배송 예정 · 해운 사정에 따라 변동 가능";
     }
 
     function renderCatalog() {
@@ -1665,7 +1665,8 @@
       const deliveryDate =
         window.KH_DELIVERY?.defaultDeliveryDateFromProducts?.() ||
         window.KH_DELIVERY?.parseDeliveryDate?.(Object.values(breakdown)[0]?.delivery) ||
-        "2026-08-23";
+        window.KH_DELIVERY?.DEFAULT_DELIVERY_DATE ||
+        "2026-08-29";
 
       const payload = {
         secret: cfg.orderSecret,
