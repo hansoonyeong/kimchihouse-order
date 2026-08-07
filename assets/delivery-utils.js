@@ -9,6 +9,14 @@
   const DEFAULT_DELIVERY_STATUS = "예약 접수";
   const DEFAULT_DELIVERY_DATE = "2026-08-29";
   const CURRENT_ROUND_MIN_DATE = "2026-08-23";
+  /**
+   * 일괄 배송 회차에서 저장된 날짜가 달라도 같은 배치로 본다.
+   * (기존 8/23 예약 → 해운 조정 후 8/29~30 일괄)
+   */
+  const DELIVERY_BATCH_CANONICAL = {
+    "2026-08-23": "2026-08-29",
+    "2026-08-30": "2026-08-29",
+  };
   const CATEGORY_LABELS = {
     kimchi: "김치",
     frozen: "냉동·반찬",
@@ -75,7 +83,9 @@
   function formatDeliveryDateLabel(isoDate) {
     const parsed = parseDeliveryDate(isoDate);
     if (!parsed) return "-";
-    const parts = parsed.split("-");
+    const canon = canonicalDeliveryDate(parsed) || parsed;
+    if (canon === "2026-08-29") return "8월 29일~30일";
+    const parts = canon.split("-");
     return `${Number(parts[1])}월 ${Number(parts[2])}일`;
   }
 
@@ -83,7 +93,17 @@
   function formatDeliveryDateApproxLabel(isoDate) {
     const label = formatDeliveryDateLabel(isoDate);
     if (!label || label === "-") return label;
-    return /경$/.test(label) ? label : `${label}경`;
+    if (/~/.test(label) || /경$/.test(label)) return label;
+    return `${label}경`;
+  }
+
+  /**
+   * 관리자 필터·통계용: 같은 일괄 배송 배치면 하나의 날짜 키로 합친다.
+   */
+  function canonicalDeliveryDate(value) {
+    const parsed = parseDeliveryDate(value);
+    if (!parsed) return value || null;
+    return DELIVERY_BATCH_CANONICAL[parsed] || parsed;
   }
 
   function explicitDeliveryDate(order) {
@@ -361,6 +381,7 @@ ${dateLabel}
     parseDeliveryDate,
     formatDeliveryDateLabel,
     formatDeliveryDateApproxLabel,
+    canonicalDeliveryDate,
     explicitDeliveryDate,
     inferredDeliveryDate,
     isPreviousRoundOrder,

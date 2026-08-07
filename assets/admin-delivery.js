@@ -52,7 +52,8 @@
       }
 
       function deliveryDate(o) {
-        return D.resolveDeliveryDate(o);
+        const raw = D.resolveDeliveryDate(o);
+        return D.canonicalDeliveryDate?.(raw) || raw;
       }
 
       function suburbKey(o) {
@@ -190,16 +191,26 @@
       function renderDateTabs(list) {
         const root = document.getElementById("dc-date-tabs");
         if (!root) return;
+        if (state.dateFilter !== "all") {
+          state.dateFilter = D.canonicalDeliveryDate?.(state.dateFilter) || state.dateFilter;
+        }
         const dates = uniqueDates(list.length ? list : allOrders().filter(isInRoundScope));
+        if (state.dateFilter !== "all" && !dates.includes(state.dateFilter)) {
+          state.dateFilter = "all";
+        }
         const scopeList = allOrders().filter(isInRoundScope);
+        const showDateTabs = dates.length > 1;
+        if (!showDateTabs) state.dateFilter = "all";
         root.innerHTML = `
-          <button type="button" class="filter-tab${state.dateFilter === "all" ? " active" : ""}" data-dc-date="all">전체 (${scopeList.length})</button>
-          ${dates
-            .map((date) => {
-              const count = scopeList.filter((o) => deliveryDate(o) === date).length;
-              return `<button type="button" class="filter-tab${state.dateFilter === date ? " active" : ""}" data-dc-date="${esc(date)}">${esc(D.formatDeliveryDateLabel(date))} (${count})</button>`;
-            })
-            .join("")}`;
+          <button type="button" class="filter-tab${state.dateFilter === "all" || !showDateTabs ? " active" : ""}" data-dc-date="all">전체 (${scopeList.length})</button>
+          ${showDateTabs
+            ? dates
+                .map((date) => {
+                  const count = scopeList.filter((o) => deliveryDate(o) === date).length;
+                  return `<button type="button" class="filter-tab${state.dateFilter === date ? " active" : ""}" data-dc-date="${esc(date)}">${esc(D.formatDeliveryDateLabel(date))} (${count})</button>`;
+                })
+                .join("")
+            : ""}`;
       }
 
       function renderOpsStatusTabs() {

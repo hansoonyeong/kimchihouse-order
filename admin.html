@@ -423,7 +423,8 @@
     }
 
     function deliveryDate(o) {
-      return D.inferredDeliveryDate(o) || D.resolveDeliveryDate(o);
+      const raw = D.inferredDeliveryDate(o) || D.resolveDeliveryDate(o);
+      return D.canonicalDeliveryDate?.(raw) || raw;
     }
 
     function isCurrentRoundOrder(o) {
@@ -959,36 +960,54 @@
 
     function renderRoundControls() {
       const dates = uniqueDeliveryDates();
+      if (roundFilter !== "all") {
+        roundFilter = D.canonicalDeliveryDate?.(roundFilter) || roundFilter;
+        if (!dates.includes(roundFilter)) roundFilter = "all";
+      }
       const statsRoot = document.getElementById("round-stats");
       const tabsRoot = document.getElementById("round-filter-tabs");
       const title = document.getElementById("round-title");
       const scopeList = ordersInScope();
       const scopeLabel = roundScope === "previous" ? "이전 차수" : "이번 차수";
 
+      // 일괄 배송(날짜 1개)일 때는 날짜 탭을 숨기고 전체만 표시
+      const showDateTabs = dates.length > 1;
+
       statsRoot.innerHTML = `
-        <button type="button" class="stat stat-round${roundFilter === "all" ? " active" : ""}" data-round-stat="all">
+        <button type="button" class="stat stat-round${roundFilter === "all" || !showDateTabs ? " active" : ""}" data-round-stat="all">
           <div class="num">${scopeList.length}</div><div class="lbl">${scopeLabel} 전체</div>
         </button>
-        ${dates
-          .map((date) => {
-            const count = ordersForRound(date).length;
-            return `<button type="button" class="stat stat-round${roundFilter === date ? " active" : ""}" data-round-stat="${date}">
+        ${showDateTabs
+          ? dates
+              .map((date) => {
+                const count = ordersForRound(date).length;
+                return `<button type="button" class="stat stat-round${roundFilter === date ? " active" : ""}" data-round-stat="${date}">
               <div class="num">${count}</div><div class="lbl">${D.formatDeliveryDateLabel(date)}</div>
             </button>`;
-          })
-          .join("")}`;
+              })
+              .join("")
+          : ""}`;
 
       tabsRoot.innerHTML = `
-        <button type="button" class="filter-tab filter-tab-round${roundFilter === "all" ? " active" : ""}" data-filter-group="round" data-filter-value="all">${scopeLabel} 전체</button>
-        ${dates
-          .map(
-            (date) =>
-              `<button type="button" class="filter-tab filter-tab-round${roundFilter === date ? " active" : ""}" data-filter-group="round" data-filter-value="${date}">${D.formatDeliveryDateLabel(date)}</button>`
-          )
-          .join("")}`;
+        <button type="button" class="filter-tab filter-tab-round${roundFilter === "all" || !showDateTabs ? " active" : ""}" data-filter-group="round" data-filter-value="all">${scopeLabel} 전체</button>
+        ${showDateTabs
+          ? dates
+              .map(
+                (date) =>
+                  `<button type="button" class="filter-tab filter-tab-round${roundFilter === date ? " active" : ""}" data-filter-group="round" data-filter-value="${date}">${D.formatDeliveryDateLabel(date)}</button>`
+              )
+              .join("")
+          : ""}`;
 
-      if (roundFilter === "all") {
-        title.textContent = `${scopeLabel} · 전체 배송`;
+      if (!showDateTabs || roundFilter === "all") {
+        const dateHint =
+          roundScope === "current" && dates[0]
+            ? ` · ${D.formatDeliveryDateLabel(dates[0])} 일괄 배송`
+            : dates.length === 1
+              ? ` · ${D.formatDeliveryDateLabel(dates[0])} 배송`
+              : " · 전체 배송";
+        title.textContent = `${scopeLabel}${dateHint}`;
+        if (!showDateTabs) roundFilter = "all";
       } else {
         title.textContent = `${scopeLabel} · ${D.formatDeliveryDateLabel(roundFilter)} 배송`;
       }
