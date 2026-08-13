@@ -41,6 +41,7 @@
         <strong>배송루트</strong>
       </div>
       <div class="dr-topbar-actions">
+        <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="btn-refresh-orders">주문 새로고침</button>
         <label class="shop-btn shop-btn-outline shop-btn-sm" style="cursor:pointer;margin:0">
           주문 업로드
           <input type="file" id="file-upload" accept=".csv,.xlsx,.xls" hidden />
@@ -126,6 +127,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="/assets/delivery-utils.js"></script>
   <script src="/assets/delivery-routes/lib/distance.js"></script>
   <script src="/assets/delivery-routes/lib/geocode-provider.js"></script>
   <script src="/assets/delivery-routes/lib/routing-provider.js"></script>

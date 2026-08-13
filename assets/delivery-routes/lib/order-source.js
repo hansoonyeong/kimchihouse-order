@@ -1,87 +1,104 @@
 /**
  * Order source abstraction.
  *
- * SpreadsheetOrderSource  — CSV/XLSX upload (current)
- * KimchiHouseApiOrderSource — future: pull from /api/orders by delivery date
- *
- * @typedef {Object} DeliveryOrder
- * @property {string} id
- * @property {string} name
- * @property {string} phone
- * @property {string} address
- * @property {string} suburb
- * @property {string} postcode
- * @property {string} orderSummary
- * @property {number} total
- * @property {number} boxCount
- * @property {string} notes
- * @property {number|null} lat
- * @property {number|null} lng
- * @property {'ok'|'needs_review'|'pending'} status
- * @property {string|null} reviewReason
- * @property {string|null} etaStart
- * @property {string|null} etaEnd
- * @property {string|null} actualDeliveredAt
- * @property {'none'|'queued'|'sent'|'failed'} smsStatus
- * @property {string|null} lastSmsAt
- * @property {'none'|'queued'|'sent'|'failed'} etaSmsStatus
+ * SpreadsheetOrderSource      — CSV/XLSX upload
+ * KimchiHouseApiOrderSource   — live admin /api/orders
  */
-
 (function (global) {
+  function extractPostcode(address, suburb) {
+    const fromAddr = String(address || "").match(/\b(\d{4})\b/);
+    if (fromAddr) return fromAddr[1];
+    const fromSub = String(suburb || "").match(/\b(\d{4})\b/);
+    return fromSub ? fromSub[1] : "";
+  }
+
+  function cleanSuburb(suburb) {
+    return String(suburb || "")
+      .replace(/\bNSW\b/gi, "")
+      .replace(/\b\d{4}\b/g, "")
+      .replace(/,\s*$/, "")
+      .trim();
+  }
+
+  function mapApiOrder(o) {
+    const c = o.customer || {};
+    const address = String(c.address || "").trim();
+    const suburbRaw = String(c.suburb || "").trim();
+    const suburb = cleanSuburb(suburbRaw) || cleanSuburb(address.split(",").slice(-1)[0] || "");
+    const postcode = extractPostcode(address, suburbRaw) || extractPostcode(suburbRaw, "");
+    const items = o.items || [];
+    return {
+      id: o.id,
+      name: c.name || "",
+      phone: c.phone || "",
+      address,
+      suburb,
+      postcode,
+      orderSummary: items.map((i) => `${i.name} × ${i.qty}`).join("\n"),
+      total: Number(o.total) || 0,
+      boxCount: items.reduce((a, i) => a + (Number(i.qty) || 0), 0) || 1,
+      notes: o.note || "",
+      lat: null,
+      lng: null,
+      isDemo: false,
+      status: "pending",
+      reviewReason: null,
+      sourceDeliveryDate: null,
+      etaStart: null,
+      etaEnd: null,
+      actualDeliveredAt: null,
+      smsStatus: "none",
+      lastSmsAt: null,
+      etaSmsStatus: "none",
+    };
+  }
+
   class SpreadsheetOrderSource {
     async getOrders() {
       throw new Error("use KHSpreadsheet.parseWorkbook + applyMapping");
     }
   }
 
-  /** Future: replace upload flow with admin order DB selection. */
   class KimchiHouseApiOrderSource {
     constructor({ adminKey, endpoint = "/api/orders" } = {}) {
       this.adminKey = adminKey;
       this.endpoint = endpoint;
     }
 
-    async getOrders(deliveryDate) {
+    async fetchRaw() {
       const res = await fetch(this.endpoint, {
         headers: { Authorization: `Bearer ${this.adminKey}` },
       });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || "주문 조회 실패");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "주문 조회 실패");
+      return data.orders || [];
+    }
+
+    /** 이번 차수(일괄 배송) 주문만 DeliveryOrder로 변환 */
+    async getCurrentRoundOrders() {
       const D = global.KH_DELIVERY;
-      return (data.orders || [])
-        .filter((o) => {
-          if (!deliveryDate || !D) return true;
-          const date = D.canonicalDeliveryDate?.(D.resolveDeliveryDate(o)) || D.resolveDeliveryDate(o);
-          return date === deliveryDate;
-        })
-        .map((o) => ({
-          id: o.id,
-          name: o.customer?.name || "",
-          phone: o.customer?.phone || "",
-          address: o.customer?.address || "",
-          suburb: o.customer?.suburb || "",
-          postcode: "",
-          orderSummary: (o.items || []).map((i) => `${i.name} × ${i.qty}`).join("\n"),
-          total: o.total || 0,
-          boxCount: (o.items || []).reduce((a, i) => a + (Number(i.qty) || 0), 0),
-          notes: o.note || "",
-          lat: null,
-          lng: null,
-          isDemo: false,
-          status: "pending",
-          reviewReason: null,
-          etaStart: null,
-          etaEnd: null,
-          actualDeliveredAt: null,
-          smsStatus: "none",
-          lastSmsAt: null,
-          etaSmsStatus: "none",
-        }));
+      const raw = await this.fetchRaw();
+      const filtered = D?.isCurrentRoundOrder
+        ? raw.filter((o) => D.isCurrentRoundOrder(o))
+        : raw;
+
+      return filtered.map((o) => {
+        const mapped = mapApiOrder(o);
+        if (D) {
+          const resolved = D.resolveDeliveryDate?.(o);
+          mapped.sourceDeliveryDate =
+            D.canonicalDeliveryDate?.(resolved) || resolved || null;
+        }
+        return mapped;
+      });
     }
   }
 
   global.KHOrderSource = {
     SpreadsheetOrderSource,
     KimchiHouseApiOrderSource,
+    mapApiOrder,
+    extractPostcode,
+    cleanSuburb,
   };
 })(typeof window !== "undefined" ? window : globalThis);
