@@ -43,12 +43,34 @@
   </div>
 
   <div class="admin-panel" id="admin-panel">
-    <header class="shop-site-header">
+    <aside class="admin-sidebar" aria-label="관리자 메뉴">
+      <div class="admin-sidebar-brand">
+        <img src="assets/logo.jpg" alt="" width="36" height="40" />
+        <div>
+          <strong>KIMCHI HOUSE AU</strong>
+          <span>Admin</span>
+        </div>
+      </div>
+      <nav class="admin-sidebar-nav" role="tablist">
+        <button type="button" class="admin-side-link active" data-admin-view="orders">주문 관리</button>
+        <button type="button" class="admin-side-link" data-admin-view="delivery">배송 관련</button>
+        <button type="button" class="admin-side-link" data-admin-view="routes">배송루트</button>
+        <button type="button" class="admin-side-link" data-admin-view="stock">재고 관리</button>
+        <button type="button" class="admin-side-link" data-admin-view="sales">판매 품목</button>
+      </nav>
+      <div class="admin-sidebar-foot">
+        <span class="admin-sidebar-user">Staff</span>
+        <button type="button" class="admin-side-link is-quiet" id="logout-btn-side">로그아웃</button>
+      </div>
+    </aside>
+
+    <div class="admin-workspace">
+    <header class="shop-site-header admin-top-header">
       <div class="shop-header-row shop-header-row-simple">
-        <a class="shop-logo" href="index.html">
-          <img src="assets/logo.jpg" alt="김치하우스 Kimchi House AU" class="shop-logo-mark" width="56" height="63" />
-          <span class="shop-logo-text">Kimchi House</span>
-        </a>
+        <div class="admin-page-heading">
+          <h1 class="admin-page-title" id="admin-page-title">주문 관리</h1>
+          <p class="admin-page-sub">김치하우스 온라인 주문 · 배송 · 재고</p>
+        </div>
         <div class="shop-header-actions admin-header-actions">
           <span class="admin-store-badge" id="store-badge">저장소 확인 중…</span>
           <div class="admin-preorder-toggle">
@@ -58,18 +80,14 @@
               <span class="preorder-switch-text">ON</span>
             </button>
           </div>
+          <a class="shop-btn shop-btn-outline shop-btn-sm" href="index.html">쇼핑몰</a>
           <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="logout-btn">로그아웃</button>
         </div>
       </div>
     </header>
 
     <main class="shop-main shop-admin-main">
-      <section class="shop-section shop-admin-top">
-        <div class="shop-section-head">
-          <h1 class="shop-section-title">주문 · 배송 · 재고 · 판매 관리</h1>
-          <a class="shop-section-more" href="index.html">쇼핑몰 보기</a>
-        </div>
-
+      <section class="shop-section shop-admin-top" hidden>
         <div class="admin-view-tabs" role="tablist">
           <button type="button" class="admin-view-tab active" data-admin-view="orders">주문 관리</button>
           <button type="button" class="admin-view-tab" data-admin-view="delivery">배송 관련</button>
@@ -318,6 +336,7 @@
     </main>
 
     <div class="admin-toast" id="admin-toast" role="status" aria-live="polite"></div>
+    </div>
   </div>
 
   <dialog class="admin-export-dialog" id="excel-export-dialog" aria-labelledby="excel-export-title">
@@ -1272,6 +1291,15 @@
       document.querySelectorAll("[data-admin-view]").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.adminView === view);
       });
+      const titles = {
+        orders: "주문 관리",
+        delivery: "배송 관련",
+        routes: "배송루트",
+        stock: "재고 관리",
+        sales: "판매 품목",
+      };
+      const titleEl = document.getElementById("admin-page-title");
+      if (titleEl) titleEl.textContent = titles[view] || "관리자";
       document.getElementById("orders-view").hidden = view !== "orders";
       document.getElementById("delivery-view").hidden = view !== "delivery";
       document.getElementById("routes-view").hidden = view !== "routes";
@@ -2064,10 +2092,18 @@
       renderOrders();
     });
 
-    document.querySelector(".admin-view-tabs").addEventListener("click", (e) => {
+    document.querySelector(".admin-view-tabs")?.addEventListener("click", (e) => {
       const tab = e.target.closest("[data-admin-view]");
       if (!tab) return;
       setAdminView(tab.dataset.adminView);
+    });
+    document.querySelector(".admin-sidebar-nav")?.addEventListener("click", (e) => {
+      const tab = e.target.closest("[data-admin-view]");
+      if (!tab) return;
+      setAdminView(tab.dataset.adminView);
+    });
+    document.getElementById("logout-btn-side")?.addEventListener("click", () => {
+      document.getElementById("logout-btn")?.click();
     });
 
     document.getElementById("stock-cat-tabs").addEventListener("click", (e) => {

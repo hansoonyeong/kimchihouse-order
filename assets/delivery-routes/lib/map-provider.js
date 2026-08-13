@@ -318,7 +318,6 @@
               this.focusRouteIndex == null || this.focusRouteIndex === it.routeIndex;
             const meta = [
               `${it.stops} stops`,
-              it.boxes != null ? `${it.boxes} box` : null,
               it.distanceKm != null ? `~${it.distanceKm} km` : null,
             ]
               .filter(Boolean)

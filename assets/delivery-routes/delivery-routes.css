@@ -1,12 +1,13 @@
 /* Delivery Route Planner — Kimchi House AU admin */
 :root {
-  --dr-bg: #f3f1ec;
+  --dr-bg: #f4f5f7;
   --dr-panel: #ffffff;
-  --dr-border: #ddd6cb;
-  --dr-text: #1c1c1c;
-  --dr-muted: #5f5a52;
-  --dr-green: #0f4a35;
-  --dr-green-soft: #e8f2ec;
+  --dr-border: #e2e6ea;
+  --dr-text: #1a2b23;
+  --dr-muted: #5c6b64;
+  --dr-green: #0f4c36;
+  --dr-green-deep: #1a2b23;
+  --dr-green-soft: #e7f2ec;
   --dr-warn: #8a5a00;
   --dr-warn-bg: #fff4d9;
   --dr-danger: #9b2c2c;

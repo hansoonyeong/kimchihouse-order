@@ -315,7 +315,29 @@ console.log("\n== Candidate scoring ==");
   assert(!G.hasStreetLevel(suburbOnly), "suburb centroid not street-level");
 }
 
-console.log("\n== Fallback steps (D not auto-approve) ==");
+console.log("\n== Locality / region guards ==");
+{
+  const parsed = N.parseAustralianAddress({
+    address: "12 Joseph St, Lidcombe NSW 2141",
+    suburb: "Lidcombe",
+    postcode: "2141",
+  });
+  const wrongTown = {
+    lat: "-34.9",
+    lon: "150.6",
+    address: {
+      house_number: "12",
+      road: "Joseph Street",
+      suburb: "Nowra",
+      postcode: "2541",
+      state: "New South Wales",
+    },
+  };
+  const scored = G.scoreCandidate(wrongTown, parsed);
+  assert(scored.breakdown.suburbMismatch === -50, "wrong suburb penalized");
+  assert(scored.breakdown.outOfRegion === -80, "far south penalized");
+  assert(scored.score < 40, `wrong locality score low ← ${scored.score}`);
+}
 {
   const parsed = N.parseAustralianAddress({
     address: "Shop 1 / 33 Railway pde., Eastwood NSW 2122",

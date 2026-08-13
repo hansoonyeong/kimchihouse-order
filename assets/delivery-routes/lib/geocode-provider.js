@@ -21,6 +21,8 @@
     invalid: "주소 형식이 올바르지 않음",
     manual_override: "수동으로 위치 확정",
     suburb_only: "Suburb만 확인됨",
+    locality_mismatch: "Suburb/지역이 일치하지 않음",
+    out_of_region: "배송 권역 밖 좌표로 매칭됨",
   };
 
   function isDebugEnabled() {
@@ -128,13 +130,35 @@
   function suburbOf(addr) {
     return (
       addr.suburb ||
-      addr.city ||
       addr.town ||
       addr.village ||
       addr.municipality ||
       addr.city_district ||
       ""
     );
+  }
+
+  function localityTokens(addr) {
+    return [addr.suburb, addr.town, addr.village, addr.city_district, addr.municipality, addr.hamlet, addr.city]
+      .filter(Boolean)
+      .map((s) => normStr(s));
+  }
+
+  /** True when candidate locality matches expected suburb (or suburb unknown). */
+  function suburbMatches(parsed, addr) {
+    const want = normStr(parsed.suburb);
+    if (!want) return true;
+    const tokens = localityTokens(addr);
+    if (tokens.some((t) => t === want || t.includes(want) || want.includes(t))) return true;
+    return false;
+  }
+
+  /** Greater Sydney / nearby metro — reject far regional false matches (e.g. Lidcombe → south coast). */
+  function inDeliveryRegion(lat, lng) {
+    const la = Number(lat);
+    const ln = Number(lng);
+    if (!Number.isFinite(la) || !Number.isFinite(ln)) return false;
+    return la <= -33.35 && la >= -34.4 && ln >= 150.5 && ln <= 151.4;
   }
 
   function scoreCandidate(hit, parsed) {
@@ -148,10 +172,13 @@
       breakdown.postcode = 40;
     }
 
-    const sub = suburbOf(addr);
-    if (parsed.suburb && sub && normStr(sub) === normStr(parsed.suburb)) {
+    if (parsed.suburb && suburbMatches(parsed, addr)) {
       score += 30;
       breakdown.suburb = 30;
+    } else if (parsed.suburb && localityTokens(addr).length) {
+      // Wrong locality — heavy penalty so same street names elsewhere cannot win
+      score -= 50;
+      breakdown.suburbMismatch = -50;
     }
 
     const road = addr.road || addr.pedestrian || addr.footway || "";
@@ -170,7 +197,14 @@
       }
     }
 
-    return { score, breakdown };
+    const lat = Number(hit.lat);
+    const lng = Number(hit.lon);
+    if (Number.isFinite(lat) && Number.isFinite(lng) && !inDeliveryRegion(lat, lng)) {
+      score -= 80;
+      breakdown.outOfRegion = -80;
+    }
+
+    return { score, breakdown, suburbMatched: suburbMatches(parsed, addr) };
   }
 
   function hasStreetLevel(hit) {
@@ -238,6 +272,9 @@
       if (params.state) sp.set("state", params.state);
       if (params.postalcode) sp.set("postalcode", params.postalcode);
       if (params.country) sp.set("country", params.country);
+      // Prefer Greater Sydney results (soft bias; not hard-bounded)
+      sp.set("viewbox", "150.55,-33.40,151.35,-34.35");
+      sp.set("bounded", "0");
 
       const url = "https://nominatim.openstreetmap.org/search?" + sp.toString();
       return this._throttled(async () => {
@@ -349,11 +386,12 @@
 
   function pickBest(hits, parsed) {
     const scored = (hits || []).map((hit) => {
-      const { score, breakdown } = scoreCandidate(hit, parsed);
+      const { score, breakdown, suburbMatched } = scoreCandidate(hit, parsed);
       return {
         hit,
         score,
         breakdown,
+        suburbMatched,
         streetLevel: hasStreetLevel(hit),
         suburbOnly: isSuburbCentroid(hit),
         displayName: hit.display_name || "",
@@ -374,6 +412,15 @@
       };
     }
 
+    if (best.breakdown?.outOfRegion) {
+      return {
+        verificationStatus: VerificationStatus.PARTIAL_MATCH,
+        reviewReason: STATUS_LABELS.out_of_region,
+        approve: false,
+        suggestedLabel: formatSuggested(parsed, best.hit),
+      };
+    }
+
     if (best.suburbOnly || !best.streetLevel) {
       return {
         verificationStatus: VerificationStatus.PARTIAL_MATCH,
@@ -385,6 +432,18 @@
 
     const hnMatched = (best.breakdown.houseNumber || 0) > 0;
     const roadMatched = (best.breakdown.road || 0) > 0;
+    const suburbMatched = (best.breakdown.suburb || 0) > 0 || best.suburbMatched;
+    const postcodeMatched = (best.breakdown.postcode || 0) > 0;
+    const localityOk = !parsed.suburb || suburbMatched || postcodeMatched;
+
+    if (parsed.suburb && !localityOk) {
+      return {
+        verificationStatus: VerificationStatus.PARTIAL_MATCH,
+        reviewReason: STATUS_LABELS.locality_mismatch,
+        approve: false,
+        suggestedLabel: formatSuggested(parsed, best.hit),
+      };
+    }
 
     if (fromReferenceStep) {
       return {
@@ -399,16 +458,8 @@
       };
     }
 
-    // Auto-approve only when street-level and meaningful score
-    if (roadMatched && hnMatched && best.score >= 60) {
-      return {
-        verificationStatus: VerificationStatus.VERIFIED,
-        reviewReason: STATUS_LABELS.verified,
-        approve: true,
-      };
-    }
-
-    if (roadMatched && hnMatched && best.score >= 40) {
+    // Auto-approve: street-level + (suburb or postcode) + house number
+    if (roadMatched && hnMatched && localityOk && best.score >= 50) {
       return {
         verificationStatus: VerificationStatus.VERIFIED,
         reviewReason: STATUS_LABELS.verified,
@@ -425,7 +476,7 @@
       };
     }
 
-    if (roadMatched && hnMatched) {
+    if (roadMatched && hnMatched && localityOk) {
       return {
         verificationStatus: VerificationStatus.VERIFIED,
         reviewReason: STATUS_LABELS.verified,

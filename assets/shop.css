@@ -5475,7 +5475,163 @@ button.shop-product-cta {
 }
 
 .shop-admin-page .admin-panel.show {
+  display: flex;
+  min-height: 100vh;
+  background: #f4f5f7;
+}
+
+.shop-admin-page .admin-sidebar {
+  flex: 0 0 228px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 14px;
+  background: #1a2b23;
+  color: #f4f7f5;
+}
+
+.shop-admin-page .admin-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 8px;
+}
+
+.shop-admin-page .admin-sidebar-brand img {
+  border-radius: 8px;
+  object-fit: cover;
+  background: #fff;
+}
+
+.shop-admin-page .admin-sidebar-brand strong {
   display: block;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.shop-admin-page .admin-sidebar-brand span {
+  display: block;
+  font-size: 11px;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.shop-admin-page .admin-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.shop-admin-page .admin-side-link {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.82);
+  text-align: left;
+  padding: 11px 12px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shop-admin-page .admin-side-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.shop-admin-page .admin-side-link.active {
+  background: #0f4c36;
+  color: #fff;
+  box-shadow: inset 3px 0 0 #7dcea0;
+}
+
+.shop-admin-page .admin-side-link.is-quiet {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.shop-admin-page .admin-sidebar-foot {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: grid;
+  gap: 6px;
+}
+
+.shop-admin-page .admin-sidebar-user {
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.75;
+  padding: 0 12px;
+}
+
+.shop-admin-page .admin-workspace {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shop-admin-page .admin-top-header {
+  background: #fff;
+  border-bottom: 1px solid #e2e6ea;
+  margin: 0;
+  border-radius: 0;
+}
+
+.shop-admin-page .admin-page-heading {
+  display: grid;
+  gap: 2px;
+}
+
+.shop-admin-page .admin-page-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a2b23;
+}
+
+.shop-admin-page .admin-page-sub {
+  margin: 0;
+  font-size: 13px;
+  color: #5c6b64;
+  font-weight: 600;
+}
+
+.shop-admin-page .shop-admin-main {
+  background: #f4f5f7;
+}
+
+.shop-admin-page .shop-section {
+  background: #fff;
+  border: 1px solid #e2e6ea;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(26, 43, 35, 0.04);
+}
+
+@media (max-width: 900px) {
+  .shop-admin-page .admin-panel.show {
+    flex-direction: column;
+  }
+
+  .shop-admin-page .admin-sidebar {
+    flex: 0 0 auto;
+  }
+
+  .shop-admin-page .admin-sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .shop-admin-page .admin-side-link {
+    flex: 1 1 auto;
+  }
 }
 
 .shop-admin-page .admin-header-actions {

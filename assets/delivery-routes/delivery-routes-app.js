@@ -492,7 +492,7 @@
             <strong class="dr-card-name">${
               stopNumber != null ? `<span class="dr-stop-no">${stopNumber}</span>` : ""
             }${esc(order.name || "(이름 없음)")}</strong>
-            <span class="dr-card-meta">${order.boxCount || 0} box</span>
+            <span class="dr-card-meta">${esc(order.suburb || "")}</span>
           </div>
           <div class="dr-card-sub">${esc(suburbLine || "Suburb 없음")}</div>
           <div class="dr-card-order">${esc(shortSummary(order))}</div>
@@ -522,13 +522,11 @@
   function routeStatsHtml(route) {
     const byId = ordersById();
     const stops = route.stopIds.map((id) => byId.get(id)).filter(Boolean);
-    const boxes = stops.reduce((a, o) => a + (Number(o.boxCount) || 0), 0);
     const st = route.stats || {};
     const full = stops.length >= MAX_STOPS;
     return `
       <div class="dr-route-stats">
         <span class="${full ? "is-full" : ""}">${stops.length}/${MAX_STOPS}</span>
-        <span>${boxes} box</span>
         <span>~${st.distanceKm ?? "—"} km</span>
         <span>${st.durationLabel || "—"}</span>
         ${route.spreadKm != null ? `<span>범위 ${route.spreadKm}km</span>` : ""}
@@ -698,7 +696,6 @@
       .map((route, rIdx) => {
         const color = window.KHMap.ROUTE_COLORS[rIdx % window.KHMap.ROUTE_COLORS.length];
         const stops = route.stopIds.map((id) => byId.get(id)).filter(Boolean);
-        const boxes = stops.reduce((a, o) => a + (Number(o.boxCount) || 0), 0);
         const suburbSummary = [...new Set(stops.map((o) => o.suburb).filter(Boolean))]
           .slice(0, 4)
           .join(" · ");
@@ -729,7 +726,7 @@
                   <h3 class="dr-route-title">${esc(route.name)}${route.locked ? " · 잠금" : ""}</h3>
                   <p class="dr-route-summary-line">
                     <span class="dr-route-swatch" style="background:${color}"></span>
-                    ${stops.length} stops · ${boxes} box
+                    ${stops.length} stops
                     ${st.distanceKm != null ? ` · ~${st.distanceKm} km` : ""}
                     ${st.durationLabel ? ` · ${esc(st.durationLabel)}` : ""}
                   </p>
@@ -862,7 +859,7 @@
         <div>${esc(order.originalAddress || order.address)}</div>
         <div>${esc(order.suburb || "")} ${esc(order.postcode || "")}</div>
         <div>${esc(order.phone)}</div>
-        <div>${esc(shortSummary(order))} · ${order.boxCount || 0} box</div>
+        <div>${esc(shortSummary(order))}</div>
         <div style="margin-top:6px">${route ? esc(route.name) : "미배정"}${
           stopNumber ? ` · #${stopNumber}` : ""
         }</div>
@@ -900,13 +897,11 @@
       }
 
       const stops = route.stopIds.map((id) => byId.get(id)).filter(Boolean);
-      const boxes = stops.reduce((a, o) => a + (Number(o.boxCount) || 0), 0);
       const st = route.stats || {};
       legend.push({
         routeIndex: rIdx,
         name: route.name,
         stops: stops.length,
-        boxes,
         distanceKm: st.distanceKm,
         durationLabel: st.durationLabel,
       });
@@ -1075,7 +1070,6 @@
             o.suburb
           )} ${esc(o.postcode)}</td>
           <td style="white-space:pre-line">${esc(o.orderSummary)}</td>
-          <td>${o.boxCount || 0}</td>
           <td>${esc(o.notes || "")}</td>
         </tr>`;
       })
@@ -1087,7 +1081,7 @@
       <style>body{font-family:"Noto Sans KR",sans-serif;padding:24px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #ccc;padding:6px;vertical-align:top;text-align:left}th{background:#f4f8f5}</style></head><body>
       <h1>Kimchi House AU · ${esc(route.name)}</h1>
       <p>배송일 ${esc(state.deliveryDate)} · ${route.stopIds.length}곳</p>
-      <table><thead><tr><th>#</th><th>고객</th><th>주소</th><th>주문</th><th>박스</th><th>메모</th></tr></thead>
+      <table><thead><tr><th>#</th><th>고객</th><th>주소</th><th>주문</th><th>메모</th></tr></thead>
       <tbody>${rows}</tbody></table>
       <script>window.onload=()=>window.print()<\/script></body></html>`);
     w.document.close();
