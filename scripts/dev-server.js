@@ -930,6 +930,9 @@ function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split("?")[0]);
   if (urlPath === "/") urlPath = "/index.html";
   if (urlPath === "/walkerhill" || urlPath === "/walkerhill/") urlPath = "/index.html";
+  if (urlPath === "/admin/delivery-routes" || urlPath === "/admin/delivery-routes/") {
+    urlPath = "/admin/delivery-routes.html";
+  }
 
   const filePath = path.join(ROOT, urlPath);
 
@@ -1055,6 +1058,7 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`  주문:     http://localhost:${PORT}/order.html`);
   console.log(`  주문확인: http://localhost:${PORT}/lookup.html`);
   console.log(`  관리자:   http://localhost:${PORT}/admin.html`);
+  console.log(`  배송루트: http://localhost:${PORT}/admin/delivery-routes`);
   console.log("");
   console.log(`  데이터 저장소: ${hasRedisEnv() ? "Upstash Redis (배포와 동일)" : "로컬 data/ 파일"}`);
   if (!hasRedisEnv()) {

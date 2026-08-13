@@ -1,0 +1,464 @@
+/* Delivery Route Planner — Kimchi House AU admin */
+:root {
+  --dr-bg: #faf8f4;
+  --dr-panel: #ffffff;
+  --dr-border: #e6e2da;
+  --dr-text: #222;
+  --dr-muted: #6a6a6a;
+  --dr-green: #0f4a35;
+  --dr-green-soft: #edf5f0;
+  --dr-warn: #8a5a00;
+  --dr-warn-bg: #fff7e8;
+  --dr-danger: #9b2c2c;
+}
+
+body.dr-page {
+  margin: 0;
+  background: var(--dr-bg);
+  color: var(--dr-text);
+  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.dr-login-wrap {
+  max-width: 420px;
+  margin: 48px auto;
+  padding: 0 16px;
+}
+
+.dr-app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dr-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--dr-green);
+  color: #fff;
+}
+
+.dr-topbar a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.dr-topbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.dr-topbar .shop-btn-outline {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.dr-topbar .shop-btn-primary {
+  background: #fff;
+  color: var(--dr-green);
+  border: none;
+}
+
+.dr-dashboard {
+  display: grid;
+  grid-template-columns: auto repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--dr-panel);
+  border-bottom: 1px solid var(--dr-border);
+}
+
+.dr-dash-item {
+  background: var(--dr-green-soft);
+  border: 1px solid rgba(15, 74, 53, 0.12);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.dr-dash-item label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--dr-muted);
+  margin-bottom: 2px;
+}
+
+.dr-dash-item strong,
+.dr-dash-item input {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--dr-green);
+  border: none;
+  background: transparent;
+  width: 100%;
+  padding: 0;
+  font-family: inherit;
+}
+
+.dr-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--dr-border);
+  background: #fff;
+}
+
+.dr-toolbar input[type="search"],
+.dr-toolbar select {
+  min-height: 36px;
+  border: 1px solid var(--dr-border);
+  border-radius: 8px;
+  padding: 0 10px;
+  font: inherit;
+  background: #fff;
+}
+
+.dr-toolbar input[type="search"] {
+  min-width: 180px;
+  flex: 1;
+}
+
+.dr-view-toggle {
+  display: none;
+  gap: 4px;
+}
+
+.dr-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(380px, 42%) 1fr;
+  min-height: 0;
+  height: calc(100vh - 170px);
+}
+
+.dr-panel {
+  overflow: auto;
+  padding: 12px;
+  border-right: 1px solid var(--dr-border);
+  background: var(--dr-bg);
+}
+
+.dr-map-wrap {
+  position: relative;
+  min-height: 320px;
+  background: #e8eee9;
+}
+
+#dr-map {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+}
+
+.dr-map-pin {
+  background: transparent !important;
+  border: none !important;
+}
+
+.dr-map-pin-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--pin, #0f4a35);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+
+.dr-map-pin-inner.is-dimmed {
+  opacity: 0.45;
+}
+
+.dr-section-title {
+  margin: 14px 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--dr-green);
+  letter-spacing: -0.01em;
+}
+
+.dr-route {
+  background: var(--dr-panel);
+  border: 1px solid var(--dr-border);
+  border-left: 4px solid var(--route-color, var(--dr-green));
+  border-radius: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.dr-route.is-locked {
+  opacity: 0.92;
+  background: #f7f7f5;
+}
+
+.dr-route-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--dr-border);
+  background: #fff;
+}
+
+.dr-route-title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.dr-route-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--dr-muted);
+  font-weight: 600;
+}
+
+.dr-route-stats .is-full {
+  color: var(--dr-danger);
+  font-weight: 800;
+}
+
+.dr-route-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dr-drop-list {
+  min-height: 48px;
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.dr-card {
+  background: #fff;
+  border: 1px solid var(--dr-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: grab;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.dr-card.is-selected {
+  border-color: var(--dr-green);
+  box-shadow: inset 0 0 0 1px var(--dr-green);
+}
+
+.dr-card-ghost {
+  opacity: 0.45;
+}
+
+.dr-card-chosen {
+  cursor: grabbing;
+}
+
+.dr-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.dr-card-name {
+  font-size: 13.5px;
+}
+
+.dr-card-meta {
+  color: var(--dr-muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dr-card-addr {
+  color: #333;
+  margin-top: 2px;
+}
+
+.dr-card-order {
+  color: var(--dr-muted);
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+.dr-card-phone {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #444;
+}
+
+.dr-card-note {
+  margin-top: 4px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: var(--dr-warn-bg);
+  color: var(--dr-warn);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dr-card-review {
+  cursor: default;
+  border-color: #e2c48a;
+  background: #fffdf7;
+}
+
+.dr-review-reason {
+  margin-top: 4px;
+  color: var(--dr-danger);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dr-empty {
+  margin: 0;
+  padding: 10px;
+  color: var(--dr-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.dr-side-block {
+  background: var(--dr-panel);
+  border: 1px solid var(--dr-border);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  padding: 8px;
+}
+
+.dr-side-block h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.dr-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.dr-modal[hidden] {
+  display: none !important;
+}
+
+.dr-modal-dialog {
+  width: min(560px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.dr-modal-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.dr-map-field {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.dr-map-field select {
+  min-height: 36px;
+  border: 1px solid var(--dr-border);
+  border-radius: 8px;
+  padding: 0 8px;
+  font: inherit;
+}
+
+.dr-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.dr-upload-progress {
+  padding: 8px 16px;
+  background: var(--dr-green-soft);
+  color: var(--dr-green);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.dr-start-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  background: #fff8e8;
+  border: 1px solid #e8d59a;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+@media (max-width: 1024px) {
+  .dr-dashboard {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dr-view-toggle {
+    display: inline-flex;
+  }
+
+  .dr-main {
+    grid-template-columns: 1fr;
+    height: calc(100vh - 210px);
+  }
+
+  body[data-dr-view="list"] .dr-map-wrap {
+    display: none;
+  }
+
+  body[data-dr-view="map"] .dr-panel {
+    display: none;
+  }
+
+  body[data-dr-view="map"] .dr-map-wrap,
+  body[data-dr-view="split"] .dr-map-wrap {
+    display: block;
+    min-height: 50vh;
+  }
+}
+
+@media (max-width: 720px) {
+  .dr-dashboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
