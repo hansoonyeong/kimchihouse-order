@@ -195,12 +195,12 @@
     return orders;
   }
 
-  /** Default Kimchi House dispatch / start point (Sydney NW-ish depot proxy). */
+  /** Default Kimchi House dispatch / start point — Galston depot. */
   const DEFAULT_START = {
-    label: "김치하우스 출발지 (기본)",
-    address: "Eastwood NSW 2122",
-    lat: -33.79,
-    lng: 151.082,
+    label: "김치하우스 출발지",
+    address: "36 Mid Dural Rd, Galston NSW 2159",
+    lat: -33.649215,
+    lng: 151.034199,
   };
 
   global.KHDeliverySample = {

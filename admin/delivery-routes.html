@@ -9,8 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <link rel="stylesheet" href="/assets/shop.css" />
-  <link rel="stylesheet" href="/assets/delivery-routes/delivery-routes.css" />
+  <link rel="stylesheet" href="/assets/delivery-routes/delivery-routes.css?v=20260813c" />
 </head>
 <body class="shop-page shop-admin-page dr-page" data-brand="kimchi-house">
 
@@ -36,22 +38,28 @@
 
   <div class="dr-app-shell" id="dr-app" hidden>
     <header class="dr-topbar">
-      <div style="display:flex;gap:12px;align-items:center">
+      <div class="dr-topbar-brand">
         <a href="/admin.html">← 관리자</a>
         <strong>배송루트</strong>
       </div>
       <div class="dr-topbar-actions">
         <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="btn-refresh-orders">주문 새로고침</button>
-        <label class="shop-btn shop-btn-outline shop-btn-sm" style="cursor:pointer;margin:0">
-          주문 업로드
+        <label class="shop-btn shop-btn-outline shop-btn-sm" style="cursor:pointer;margin:0" title="김치하우스 주문 예약표 xlsx">
+          예약표 업로드
           <input type="file" id="file-upload" accept=".csv,.xlsx,.xls" hidden />
         </label>
-        <button type="button" class="shop-btn shop-btn-primary shop-btn-sm" id="btn-auto-group">배송루트 자동 생성</button>
+        <button type="button" class="shop-btn shop-btn-primary shop-btn-sm" id="btn-auto-group" disabled>배송루트 자동 생성</button>
         <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="btn-add-route">Route 추가</button>
-        <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="btn-export-all">전체 CSV</button>
-        <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="btn-load-demo">데모 데이터</button>
-        <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="btn-clear">초기화</button>
-        <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="dr-logout">로그아웃</button>
+        <div class="dr-more">
+          <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="btn-more" aria-expanded="false">더보기 ▾</button>
+          <div class="dr-more-menu" id="dr-more-menu" hidden>
+            <button type="button" id="btn-export-all">전체 CSV</button>
+            <button type="button" id="btn-load-demo">데모 데이터</button>
+            <button type="button" id="btn-geocode-debug">Geocode 디버그</button>
+            <button type="button" id="btn-clear">초기화</button>
+            <button type="button" id="dr-logout">로그아웃</button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -63,11 +71,10 @@
         <input type="date" id="dr-date" />
       </div>
       <div class="dr-dash-item"><label>전체 주문</label><strong id="stat-total">0</strong></div>
-      <div class="dr-dash-item"><label>배정 완료</label><strong id="stat-grouped">0</strong></div>
+      <div class="dr-dash-item"><label>배정</label><strong id="stat-grouped">0</strong></div>
       <div class="dr-dash-item"><label>미배정</label><strong id="stat-unassigned">0</strong></div>
       <div class="dr-dash-item"><label>확인 필요</label><strong id="stat-review">0</strong></div>
-      <div class="dr-dash-item"><label>배송루트</label><strong id="stat-routes">0</strong></div>
-      <div class="dr-dash-item"><label>총 배송지</label><strong id="stat-stops">0</strong></div>
+      <div class="dr-dash-item"><label>Routes</label><strong id="stat-routes">0</strong></div>
     </section>
 
     <div class="dr-toolbar">
@@ -85,29 +92,39 @@
     <div class="dr-main" id="dr-panel">
       <aside class="dr-panel">
         <div class="dr-start-bar">
-          <div>
+          <div class="dr-start-bar-text">
             <strong>출발지</strong>
-            <span id="dr-start-label">김치하우스 출발지 (기본)</span>
+            <span id="dr-start-label">36 Mid Dural Rd, Galston</span>
           </div>
-          <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="btn-edit-start">출발지 변경</button>
+          <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="btn-edit-start">변경</button>
         </div>
 
-        <div class="dr-side-block">
-          <h3>확인 필요</h3>
-          <div id="dr-review-list" class="dr-drop-list" data-drop="review"></div>
+        <div class="dr-routes-block">
+          <div class="dr-section-head">
+            <h2 class="dr-section-title">배송 Route</h2>
+            <span class="dr-section-hint" id="dr-routes-hint"></span>
+          </div>
+          <div id="dr-routes"></div>
         </div>
 
-        <div class="dr-side-block">
-          <h3>미배정</h3>
+        <div class="dr-side-block dr-side-unassigned">
+          <h3>미배정 <span class="dr-count-pill" id="dr-unassigned-count">0</span></h3>
           <div id="dr-unassigned-list" class="dr-drop-list" data-drop="unassigned"></div>
         </div>
 
-        <h2 class="dr-section-title">배송 Route</h2>
-        <div id="dr-routes"></div>
+        <div class="dr-side-block dr-side-review">
+          <h3>확인 필요 <span class="dr-count-pill is-warn" id="dr-review-count">0</span></h3>
+          <div id="dr-review-list" class="dr-drop-list" data-drop="review"></div>
+        </div>
       </aside>
 
       <div class="dr-map-wrap">
+        <div class="dr-map-chrome">
+          <span>지도 · Route 색상 구분</span>
+          <button type="button" class="dr-text-btn" id="btn-clear-focus" hidden>전체 Route 보기</button>
+        </div>
         <div id="dr-map" role="application" aria-label="시드니 배송 지도"></div>
+        <div id="dr-map-legend" class="dr-map-legend" hidden></div>
       </div>
     </div>
   </div>
@@ -124,19 +141,32 @@
     </div>
   </div>
 
+  <aside class="dr-geocode-debug" id="dr-geocode-debug" hidden>
+    <header>
+      <strong>Geocode Debug</strong>
+      <div class="dr-geocode-debug-actions">
+        <button type="button" id="btn-debug-clear">로그 비우기</button>
+        <button type="button" id="btn-debug-close">닫기</button>
+      </div>
+    </header>
+    <pre id="dr-geocode-debug-log"></pre>
+  </aside>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="/assets/delivery-utils.js"></script>
-  <script src="/assets/delivery-routes/lib/distance.js"></script>
-  <script src="/assets/delivery-routes/lib/geocode-provider.js"></script>
-  <script src="/assets/delivery-routes/lib/routing-provider.js"></script>
-  <script src="/assets/delivery-routes/lib/map-provider.js"></script>
-  <script src="/assets/delivery-routes/lib/storage.js"></script>
-  <script src="/assets/delivery-routes/lib/order-source.js"></script>
-  <script src="/assets/delivery-routes/sample-orders.js"></script>
-  <script src="/assets/delivery-routes/utils/spreadsheet.js"></script>
-  <script src="/assets/delivery-routes/utils/export.js"></script>
-  <script src="/assets/delivery-routes/delivery-routes-app.js"></script>
+  <script src="/assets/delivery-routes/lib/distance.js?v=20260813c"></script>
+  <script src="/assets/delivery-routes/lib/address-normalize.js?v=20260813c"></script>
+  <script src="/assets/delivery-routes/lib/geocode-provider.js?v=20260813c"></script>
+  <script src="/assets/delivery-routes/lib/routing-provider.js?v=20260813c"></script>
+  <script src="/assets/delivery-routes/lib/map-provider.js?v=20260813c"></script>
+  <script src="/assets/delivery-routes/lib/storage.js?v=20260813c"></script>
+  <script src="/assets/delivery-routes/lib/order-source.js?v=20260813c"></script>
+  <script src="/assets/delivery-routes/sample-orders.js?v=20260813c"></script>
+  <script src="/assets/delivery-routes/utils/spreadsheet.js?v=20260813c"></script>
+  <script src="/assets/delivery-routes/utils/export.js?v=20260813c"></script>
+  <script src="/assets/delivery-routes/delivery-routes-app.js?v=20260813c"></script>
 </body>
 </html>

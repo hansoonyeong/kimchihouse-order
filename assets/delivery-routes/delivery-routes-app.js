@@ -1,5 +1,5 @@
 /**
- * Kimchi House AU — Delivery Route Planner (main app)
+ * Kimchi House AU — Delivery Route Planner
  */
 (function () {
   const MAX_STOPS = 30;
@@ -8,21 +8,27 @@
 
   const state = {
     deliveryDate: "2026-08-29",
+    /** 'api' | 'reservation' | 'demo' | 'upload' | null */
+    dataSource: null,
     orders: [],
     routes: [],
     unassignedIds: [],
     start: null,
-    filter: { q: "", routeId: "all", suburb: "all", postcode: "all", panel: "all" },
+    filter: { q: "", routeId: "all", suburb: "all", postcode: "all" },
     selectedId: null,
-    viewMode: "split", // split | list | map
+    focusedRouteId: null,
+    expandedIds: new Set(),
+    viewMode: "split",
     mapping: null,
     pendingRows: null,
     pendingHeaders: null,
-    drag: null,
+    geocodingInProgress: false,
+    geocodingDone: 0,
+    geocodingTotal: 0,
   };
 
   let mapProvider = null;
-  let geocoder = null;
+  let geocodeService = null;
   let router = null;
   let sortableInstances = [];
 
@@ -54,9 +60,51 @@
     return state.routes.find((r) => r.stopIds.includes(orderId)) || null;
   }
 
+  function coordsOf(o) {
+    return window.KHRouting.coordsOf(o);
+  }
+
+  function hasCoords(o) {
+    return window.KHRouting.hasCoords(o);
+  }
+
+  function isGeocodingFinished() {
+    if (!state.orders.length) return false;
+    if (state.geocodingInProgress) return false;
+    return state.orders.every((o) => {
+      const g = o.geocodingStatus || o.status;
+      return g === "ok" || g === "needs_review";
+    });
+  }
+
+  function isVerifiedOrder(o) {
+    if (!o) return false;
+    const v = o.verificationStatus;
+    if (v === "verified" || v === "manual_override") return hasCoords(o);
+    return (o.geocodingStatus === "ok" || o.status === "ok") && hasCoords(o);
+  }
+
+  function updateAutoGroupButton() {
+    const btn = $("#btn-auto-group");
+    if (!btn) return;
+    const ready = isGeocodingFinished() && !state.geocodingInProgress;
+    btn.disabled = !ready;
+    btn.title = ready
+      ? "좌표가 확인된 주문으로 Route를 만듭니다"
+      : "모든 주소 확인이 끝난 뒤에 사용할 수 있습니다";
+  }
+
+  function setProgress(text, { hidden = false } = {}) {
+    const el = $("#dr-upload-progress");
+    if (!el) return;
+    el.hidden = hidden;
+    if (text) el.textContent = text;
+  }
+
   function persist() {
     window.KHRouteStorage.save({
       deliveryDate: state.deliveryDate,
+      dataSource: state.dataSource,
       orders: state.orders,
       routes: state.routes,
       unassignedIds: state.unassignedIds,
@@ -68,141 +116,225 @@
     const data = window.KHRouteStorage.load();
     if (!data?.orders?.length) return false;
     state.deliveryDate = data.deliveryDate || state.deliveryDate;
-    state.orders = data.orders;
+    state.dataSource = data.dataSource || null;
+    state.orders = (data.orders || []).map(migrateOrder);
     state.routes = data.routes || [];
     state.unassignedIds = data.unassignedIds || [];
     state.start = data.start || window.KHDeliverySample.DEFAULT_START;
+    const addr = String(state.start?.address || "").toLowerCase();
+    if (!state.start?.lat || addr.includes("eastwood")) {
+      state.start = { ...window.KHDeliverySample.DEFAULT_START };
+    }
+    // 예약표로 올린 주문은 id가 RES- 로 시작
+    if (!state.dataSource && state.orders.some((o) => String(o.id || "").startsWith("RES-"))) {
+      state.dataSource = "reservation";
+    }
     return true;
   }
 
+  function shouldSkipLiveReload() {
+    return (
+      state.geocodingInProgress ||
+      state.dataSource === "reservation" ||
+      state.dataSource === "upload" ||
+      state.dataSource === "demo"
+    );
+  }
+
+  function migrateOrder(o) {
+    const original = o.originalAddress || o.address || "";
+    const verificationStatus =
+      o.verificationStatus ||
+      (o.geocodingStatus === "ok" || o.status === "ok"
+        ? "verified"
+        : o.geocodingStatus === "needs_review"
+          ? "partial_match"
+          : "pending");
+    return {
+      ...o,
+      address: original,
+      originalAddress: original,
+      normalizedAddress: o.normalizedAddress || "",
+      unitOrShop: o.unitOrShop || "",
+      suggestedAddress: o.suggestedAddress || "",
+      suggestedLat: o.suggestedLat ?? null,
+      suggestedLng: o.suggestedLng ?? null,
+      verificationStatus,
+      latitude: o.latitude ?? o.lat ?? null,
+      longitude: o.longitude ?? o.lng ?? null,
+      lat: o.lat ?? o.latitude ?? null,
+      lng: o.lng ?? o.longitude ?? null,
+      geocodingStatus:
+        o.geocodingStatus ||
+        (o.status === "ok" ? "ok" : o.status === "needs_review" ? "needs_review" : "pending"),
+      geocodingConfidence: o.geocodingConfidence || 0,
+    };
+  }
+
+  function ensureGeocodeService() {
+    if (!geocodeService) {
+      const Provider =
+        window.KHGeocode.NominatimStructuredProvider ||
+        window.KHGeocode.NominatimGeocodeProvider;
+      const provider = new Provider();
+      geocodeService = new window.KHGeocode.PipelineGeocodeService(provider);
+    }
+    return geocodeService;
+  }
+
+  async function geocodeOrder(order, { force = false } = {}) {
+    if (
+      !force &&
+      isVerifiedOrder(order) &&
+      (order.geocodingConfidence || 0) >= 0.55
+    ) {
+      return order;
+    }
+    return ensureGeocodeService().geocodeOrder(order, { force });
+  }
+
+  async function geocodeAll(orders, { reusePrev = true, concurrency = 1 } = {}) {
+    // Nominatim 정책: 순차(약 1req/s). structured provider가 글로벌 throttle.
+    state.geocodingInProgress = true;
+    state.geocodingTotal = orders.length;
+    state.geocodingDone = 0;
+    updateAutoGroupButton();
+
+    let done = 0;
+    let cursor = 0;
+    const workers = Math.max(1, Math.min(concurrency, orders.length || 1));
+
+    async function processOne(live) {
+      try {
+        const prev = reusePrev ? orderOf(live.id) : null;
+        const sameAddr =
+          prev &&
+          (prev.originalAddress || prev.address) === (live.originalAddress || live.address) &&
+          prev.suburb === live.suburb &&
+          prev.postcode === live.postcode;
+
+        if (
+          sameAddr &&
+          isVerifiedOrder(prev) &&
+          (prev.geocodingConfidence || 0) >= 0.55
+        ) {
+          live.lat = prev.lat;
+          live.lng = prev.lng;
+          live.latitude = prev.latitude ?? prev.lat;
+          live.longitude = prev.longitude ?? prev.lng;
+          live.geocodingStatus = "ok";
+          live.verificationStatus = prev.verificationStatus || "verified";
+          live.geocodingConfidence = prev.geocodingConfidence;
+          live.normalizedAddress = prev.normalizedAddress;
+          live.unitOrShop = prev.unitOrShop;
+          live.suggestedAddress = prev.suggestedAddress;
+          live.parsedAddress = prev.parsedAddress;
+          live.status = "ok";
+          live.reviewReason = null;
+        } else {
+          await geocodeOrder(live, { force: true });
+        }
+      } catch (err) {
+        live.status = "needs_review";
+        live.geocodingStatus = "needs_review";
+        live.verificationStatus = "not_found";
+        live.reviewReason = "주소 처리 중 오류: " + (err.message || "unknown");
+        live.lat = live.lng = live.latitude = live.longitude = null;
+      }
+      done += 1;
+      state.geocodingDone = done;
+      const okN = orders.filter((o) => isVerifiedOrder(o)).length;
+      setProgress(`주소 확인 중 ${done} / ${orders.length} · 지도가능 ${okN}`);
+      if (done % 5 === 0 || done === orders.length) {
+        state.unassignedIds = orders
+          .filter((o) => isVerifiedOrder(o))
+          .map((o) => o.id)
+          .filter((id) => !state.routes.some((r) => r.stopIds.includes(id)));
+        persist();
+        renderHeader();
+        renderSideLists();
+        renderMap();
+      }
+    }
+
+    async function worker() {
+      while (cursor < orders.length) {
+        const i = cursor++;
+        await processOne(orders[i]);
+      }
+    }
+
+    await Promise.all(Array.from({ length: workers }, () => worker()));
+
+    state.geocodingInProgress = false;
+    updateAutoGroupButton();
+    return orders;
+  }
+
   function loadDemo() {
-    state.orders = window.KHDeliverySample.buildSampleOrders(64);
+    state.orders = window.KHDeliverySample.buildSampleOrders(64).map(migrateOrder);
     state.routes = [];
-    state.unassignedIds = state.orders.filter((o) => o.status === "ok").map((o) => o.id);
+    state.unassignedIds = [];
     state.start = { ...window.KHDeliverySample.DEFAULT_START };
     state.deliveryDate = "2026-08-29";
     persist();
   }
 
-  async function prepareOrderGeo(order) {
-    // suburb가 비어 있으면 주소에서 추정
-    if (!order.suburb && order.address) {
-      const parts = String(order.address).split(",");
-      if (parts.length >= 2) {
-        order.suburb = window.KHOrderSource.cleanSuburb(parts[parts.length - 1]);
-      }
-    }
-    if (!order.postcode) {
-      order.postcode = window.KHOrderSource.extractPostcode(order.address, order.suburb) || "";
-    }
-
-    const reasons = window.KHSpreadsheet.validateOrder(order);
-    if (reasons.length) {
-      // 주소만 있고 suburb 추정 실패해도 로컬 geocode 한 번 더 시도
-      const geoTry = await geocoder.geocode(order);
-      if (geoTry) {
-        order.lat = geoTry.lat;
-        order.lng = geoTry.lng;
-        order.status = "ok";
-        order.reviewReason = null;
-        return order;
-      }
-      order.status = "needs_review";
-      order.reviewReason = reasons.join(" · ");
-      order.lat = null;
-      order.lng = null;
-      return order;
-    }
-    const geo = await geocoder.geocode(order);
-    if (!geo) {
-      order.status = "needs_review";
-      order.reviewReason = "주소를 지도에서 찾지 못했습니다 (Suburb 확인 필요)";
-      order.lat = null;
-      order.lng = null;
-      return order;
-    }
-    order.lat = geo.lat;
-    order.lng = geo.lng;
-    order.status = "ok";
-    order.reviewReason = null;
-    return order;
+  /* ---------- Auth ---------- */
+  function getAdminKey() {
+    return sessionStorage.getItem("kh_admin_key") || localStorage.getItem("kh_admin_key") || "";
+  }
+  function setAdminKey(key) {
+    sessionStorage.setItem("kh_admin_key", key);
+    localStorage.setItem("kh_admin_key", key);
+  }
+  function clearAdminKey() {
+    sessionStorage.removeItem("kh_admin_key");
+    localStorage.removeItem("kh_admin_key");
   }
 
-  /**
-   * 관리자 주문 DB → 배송루트.
-   * 기존에 잡아둔 Route 배정은 같은 주문번호에 한해 유지하고, 신규 주문만 미배정에 추가.
-   */
-  async function loadLiveOrders({ quiet = false } = {}) {
-    const key = sessionStorage.getItem("kh_admin_key");
+  async function loadLiveOrders({ quiet = false, force = false } = {}) {
+    if (!force && shouldSkipLiveReload()) {
+      console.info("[delivery-routes] skip live reload (source=%s)", state.dataSource);
+      return state.orders.length;
+    }
+    const key = getAdminKey();
     if (!key) throw new Error("로그인이 필요합니다.");
-    if (!geocoder) {
-      geocoder = new window.KHGeocode.LocalGeocodeProvider({ useNominatim: false });
-    }
+    ensureGeocodeService();
     if (!window.KHOrderSource?.KimchiHouseApiOrderSource) {
-      throw new Error("주문 연동 모듈을 불러오지 못했습니다. 새로고침 해주세요.");
+      throw new Error("주문 연동 모듈을 불러오지 못했습니다.");
     }
 
-    const progress = $("#dr-upload-progress");
-    if (progress) {
-      progress.hidden = false;
-      progress.textContent = "이번 차수 주문 불러오는 중…";
-    }
-
+    setProgress("이번 차수 주문 불러오는 중…");
     const source = new window.KHOrderSource.KimchiHouseApiOrderSource({ adminKey: key });
     const fetched = await source.getOrdersForPlanner();
-    let live = fetched.orders || [];
-
+    let live = (fetched.orders || []).map(migrateOrder);
     if (!live.length) {
-      if (progress) progress.hidden = true;
+      setProgress("", { hidden: true });
       throw new Error(
         `불러온 주문이 0건입니다. (API 전체 ${fetched.rawCount || 0}건 / 이번 차수 ${fetched.currentCount || 0}건)`
       );
     }
 
-    for (let i = 0; i < live.length; i++) {
-      if (progress) progress.textContent = `주소 확인 중… ${i + 1}/${live.length}`;
-      try {
-        const prev = orderOf(live[i].id);
-        if (
-          prev?.lat != null &&
-          prev?.lng != null &&
-          prev.address === live[i].address &&
-          prev.suburb === live[i].suburb
-        ) {
-          live[i].lat = prev.lat;
-          live[i].lng = prev.lng;
-          live[i].status = prev.status === "needs_review" ? "needs_review" : "ok";
-          live[i].reviewReason = prev.reviewReason;
-        } else {
-          await prepareOrderGeo(live[i]);
-        }
-      } catch (err) {
-        live[i].status = "needs_review";
-        live[i].reviewReason = "주소 처리 중 오류: " + (err.message || "unknown");
-        live[i].lat = null;
-        live[i].lng = null;
-      }
-    }
+    live = await geocodeAll(live);
 
     const prevRoutes = (state.routes || []).map((r) => ({
       ...r,
       stopIds: (r.stopIds || []).slice(),
     }));
     const liveIds = new Set(live.map((o) => o.id));
-
     const nextRoutes = prevRoutes
       .map((r) => ({
         ...r,
-        stopIds: r.stopIds.filter((id) => liveIds.has(id)),
+        stopIds: r.stopIds.filter((id) => liveIds.has(id) && isVerifiedOrder(live.find((o) => o.id === id))),
       }))
       .filter((r) => r.locked || r.stopIds.length > 0);
 
     const assigned = new Set(nextRoutes.flatMap((r) => r.stopIds));
     const unassignedIds = live
-      .filter((o) => o.status === "ok" && !assigned.has(o.id))
+      .filter((o) => isVerifiedOrder(o) && !assigned.has(o.id))
       .map((o) => o.id);
 
-    const D = window.KH_DELIVERY;
     const dates = live.map((o) => o.sourceDeliveryDate).filter(Boolean);
     const dateCounts = {};
     dates.forEach((d) => {
@@ -210,10 +342,10 @@
     });
     const topDate =
       Object.entries(dateCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
-      D?.DEFAULT_DELIVERY_DATE ||
-      state.deliveryDate ||
-      "2026-08-29";
+      window.KH_DELIVERY?.DEFAULT_DELIVERY_DATE ||
+      state.deliveryDate;
 
+    state.dataSource = "api";
     state.orders = live;
     state.routes = nextRoutes;
     state.unassignedIds = unassignedIds;
@@ -223,25 +355,19 @@
     refreshRouteStats();
     persist();
 
-    const reviewN = live.filter((o) => o.status === "needs_review").length;
-    const okN = live.filter((o) => o.status === "ok").length;
-    const msg =
-      `주문 ${live.length}건 로드` +
-      (fetched.scope === "all" ? ` (이번 차수 필터 0건 → 전체 ${fetched.rawCount}건 사용)` : "") +
-      ` · 지도가능 ${okN} · 확인필요 ${reviewN}`;
-
-    if (progress) {
-      progress.hidden = false;
-      progress.textContent = msg;
-      setTimeout(() => {
-        if (progress.textContent === msg) progress.hidden = true;
-      }, 4000);
-    }
+    const okN = live.filter((o) => isVerifiedOrder(o)).length;
+    const reviewN = live.filter((o) => o.geocodingStatus === "needs_review").length;
+    const msg = `주문 ${live.length}건 · 지도가능 ${okN} · 확인필요 ${reviewN}`;
+    setProgress(msg);
+    setTimeout(() => {
+      const el = $("#dr-upload-progress");
+      if (el && el.textContent === msg) el.hidden = true;
+    }, 4500);
     if (!quiet) alert(msg);
+    updateAutoGroupButton();
     return live.length;
   }
 
-  /* ---------- Auth ---------- */
   async function tryLogin() {
     const key = $("#dr-password").value.trim();
     if (!key) return alert("비밀번호를 입력해 주세요.");
@@ -249,7 +375,7 @@
       const res = await fetch("/api/orders", { headers: { Authorization: `Bearer ${key}` } });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "로그인 실패");
-      sessionStorage.setItem("kh_admin_key", key);
+      setAdminKey(key);
       showApp();
     } catch (err) {
       alert(err.message || "로그인 실패");
@@ -265,64 +391,164 @@
   }
 
   function logout() {
-    sessionStorage.removeItem("kh_admin_key");
+    clearAdminKey();
     location.href = "/admin.html";
+  }
+
+  function applyEmbedMode() {
+    const params = new URLSearchParams(location.search);
+    if (params.get("embed") !== "1") return false;
+    document.body.classList.add("dr-embed");
+    const back = document.querySelector(".dr-topbar a[href='/admin.html']");
+    if (back) back.hidden = true;
+    return true;
+  }
+
+  function listenParentSync() {
+    window.addEventListener("message", (event) => {
+      if (event.origin !== location.origin) return;
+      const data = event.data;
+      if (!data || data.type !== "kh-delivery-routes-sync") return;
+      if (data.adminKey) setAdminKey(String(data.adminKey));
+      const login = $("#dr-login");
+      const app = $("#dr-app");
+      if (login) login.hidden = true;
+      if (app) app.hidden = false;
+      // 이미 플래너가 떠 있으면 로그인만 동기화 (예약표 덮어쓰기 방지)
+      if (document.body.dataset.drInited === "1") {
+        renderAll();
+        return;
+      }
+      showApp();
+    });
   }
 
   /* ---------- Stats / filters ---------- */
   function stats() {
-    const review = state.orders.filter((o) => o.status === "needs_review");
+    const review = state.orders.filter(
+      (o) => o.geocodingStatus === "needs_review" || o.status === "needs_review"
+    );
     const assigned = new Set(state.routes.flatMap((r) => r.stopIds));
-    const ok = state.orders.filter((o) => o.status === "ok");
     return {
       total: state.orders.length,
       grouped: assigned.size,
       unassigned: state.unassignedIds.length,
       review: review.length,
       routes: state.routes.length,
-      stops: assigned.size,
     };
   }
 
-  function matchesFilter(order) {
-    const f = state.filter;
-    const q = f.q.trim().toLowerCase();
+  function matchesFilter(o) {
+    const q = state.filter.q.trim().toLowerCase();
     if (q) {
-      const hay = [order.name, order.phone, order.address, order.suburb, order.postcode, order.id, order.notes]
+      const blob = [
+        o.name,
+        o.phone,
+        o.originalAddress || o.address,
+        o.suburb,
+        o.postcode,
+        o.notes,
+        o.orderSummary,
+      ]
         .join(" ")
         .toLowerCase();
-      if (!hay.includes(q)) return false;
+      if (!blob.includes(q)) return false;
     }
-    if (f.suburb !== "all" && order.suburb !== f.suburb) return false;
-    if (f.postcode !== "all" && order.postcode !== f.postcode) return false;
-    const route = findRouteOfOrder(order.id);
-    if (f.routeId !== "all") {
-      if (f.routeId === "unassigned") {
-        if (!state.unassignedIds.includes(order.id)) return false;
-      } else if (f.routeId === "review") {
-        if (order.status !== "needs_review") return false;
-      } else if (!route || route.id !== f.routeId) {
-        return false;
-      }
+    if (state.filter.suburb !== "all" && o.suburb !== state.filter.suburb) return false;
+    if (state.filter.postcode !== "all" && o.postcode !== state.filter.postcode) return false;
+    if (state.filter.routeId !== "all") {
+      if (state.filter.routeId === "unassigned") return state.unassignedIds.includes(o.id);
+      if (state.filter.routeId === "review")
+        return o.geocodingStatus === "needs_review" || o.status === "needs_review";
+      const route = state.routes.find((r) => r.id === state.filter.routeId);
+      if (!route?.stopIds.includes(o.id)) return false;
     }
-    if (f.panel === "unassigned" && !state.unassignedIds.includes(order.id)) return false;
-    if (f.panel === "review" && order.status !== "needs_review") return false;
     return true;
+  }
+
+  function shortSummary(order) {
+    const lines = String(order.orderSummary || "")
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!lines.length) return "—";
+    if (lines.length === 1) return lines[0];
+    return `${lines[0]} 외 ${lines.length - 1}`;
+  }
+
+  function cardHtml(order, stopNumber, routeId) {
+    const expanded = state.expandedIds.has(order.id);
+    const suburbLine = [order.suburb, order.postcode].filter(Boolean).join(" ");
+    const original = order.originalAddress || order.address || "—";
+    return `
+      <article class="dr-card${state.selectedId === order.id ? " is-selected" : ""}${
+        expanded ? " is-expanded" : ""
+      }"
+        draggable="true"
+        data-order-id="${esc(order.id)}"
+        data-from-route="${esc(routeId || "")}">
+        <div class="dr-card-compact">
+          <div class="dr-card-top">
+            <strong class="dr-card-name">${
+              stopNumber != null ? `<span class="dr-stop-no">${stopNumber}</span>` : ""
+            }${esc(order.name || "(이름 없음)")}</strong>
+            <span class="dr-card-meta">${order.boxCount || 0} box</span>
+          </div>
+          <div class="dr-card-sub">${esc(suburbLine || "Suburb 없음")}</div>
+          <div class="dr-card-order">${esc(shortSummary(order))}</div>
+          <div class="dr-card-phone">${esc(order.phone || "—")}</div>
+          <button type="button" class="dr-card-toggle" data-act="toggle-detail" data-order="${esc(
+            order.id
+          )}">${expanded ? "접기" : "상세"}</button>
+        </div>
+        <div class="dr-card-detail" ${expanded ? "" : "hidden"}>
+          <div class="dr-card-addr">${esc(original)}${
+            order.unitOrShop ? ` · ${esc(order.unitOrShop)}` : ""
+          }</div>
+          ${
+            order.normalizedAddress
+              ? `<div class="dr-card-norm">검색: ${esc(order.normalizedAddress)}</div>`
+              : ""
+          }
+          <div class="dr-card-order-full">${esc(
+            String(order.orderSummary || "").replace(/\n/g, " · ")
+          )}</div>
+          <div class="dr-card-meta-full">${money(order.total)}</div>
+          ${order.notes ? `<div class="dr-card-note">⚠️ ${esc(order.notes)}</div>` : ""}
+        </div>
+      </article>`;
+  }
+
+  function routeStatsHtml(route) {
+    const byId = ordersById();
+    const stops = route.stopIds.map((id) => byId.get(id)).filter(Boolean);
+    const boxes = stops.reduce((a, o) => a + (Number(o.boxCount) || 0), 0);
+    const st = route.stats || {};
+    const full = stops.length >= MAX_STOPS;
+    return `
+      <div class="dr-route-stats">
+        <span class="${full ? "is-full" : ""}">${stops.length}/${MAX_STOPS}</span>
+        <span>${boxes} box</span>
+        <span>~${st.distanceKm ?? "—"} km</span>
+        <span>${st.durationLabel || "—"}</span>
+        ${route.spreadKm != null ? `<span>범위 ${route.spreadKm}km</span>` : ""}
+      </div>`;
   }
 
   function renderHeader() {
     const s = stats();
-    $("#dr-date").value = state.deliveryDate;
+    const dateEl = $("#dr-date");
+    if (dateEl) dateEl.value = state.deliveryDate;
     $("#stat-total").textContent = s.total;
     $("#stat-grouped").textContent = s.grouped;
     $("#stat-unassigned").textContent = s.unassigned;
     $("#stat-review").textContent = s.review;
     $("#stat-routes").textContent = s.routes;
-    $("#stat-stops").textContent = s.stops;
     const startLabel = $("#dr-start-label");
     if (startLabel && state.start) {
       startLabel.textContent = `${state.start.label || "출발지"} · ${state.start.address || ""}`;
     }
+    updateAutoGroupButton();
   }
 
   function fillFilterOptions() {
@@ -331,6 +557,7 @@
     const suburbSel = $("#filter-suburb");
     const pcSel = $("#filter-postcode");
     const routeSel = $("#filter-route");
+    if (!suburbSel || !pcSel || !routeSel) return;
     suburbSel.innerHTML =
       `<option value="all">Suburb 전체</option>` +
       suburbs.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("");
@@ -347,44 +574,6 @@
     routeSel.value = state.filter.routeId;
   }
 
-  function cardHtml(order, stopNumber, routeId) {
-    const note = order.notes
-      ? `<div class="dr-card-note">⚠️ ${esc(order.notes)}</div>`
-      : "";
-    const summary = esc(String(order.orderSummary || "").replace(/\n/g, " · "));
-    return `
-      <article class="dr-card${state.selectedId === order.id ? " is-selected" : ""}"
-        draggable="true"
-        data-order-id="${esc(order.id)}"
-        data-from-route="${esc(routeId || "")}">
-        <div class="dr-card-top">
-          <strong class="dr-card-name">${stopNumber != null ? `${stopNumber}. ` : ""}${esc(order.name || "(이름 없음)")}</strong>
-          <span class="dr-card-meta">${money(order.total)} · ${order.boxCount || 0} boxes</span>
-        </div>
-        <div class="dr-card-addr">${esc(order.address)}${order.suburb ? `, ${esc(order.suburb)}` : ""}${order.postcode ? ` NSW ${esc(order.postcode)}` : ""}</div>
-        <div class="dr-card-order">${summary || "—"}</div>
-        <div class="dr-card-phone">${esc(order.phone || "—")}</div>
-        ${note}
-      </article>`;
-  }
-
-  function routeStatsHtml(route) {
-    const byId = ordersById();
-    const stops = route.stopIds.map((id) => byId.get(id)).filter(Boolean);
-    const boxes = stops.reduce((a, o) => a + (Number(o.boxCount) || 0), 0);
-    const total = stops.reduce((a, o) => a + (Number(o.total) || 0), 0);
-    const st = route.stats || {};
-    const full = stops.length >= MAX_STOPS;
-    return `
-      <div class="dr-route-stats">
-        <span class="${full ? "is-full" : ""}">${stops.length} / ${MAX_STOPS}곳</span>
-        <span>${boxes} boxes</span>
-        <span>${money(total)}</span>
-        <span>~${st.distanceKm ?? "—"} km</span>
-        <span>${st.durationLabel || "—"}</span>
-      </div>`;
-  }
-
   function destroySortables() {
     sortableInstances.forEach((s) => s.destroy?.());
     sortableInstances = [];
@@ -393,23 +582,18 @@
   function bindSortables() {
     destroySortables();
     if (!window.Sortable) return;
-
-    const lists = $$(".dr-drop-list");
-    lists.forEach((el) => {
-      const inst = Sortable.create(el, {
-        group: "kh-routes",
-        animation: 140,
-        draggable: ".dr-card",
-        ghostClass: "dr-card-ghost",
-        chosenClass: "dr-card-chosen",
-        onAdd(evt) {
-          handleDrop(evt);
-        },
-        onUpdate(evt) {
-          handleReorder(evt);
-        },
-      });
-      sortableInstances.push(inst);
+    $$(".dr-drop-list").forEach((el) => {
+      sortableInstances.push(
+        Sortable.create(el, {
+          group: "kh-routes",
+          animation: 120,
+          draggable: ".dr-card",
+          ghostClass: "dr-card-ghost",
+          chosenClass: "dr-card-chosen",
+          onAdd: handleDrop,
+          onUpdate: handleReorder,
+        })
+      );
     });
   }
 
@@ -422,8 +606,6 @@
       handleReorder(evt);
       return;
     }
-
-    // Remove from previous
     state.routes.forEach((r) => {
       r.stopIds = r.stopIds.filter((id) => id !== orderId);
     });
@@ -435,6 +617,7 @@
       const o = orderOf(orderId);
       if (o) {
         o.status = "needs_review";
+        o.geocodingStatus = "needs_review";
         o.reviewReason = o.reviewReason || "수동으로 확인 필요로 이동";
       }
     } else {
@@ -445,20 +628,20 @@
         renderAll();
         return;
       }
+      const o = orderOf(orderId);
+      if (!hasCoords(o)) {
+        alert("좌표가 없는 주문은 Route에 넣을 수 없습니다. 주소를 먼저 확인하세요.");
+        renderAll();
+        return;
+      }
       const newIndex = evt.newIndex ?? route.stopIds.length;
       if (route.stopIds.length >= MAX_STOPS) {
-        const ok = confirm(`이 Route는 이미 ${MAX_STOPS}곳입니다. 그래도 추가할까요?`);
-        if (!ok) {
+        if (!confirm(`이 Route는 이미 ${MAX_STOPS}곳입니다. 그래도 추가할까요?`)) {
           renderAll();
           return;
         }
       }
       route.stopIds.splice(newIndex, 0, orderId);
-      const o = orderOf(orderId);
-      if (o && o.status === "needs_review") {
-        // keep review unless geocoded
-        if (o.lat != null) o.status = "ok";
-      }
     }
     refreshRouteStats();
     persist();
@@ -476,7 +659,7 @@
     }
     const route = state.routes.find((r) => r.id === listKey);
     if (!route || route.locked) {
-      if (route?.locked) alert("잠긴 Route는 순서를 변경할 수 없습니다. 잠금을 해제해 주세요.");
+      if (route?.locked) alert("잠긴 Route는 순서를 변경할 수 없습니다.");
       renderAll();
       return;
     }
@@ -492,40 +675,96 @@
     const byId = ordersById();
     targets.forEach((route) => {
       const stops = route.stopIds.map((id) => byId.get(id)).filter(Boolean);
-      route.stats = window.KHRouting.pathStats(state.start, stops.filter((s) => s.lat != null));
+      route.stats = window.KHRouting.pathStats(
+        state.start,
+        stops.filter((s) => hasCoords(s))
+      );
+      route.spreadKm = window.KHRouting.geographicSpreadKm(stops);
+      route.warning =
+        route.spreadKm >= 18
+          ? `지역 범위가 넓습니다 (최대 ${route.spreadKm}km). 먼 배송지를 다른 Route로 옮기세요.`
+          : null;
     });
   }
 
   function renderRoutes() {
     const root = $("#dr-routes");
     const byId = ordersById();
+    if (!state.routes.length) {
+      root.innerHTML = `<p class="dr-empty-routes">아직 Route가 없습니다. 주소 확인이 끝나면 <strong>배송루트 자동 생성</strong>을 눌러 주세요.</p>`;
+      return;
+    }
     root.innerHTML = state.routes
       .map((route, rIdx) => {
         const color = window.KHMap.ROUTE_COLORS[rIdx % window.KHMap.ROUTE_COLORS.length];
-        const cards = route.stopIds
-          .map((id, i) => {
-            const o = byId.get(id);
-            if (!o || !matchesFilter(o)) return "";
-            return cardHtml(o, i + 1, route.id);
-          })
-          .join("");
+        const stops = route.stopIds.map((id) => byId.get(id)).filter(Boolean);
+        const boxes = stops.reduce((a, o) => a + (Number(o.boxCount) || 0), 0);
+        const suburbSummary = [...new Set(stops.map((o) => o.suburb).filter(Boolean))]
+          .slice(0, 4)
+          .join(" · ");
+        const focused = state.focusedRouteId === route.id;
+        const showStops = !state.focusedRouteId || focused;
+        const cards = showStops
+          ? route.stopIds
+              .map((id, i) => {
+                const o = byId.get(id);
+                if (!o || !matchesFilter(o)) return "";
+                return cardHtml(o, i + 1, route.id);
+              })
+              .join("")
+          : "";
+        const st = route.stats || {};
         return `
-          <section class="dr-route${route.locked ? " is-locked" : ""}" data-route-id="${esc(route.id)}" style="--route-color:${color}">
-            <header class="dr-route-head">
-              <div>
-                <h3 class="dr-route-title">${esc(route.name)}${route.locked ? " 🔒" : ""}</h3>
-                ${routeStatsHtml(route)}
+          <section class="dr-route${route.locked ? " is-locked" : ""}${
+            focused ? " is-focused" : ""
+          }${state.focusedRouteId && !focused ? " is-dimmed-route" : ""}" data-route-id="${esc(
+            route.id
+          )}" style="--route-color:${color}">
+            <header class="dr-route-head" data-act="focus-route" data-route="${esc(route.id)}">
+              <div class="dr-route-head-main">
+                <span class="dr-route-badge" style="background:${color}" title="${esc(
+                  route.name
+                )}"></span>
+                <div class="dr-route-head-text">
+                  <h3 class="dr-route-title">${esc(route.name)}${route.locked ? " · 잠금" : ""}</h3>
+                  <p class="dr-route-summary-line">
+                    <span class="dr-route-swatch" style="background:${color}"></span>
+                    ${stops.length} stops · ${boxes} box
+                    ${st.distanceKm != null ? ` · ~${st.distanceKm} km` : ""}
+                    ${st.durationLabel ? ` · ${esc(st.durationLabel)}` : ""}
+                  </p>
+                  ${suburbSummary ? `<p class="dr-route-areas">${esc(suburbSummary)}</p>` : ""}
+                  ${route.warning ? `<p class="dr-route-warn">${esc(route.warning)}</p>` : ""}
+                </div>
               </div>
-              <div class="dr-route-actions">
-                <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-act="rename" data-route="${esc(route.id)}">이름</button>
-                <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-act="optimize" data-route="${esc(route.id)}">순서 정렬</button>
-                <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-act="lock" data-route="${esc(route.id)}">${route.locked ? "잠금 해제" : "잠금"}</button>
-                <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-act="export" data-route="${esc(route.id)}">CSV</button>
-                <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-act="print" data-route="${esc(route.id)}">인쇄</button>
-                <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-act="delete" data-route="${esc(route.id)}">삭제</button>
+              <div class="dr-route-actions" onclick="event.stopPropagation()">
+                <button type="button" class="dr-icon-btn" data-act="optimize" data-route="${esc(
+                  route.id
+                )}">정렬</button>
+                <button type="button" class="dr-icon-btn" data-act="lock" data-route="${esc(
+                  route.id
+                )}">${route.locked ? "해제" : "잠금"}</button>
+                <button type="button" class="dr-icon-btn" data-act="export" data-route="${esc(
+                  route.id
+                )}">CSV</button>
+                <button type="button" class="dr-icon-btn" data-act="print" data-route="${esc(
+                  route.id
+                )}">인쇄</button>
+                <button type="button" class="dr-icon-btn" data-act="rename" data-route="${esc(
+                  route.id
+                )}">이름</button>
+                <button type="button" class="dr-icon-btn is-danger" data-act="delete" data-route="${esc(
+                  route.id
+                )}">삭제</button>
               </div>
             </header>
-            <div class="dr-drop-list" data-drop="${esc(route.id)}">${cards || '<p class="dr-empty">주문을 여기로 드래그하세요</p>'}</div>
+            ${
+              showStops
+                ? `<div class="dr-drop-list" data-drop="${esc(route.id)}">${
+                    cards || '<p class="dr-empty">주문을 여기로 드래그</p>'
+                  }</div>`
+                : `<p class="dr-route-hidden-hint">이 Route를 클릭하면 정차 목록·지도 강조가 표시됩니다</p>`
+            }
           </section>`;
       })
       .join("");
@@ -536,79 +775,175 @@
     const revRoot = $("#dr-review-list");
     const byId = ordersById();
 
-    const unCards = state.unassignedIds
+    const unOrders = state.unassignedIds
       .map((id) => byId.get(id))
-      .filter((o) => o && o.status === "ok" && matchesFilter(o))
-      .map((o) => cardHtml(o, null, ""))
-      .join("");
-    unRoot.innerHTML = unCards || '<p class="dr-empty">미배정 주문 없음</p>';
+      .filter((o) => o && isVerifiedOrder(o) && matchesFilter(o));
+    unRoot.innerHTML = unOrders.map((o) => cardHtml(o, null, "")).join("") ||
+      '<p class="dr-empty">미배정 없음</p>';
     unRoot.dataset.drop = "unassigned";
+    const unCount = $("#dr-unassigned-count");
+    if (unCount) unCount.textContent = String(unOrders.length);
 
-    const reviewOrders = state.orders.filter((o) => o.status === "needs_review" && matchesFilter(o));
+    const reviewOrders = state.orders.filter(
+      (o) =>
+        (o.geocodingStatus === "needs_review" || o.status === "needs_review") && matchesFilter(o)
+    );
     revRoot.innerHTML =
       reviewOrders
-        .map(
-          (o) => `
+        .map((o) => {
+          const suggested = o.suggestedAddress || o.normalizedAddress || "";
+          const hasSuggestion = o.suggestedLat != null && o.suggestedLng != null;
+          return `
         <article class="dr-card dr-card-review" data-order-id="${esc(o.id)}">
           <div class="dr-card-top">
             <strong>${esc(o.name || "(이름 없음)")}</strong>
-            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-act="edit-address" data-order="${esc(o.id)}">주소 수정</button>
+            <span class="dr-verify-badge">${esc(
+              window.KHGeocode?.STATUS_LABELS?.[o.verificationStatus] ||
+                o.reviewReason ||
+                "확인 필요"
+            )}</span>
           </div>
-          <div class="dr-card-addr">${esc(o.address || "—")} ${esc(o.suburb || "")} ${esc(o.postcode || "")}</div>
+          <div class="dr-card-addr"><strong>원본</strong> ${esc(
+            o.originalAddress || o.address || "—"
+          )}</div>
+          ${
+            suggested
+              ? `<div class="dr-card-suggest"><strong>추천</strong> ${esc(suggested)}</div>`
+              : ""
+          }
           <div class="dr-review-reason">${esc(o.reviewReason || "확인 필요")}</div>
-          <div class="dr-card-phone">${esc(o.phone || "—")}</div>
-        </article>`
-        )
-        .join("") || '<p class="dr-empty">확인 필요 항목 없음</p>';
+          <div class="dr-review-actions">
+            ${
+              hasSuggestion
+                ? `<button type="button" class="shop-btn shop-btn-primary shop-btn-sm" data-act="accept-suggest" data-order="${esc(
+                    o.id
+                  )}">이 위치 사용</button>`
+                : ""
+            }
+            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-act="toggle-edit" data-order="${esc(
+              o.id
+            )}">주소 수정</button>
+          </div>
+          <div class="dr-review-edit-wrap" data-edit-wrap="${esc(o.id)}" hidden>
+            <label class="dr-review-edit">
+              <span>주소 수정</span>
+              <input type="text" data-review-address="${esc(o.id)}" value="${esc(
+                o.originalAddress || o.address || ""
+              )}" />
+            </label>
+            <label class="dr-review-edit">
+              <span>Suburb</span>
+              <input type="text" data-review-suburb="${esc(o.id)}" value="${esc(o.suburb || "")}" />
+            </label>
+            <label class="dr-review-edit">
+              <span>Postcode</span>
+              <input type="text" data-review-postcode="${esc(o.id)}" value="${esc(
+                o.postcode || ""
+              )}" />
+            </label>
+            <button type="button" class="shop-btn shop-btn-primary shop-btn-sm" data-act="research" data-order="${esc(
+              o.id
+            )}">다시 검색</button>
+          </div>
+        </article>`;
+        })
+        .join("") || '<p class="dr-empty">확인 필요 없음</p>';
+    const revCount = $("#dr-review-count");
+    if (revCount) revCount.textContent = String(reviewOrders.length);
+
+    const hint = $("#dr-routes-hint");
+    if (hint) hint.textContent = state.routes.length ? `${state.routes.length}개` : "";
   }
 
   function popupHtml(order, route, stopNumber) {
     return `
       <div class="dr-popup">
         <strong>${esc(order.name)}</strong>
-        <div>${esc(order.address)}, ${esc(order.suburb)} ${esc(order.postcode)}</div>
+        <div>${esc(order.originalAddress || order.address)}</div>
+        <div>${esc(order.suburb || "")} ${esc(order.postcode || "")}</div>
         <div>${esc(order.phone)}</div>
-        <div style="margin-top:6px;white-space:pre-line">${esc(order.orderSummary)}</div>
-        <div>${money(order.total)} · ${order.boxCount || 0} boxes</div>
-        ${order.notes ? `<div>⚠️ ${esc(order.notes)}</div>` : ""}
-        <div style="margin-top:6px">${route ? esc(route.name) : "미배정"}${stopNumber ? ` · #${stopNumber}` : ""}</div>
+        <div>${esc(shortSummary(order))} · ${order.boxCount || 0} box</div>
+        <div style="margin-top:6px">${route ? esc(route.name) : "미배정"}${
+          stopNumber ? ` · #${stopNumber}` : ""
+        }</div>
       </div>`;
   }
 
   function renderMap() {
     if (!mapProvider) return;
     const pins = [];
+    const byId = ordersById();
+    const routePaths = [];
+    const legend = [];
+
     state.routes.forEach((route, rIdx) => {
+      const stopCoords = [];
       route.stopIds.forEach((id, i) => {
-        const o = orderOf(id);
-        if (!o || o.lat == null || !matchesFilter(o)) return;
+        const o = byId.get(id);
+        if (!o || !hasCoords(o)) return;
+        if (state.filter.q && !matchesFilter(o)) return;
+        const c = coordsOf(o);
         pins.push({
           id: o.id,
-          lat: o.lat,
-          lng: o.lng,
+          lat: c.lat,
+          lng: c.lng,
           routeIndex: rIdx,
           stopNumber: i + 1,
-          dimmed: false,
           popupHtml: popupHtml(o, route, i + 1),
         });
+        stopCoords.push(c);
+      });
+
+      if (stopCoords.length) {
+        const path = state.start?.lat != null ? [state.start, ...stopCoords] : stopCoords;
+        routePaths.push({ routeIndex: rIdx, path, name: route.name });
+      }
+
+      const stops = route.stopIds.map((id) => byId.get(id)).filter(Boolean);
+      const boxes = stops.reduce((a, o) => a + (Number(o.boxCount) || 0), 0);
+      const st = route.stats || {};
+      legend.push({
+        routeIndex: rIdx,
+        name: route.name,
+        stops: stops.length,
+        boxes,
+        distanceKm: st.distanceKm,
+        durationLabel: st.durationLabel,
       });
     });
-    state.unassignedIds.forEach((id) => {
-      const o = orderOf(id);
-      if (!o || o.lat == null || !matchesFilter(o)) return;
-      pins.push({
-        id: o.id,
-        lat: o.lat,
-        lng: o.lng,
-        routeIndex: null,
-        stopNumber: null,
-        label: "·",
-        dimmed: false,
-        popupHtml: popupHtml(o, null, null),
+
+    // unassigned only in overview
+    if (!state.focusedRouteId) {
+      state.unassignedIds.forEach((id) => {
+        const o = orderOf(id);
+        if (!o || !hasCoords(o) || !matchesFilter(o)) return;
+        const c = coordsOf(o);
+        pins.push({
+          id: o.id,
+          lat: c.lat,
+          lng: c.lng,
+          routeIndex: null,
+          stopNumber: null,
+          popupHtml: popupHtml(o, null, null),
+        });
       });
-    });
+    }
+
+    const focusRouteIndex = state.focusedRouteId
+      ? routeIndexOf(state.focusedRouteId)
+      : null;
+
     mapProvider.setStart(state.start, state.start?.label || "출발지");
-    mapProvider.setPins(pins);
+    mapProvider.setPins(pins, {
+      start: state.start,
+      focusRouteIndex: focusRouteIndex >= 0 ? focusRouteIndex : null,
+      routePaths,
+      legend,
+      fit: !state.selectedId,
+    });
+
+    const clearBtn = $("#btn-clear-focus");
+    if (clearBtn) clearBtn.hidden = !state.focusedRouteId;
   }
 
   function renderAll() {
@@ -623,22 +958,25 @@
 
   /* ---------- Actions ---------- */
   async function autoGroup() {
-    const lockedIds = new Set(
-      state.routes.filter((r) => r.locked).flatMap((r) => r.stopIds)
-    );
+    if (!isGeocodingFinished()) {
+      alert("모든 주소 확인이 끝난 뒤에 Route를 생성할 수 있습니다.");
+      return;
+    }
+    const lockedIds = new Set(state.routes.filter((r) => r.locked).flatMap((r) => r.stopIds));
     const lockedRoutes = state.routes.filter((r) => r.locked);
     const movable = state.orders.filter(
-      (o) => o.status === "ok" && o.lat != null && !lockedIds.has(o.id)
+      (o) => isVerifiedOrder(o) && !lockedIds.has(o.id)
     );
     if (!movable.length) {
-      alert("자동 그룹핑할 유효 주문이 없습니다. (확인 필요·좌표 없음·잠긴 Route 제외)");
+      alert("자동 그룹핑할 유효 좌표 주문이 없습니다. 확인 필요 주소를 먼저 해결하세요.");
       return;
     }
     const generated = window.KHRouting.autoGroupStops(movable, {
       maxPerRoute: MAX_STOPS,
       origin: state.start,
+      maxRadiusKm: 12,
+      warnSpreadKm: 18,
     });
-    // Re-number after locked
     let n = lockedRoutes.length;
     generated.forEach((g) => {
       n += 1;
@@ -648,11 +986,18 @@
     state.routes = [...lockedRoutes, ...generated];
     const assigned = new Set(state.routes.flatMap((r) => r.stopIds));
     state.unassignedIds = state.orders
-      .filter((o) => o.status === "ok" && !assigned.has(o.id))
+      .filter((o) => isVerifiedOrder(o) && !assigned.has(o.id))
       .map((o) => o.id);
+    state.focusedRouteId = null;
     refreshRouteStats();
     persist();
     renderAll();
+    const warns = state.routes.filter((r) => r.warning);
+    if (warns.length) {
+      alert(
+        `Route ${state.routes.length}개 생성.\n범위가 넓은 Route ${warns.length}개가 있어 경고가 표시됩니다.`
+      );
+    }
   }
 
   async function optimizeRoute(routeId) {
@@ -689,10 +1034,10 @@
   function deleteRoute(routeId) {
     const route = state.routes.find((r) => r.id === routeId);
     if (!route) return;
-    if (route.locked) return alert("잠긴 Route는 삭제할 수 없습니다.");
     if (!confirm(`「${route.name}」을(를) 삭제하고 주문은 미배정으로 옮길까요?`)) return;
     state.unassignedIds.push(...route.stopIds);
     state.routes = state.routes.filter((r) => r.id !== routeId);
+    if (state.focusedRouteId === routeId) state.focusedRouteId = null;
     persist();
     renderAll();
   }
@@ -726,7 +1071,9 @@
         return `<tr>
           <td>${i + 1}</td>
           <td>${esc(o.name)}<br><small>${esc(o.phone)}</small></td>
-          <td>${esc(o.address)}, ${esc(o.suburb)} ${esc(o.postcode)}</td>
+          <td>${esc(o.originalAddress || o.address)}${o.unitOrShop ? ` (${esc(o.unitOrShop)})` : ""}, ${esc(
+            o.suburb
+          )} ${esc(o.postcode)}</td>
           <td style="white-space:pre-line">${esc(o.orderSummary)}</td>
           <td>${o.boxCount || 0}</td>
           <td>${esc(o.notes || "")}</td>
@@ -734,81 +1081,189 @@
       })
       .join("");
     const w = window.open("", "_blank");
-    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"/><title>${esc(route.name)}</title>
-      <style>
-        body{font-family:"Noto Sans KR",sans-serif;padding:24px;color:#222}
-        h1{font-size:20px;margin:0 0 4px}
-        .meta{color:#555;margin-bottom:16px;font-size:13px}
-        table{width:100%;border-collapse:collapse;font-size:12px}
-        th,td{border:1px solid #ccc;padding:6px 8px;vertical-align:top;text-align:left}
-        th{background:#f4f8f5}
-        @media print{body{padding:0}}
-      </style></head><body>
+    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"/><title>${esc(
+      route.name
+    )}</title>
+      <style>body{font-family:"Noto Sans KR",sans-serif;padding:24px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #ccc;padding:6px;vertical-align:top;text-align:left}th{background:#f4f8f5}</style></head><body>
       <h1>Kimchi House AU · ${esc(route.name)}</h1>
-      <div class="meta">배송일 ${esc(state.deliveryDate)} · ${route.stopIds.length}곳</div>
+      <p>배송일 ${esc(state.deliveryDate)} · ${route.stopIds.length}곳</p>
       <table><thead><tr><th>#</th><th>고객</th><th>주소</th><th>주문</th><th>박스</th><th>메모</th></tr></thead>
       <tbody>${rows}</tbody></table>
-      <script>window.onload=()=>window.print()<\/script>
-      </body></html>`);
+      <script>window.onload=()=>window.print()<\/script></body></html>`);
     w.document.close();
   }
 
-  function editAddress(orderId) {
+  async function researchAddress(orderId) {
     const o = orderOf(orderId);
     if (!o) return;
-    const address = prompt("배송주소", o.address || "");
-    if (address == null) return;
-    const suburb = prompt("Suburb", o.suburb || "");
-    if (suburb == null) return;
-    const postcode = prompt("Postcode", o.postcode || "");
-    if (postcode == null) return;
-    o.address = address.trim();
-    o.suburb = suburb.trim();
-    o.postcode = postcode.trim();
-    revalidateAndGeocode(o).then(() => {
+    const addrInput = $(`[data-review-address="${CSS.escape(orderId)}"]`);
+    const subInput = $(`[data-review-suburb="${CSS.escape(orderId)}"]`);
+    const pcInput = $(`[data-review-postcode="${CSS.escape(orderId)}"]`);
+    const address = (addrInput?.value || o.originalAddress || "").trim();
+    const suburb = (subInput?.value || o.suburb || "").trim();
+    const postcode = (pcInput?.value || o.postcode || "").trim();
+    if (!address) return alert("주소를 입력해 주세요.");
+
+    o.originalAddress = address;
+    o.address = address;
+    o.suburb = suburb;
+    o.postcode = postcode;
+    setProgress(`다시 검색 중… ${o.name || orderId}`);
+    await geocodeOrder(o, { force: true });
+
+    // remove from all routes while reviewing
+    state.routes.forEach((r) => {
+      r.stopIds = r.stopIds.filter((id) => id !== orderId);
+    });
+    state.unassignedIds = state.unassignedIds.filter((id) => id !== orderId);
+
+    if (isVerifiedOrder(o)) {
+      state.unassignedIds.push(orderId);
+      setProgress(`주소 확인됨: ${o.name || orderId}`);
+    } else {
+      setProgress(`여전히 확인 필요: ${o.reviewReason || ""}`);
+    }
+    setTimeout(() => setProgress("", { hidden: true }), 2500);
+    persist();
+    renderAll();
+  }
+
+  function acceptSuggestedLocation(orderId) {
+    const o = orderOf(orderId);
+    if (!o) return;
+    try {
+      ensureGeocodeService().applyManualOverride(o);
+      state.routes.forEach((r) => {
+        r.stopIds = r.stopIds.filter((id) => id !== orderId);
+      });
+      state.unassignedIds = state.unassignedIds.filter((id) => id !== orderId);
+      state.unassignedIds.push(orderId);
       persist();
       renderAll();
-    });
-  }
-
-  async function revalidateAndGeocode(order) {
-    const reasons = window.KHSpreadsheet.validateOrder(order);
-    if (reasons.length) {
-      order.status = "needs_review";
-      order.reviewReason = reasons.join(" · ");
-      order.lat = null;
-      order.lng = null;
-      state.unassignedIds = state.unassignedIds.filter((id) => id !== order.id);
-      state.routes.forEach((r) => {
-        r.stopIds = r.stopIds.filter((id) => id !== order.id);
-      });
-      return;
-    }
-    const geo = await geocoder.geocode(order);
-    if (!geo) {
-      order.status = "needs_review";
-      order.reviewReason = "주소를 지도에서 찾지 못했습니다";
-      order.lat = null;
-      order.lng = null;
-      return;
-    }
-    order.lat = geo.lat;
-    order.lng = geo.lng;
-    order.status = "ok";
-    order.reviewReason = null;
-    if (!findRouteOfOrder(order.id) && !state.unassignedIds.includes(order.id)) {
-      state.unassignedIds.push(order.id);
+      setProgress(`위치 확정: ${o.name || orderId}`);
+      setTimeout(() => setProgress("", { hidden: true }), 2000);
+    } catch (err) {
+      alert(err.message || "위치 확정 실패");
     }
   }
 
-  /* ---------- Upload / mapping ---------- */
+  function focusRoute(routeId) {
+    state.focusedRouteId = state.focusedRouteId === routeId ? null : routeId;
+    renderAll();
+  }
+
+  function resetPlannerState() {
+    state.orders = [];
+    state.routes = [];
+    state.unassignedIds = [];
+    state.selectedId = null;
+    state.focusedRouteId = null;
+    state.expandedIds = new Set();
+    state.filter = { q: "", routeId: "all", suburb: "all", postcode: "all" };
+    state.geocodingInProgress = false;
+    state.geocodingDone = 0;
+    state.geocodingTotal = 0;
+    state.pendingRows = null;
+    state.pendingHeaders = null;
+    state.mapping = null;
+    state.dataSource = null;
+    try {
+      window.KHRouteStorage.clear();
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  /* ---------- Upload ---------- */
+  async function ingestOrdersFromUpload(
+    orders,
+    { label = "업로드", freshStart = false, dataSource = "upload" } = {}
+  ) {
+    if (freshStart) {
+      resetPlannerState();
+      setProgress(`${label} · 기존 작업 초기화 후 0건부터 시작`);
+    }
+
+    const ready = orders.map(migrateOrder).map((o) => ({
+      ...o,
+      geocodingStatus: o.geocodingStatus || "pending",
+      status: o.status || "pending",
+    }));
+    state.dataSource = dataSource;
+    state.orders = ready;
+    state.routes = [];
+    state.focusedRouteId = null;
+    state.selectedId = null;
+    state.unassignedIds = [];
+    persist();
+    renderAll();
+
+    await geocodeAll(ready, { reusePrev: false, concurrency: 1 });
+    state.orders = ready;
+    state.unassignedIds = ready.filter((o) => isVerifiedOrder(o)).map((o) => o.id);
+
+    const okN = state.unassignedIds.length;
+    const reviewN = ready.length - okN;
+    setProgress(`${label} 완료 · 전체 ${ready.length} · 지도가능 ${okN} · 확인필요 ${reviewN}`);
+    persist();
+    renderAll();
+
+    if (okN > 0) {
+      setProgress(`배송루트 자동 생성 중… (${okN}건)`);
+      try {
+        await autoGroup();
+        setProgress(
+          `${label} → Route ${state.routes.length}개 생성 · 지도가능 ${okN} · 확인필요 ${reviewN}`
+        );
+      } catch (err) {
+        alert("루트 자동 생성 실패: " + (err.message || err));
+      }
+    } else {
+      alert(
+        `${label} 완료.\n지도 가능 ${okN}건 / 확인 필요 ${reviewN}건\n확인 필요 주소를 수정한 뒤 배송루트 자동 생성을 눌러 주세요.`
+      );
+    }
+    setTimeout(() => {
+      const el = $("#dr-upload-progress");
+      if (el && String(el.textContent || "").includes(label)) el.hidden = true;
+    }, 8000);
+  }
+
   async function onFileSelected(file) {
-    const buf = await file.arrayBuffer();
-    const { headers, rows } = window.KHSpreadsheet.parseWorkbook(buf);
-    state.pendingHeaders = headers;
-    state.pendingRows = rows;
-    state.mapping = window.KHSpreadsheet.suggestMapping(headers);
-    openMappingModal();
+    try {
+      const buf = await file.arrayBuffer();
+      setProgress("예약표 파일 읽는 중…");
+
+      // 김치하우스 주문 예약표 → 매핑 없이 바로 반영 + 루트 자동 생성
+      const reservation = window.KHSpreadsheet.parseKimchiReservationWorkbook?.(buf);
+      if (reservation?.orders?.length) {
+        const sheetLabel = reservation.sheets.join(", ");
+        if (
+          !confirm(
+            `예약표 ${reservation.orders.length}건을 불러옵니다.\n(${sheetLabel})\n\n기존 주문·루트는 모두 지우고 0건부터 시작합니다. 계속할까요?`
+          )
+        ) {
+          setProgress("", { hidden: true });
+          return;
+        }
+        await ingestOrdersFromUpload(reservation.orders, {
+          label: `예약표 ${reservation.orders.length}건`,
+          freshStart: true,
+          dataSource: "reservation",
+        });
+        return;
+      }
+
+      const { headers, rows } = window.KHSpreadsheet.parseWorkbook(buf);
+      state.pendingHeaders = headers;
+      state.pendingRows = rows;
+      state.mapping = window.KHSpreadsheet.suggestMapping(headers);
+      setProgress("", { hidden: true });
+      openMappingModal();
+    } catch (err) {
+      setProgress("", { hidden: true });
+      alert(err.message || "파일 읽기 실패");
+    }
   }
 
   function openMappingModal() {
@@ -819,11 +1274,15 @@
         .concat(
           state.pendingHeaders.map(
             (h) =>
-              `<option value="${esc(h)}"${state.mapping[f.key] === h ? " selected" : ""}>${esc(h)}</option>`
+              `<option value="${esc(h)}"${state.mapping[f.key] === h ? " selected" : ""}>${esc(
+                h
+              )}</option>`
           )
         )
         .join("");
-      return `<label class="dr-map-field"><span>${esc(f.label)}</span><select data-map-key="${esc(f.key)}">${opts}</select></label>`;
+      return `<label class="dr-map-field"><span>${esc(f.label)}</span><select data-map-key="${esc(
+        f.key
+      )}">${opts}</select></label>`;
     }).join("");
     modal.hidden = false;
   }
@@ -836,40 +1295,11 @@
       alert("고객명과 배송주소는 필수입니다.");
       return;
     }
-    const orders = window.KHSpreadsheet.applyMapping(state.pendingRows, state.mapping);
+    const orders = window.KHSpreadsheet.applyMapping(state.pendingRows, state.mapping).map(
+      migrateOrder
+    );
     $("#dr-mapping-modal").hidden = true;
-    $("#dr-upload-progress").hidden = false;
-    $("#dr-upload-progress").textContent = "주소 확인 중…";
-
-    const ready = [];
-    for (let i = 0; i < orders.length; i++) {
-      const o = orders[i];
-      $("#dr-upload-progress").textContent = `주소 확인 중… ${i + 1}/${orders.length}`;
-      const reasons = window.KHSpreadsheet.validateOrder(o);
-      if (reasons.length) {
-        o.status = "needs_review";
-        o.reviewReason = reasons.join(" · ");
-      } else {
-        const geo = await geocoder.geocode(o);
-        if (!geo) {
-          o.status = "needs_review";
-          o.reviewReason = "주소를 지도에서 찾지 못했습니다";
-        } else {
-          o.lat = geo.lat;
-          o.lng = geo.lng;
-          o.status = "ok";
-        }
-      }
-      ready.push(o);
-    }
-
-    state.orders = ready;
-    state.routes = [];
-    state.unassignedIds = ready.filter((o) => o.status === "ok").map((o) => o.id);
-    $("#dr-upload-progress").hidden = true;
-    persist();
-    renderAll();
-    alert(`업로드 완료: 전체 ${ready.length}건 / 확인 필요 ${ready.filter((o) => o.status === "needs_review").length}건`);
+    await ingestOrdersFromUpload(orders, { label: "업로드" });
   }
 
   /* ---------- Events ---------- */
@@ -883,33 +1313,132 @@
       state.deliveryDate = e.target.value;
       persist();
     });
-    $("#btn-load-demo")?.addEventListener("click", () => {
-      if (!confirm("데모 샘플 주문으로 바꿀까요? 현재 작업은 덮어씁니다.")) return;
-      loadDemo();
-      renderAll();
+
+    $("#btn-more")?.addEventListener("click", () => {
+      const menu = $("#dr-more-menu");
+      const btn = $("#btn-more");
+      if (!menu) return;
+      menu.hidden = !menu.hidden;
+      btn?.setAttribute("aria-expanded", menu.hidden ? "false" : "true");
     });
-    $("#btn-refresh-orders")?.addEventListener("click", async () => {
-      try {
-        const n = await loadLiveOrders();
-        renderAll();
-        alert(`이번 차수 주문 ${n}건을 불러왔습니다.`);
-      } catch (err) {
-        alert(err.message || "주문 불러오기 실패");
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".dr-more")) {
+        const menu = $("#dr-more-menu");
+        if (menu) menu.hidden = true;
       }
     });
-    $("#btn-clear")?.addEventListener("click", () => {
-      if (!confirm("저장된 배송루트 작업을 모두 지울까요?")) return;
-      window.KHRouteStorage.clear();
-      state.orders = [];
-      state.routes = [];
-      state.unassignedIds = [];
+
+    $("#btn-load-demo")?.addEventListener("click", async () => {
+      if (!confirm("데모 샘플 주문으로 바꿀까요?")) return;
+      loadDemo();
+      state.dataSource = "demo";
+      await geocodeAll(state.orders, { reusePrev: false });
+      state.unassignedIds = state.orders
+        .filter((o) => isVerifiedOrder(o))
+        .map((o) => o.id);
+      persist();
       renderAll();
     });
+
+    $("#btn-refresh-orders")?.addEventListener("click", async () => {
+      try {
+        if (state.dataSource === "reservation" || state.dataSource === "upload") {
+          if (
+            !confirm(
+              "지금 화면은 업로드한 예약표입니다.\n온라인 주문으로 바꾸면 예약표 작업이 사라집니다. 계속할까요?"
+            )
+          ) {
+            return;
+          }
+        }
+        await loadLiveOrders({ quiet: false, force: true });
+        renderAll();
+      } catch (err) {
+        alert(err.message || "새로고침 실패");
+      }
+    });
+
     $("#btn-auto-group")?.addEventListener("click", autoGroup);
     $("#btn-add-route")?.addEventListener("click", addRoute);
     $("#btn-export-all")?.addEventListener("click", () => {
       window.KHRouteExport.exportRoutesCsv(ordersById(), state.routes, state.deliveryDate);
     });
+    $("#btn-clear")?.addEventListener("click", () => {
+      if (!confirm("배송루트 작업 내용을 모두 지울까요?")) return;
+      window.KHRouteStorage.clear();
+      state.orders = [];
+      state.routes = [];
+      state.unassignedIds = [];
+      state.focusedRouteId = null;
+      state.dataSource = null;
+      renderAll();
+    });
+
+    function renderGeocodeDebugPanel() {
+      const panel = $("#dr-geocode-debug");
+      const logEl = $("#dr-geocode-debug-log");
+      if (!panel || !logEl || panel.hidden) return;
+      const entries = window.KHGeocode?.getDebugLog?.() || [];
+      logEl.textContent = entries
+        .slice()
+        .reverse()
+        .slice(0, 40)
+        .map((e) => {
+          return [
+            `── ${e.at || ""} · ${e.phase || ""}`,
+            `original: ${e.originalAddress || ""}`,
+            `normalized: ${e.normalizedAddress || ""}`,
+            e.structuredQuery ? `query: ${JSON.stringify(e.structuredQuery)}` : null,
+            e.candidateResults
+              ? `candidates: ${JSON.stringify(
+                  e.candidateResults.map((c) => ({
+                    score: c.score,
+                    name: c.displayName,
+                    lat: c.lat,
+                    lng: c.lng,
+                  }))
+                )}`
+              : null,
+            e.finalSelectedCoordinate
+              ? `selected: ${JSON.stringify(e.finalSelectedCoordinate)}`
+              : null,
+            e.failureReason ? `failure: ${e.failureReason}` : null,
+          ]
+            .filter(Boolean)
+            .join("\n");
+        })
+        .join("\n\n");
+    }
+
+    $("#btn-geocode-debug")?.addEventListener("click", () => {
+      const panel = $("#dr-geocode-debug");
+      if (!panel) return;
+      const next = panel.hidden;
+      panel.hidden = !next;
+      window.KHGeocode?.setDebugEnabled?.(next);
+      if (next) renderGeocodeDebugPanel();
+      const menu = $("#dr-more-menu");
+      if (menu) menu.hidden = true;
+    });
+    $("#btn-debug-close")?.addEventListener("click", () => {
+      const panel = $("#dr-geocode-debug");
+      if (panel) panel.hidden = true;
+    });
+    $("#btn-debug-clear")?.addEventListener("click", () => {
+      window.KHGeocode?.clearDebugLog?.();
+      renderGeocodeDebugPanel();
+    });
+    window.addEventListener("kh-geocode-debug", () => renderGeocodeDebugPanel());
+
+    if (window.KHGeocode?.isDebugEnabled?.()) {
+      const panel = $("#dr-geocode-debug");
+      if (panel) panel.hidden = false;
+    }
+    $("#btn-clear-focus")?.addEventListener("click", () => {
+      state.focusedRouteId = null;
+      renderAll();
+    });
+
     $("#file-upload")?.addEventListener("change", (e) => {
       const file = e.target.files?.[0];
       if (file) onFileSelected(file);
@@ -924,6 +1453,10 @@
       state.filter.q = e.target.value;
       renderAll();
     });
+    $("#filter-route")?.addEventListener("change", (e) => {
+      state.filter.routeId = e.target.value;
+      renderAll();
+    });
     $("#filter-suburb")?.addEventListener("change", (e) => {
       state.filter.suburb = e.target.value;
       renderAll();
@@ -932,16 +1465,14 @@
       state.filter.postcode = e.target.value;
       renderAll();
     });
-    $("#filter-route")?.addEventListener("change", (e) => {
-      state.filter.routeId = e.target.value;
-      renderAll();
-    });
 
     $$("[data-view-mode]").forEach((btn) => {
       btn.addEventListener("click", () => {
         state.viewMode = btn.dataset.viewMode;
         document.body.dataset.drView = state.viewMode;
-        $$("[data-view-mode]").forEach((b) => b.classList.toggle("active", b === btn));
+        $$("[data-view-mode]").forEach((b) =>
+          b.classList.toggle("active", b.dataset.viewMode === state.viewMode)
+        );
         requestAnimationFrame(() => mapProvider?.invalidate());
       });
     });
@@ -952,37 +1483,63 @@
         const act = actBtn.dataset.act;
         const routeId = actBtn.dataset.route;
         const orderId = actBtn.dataset.order;
+        if (act === "focus-route") focusRoute(routeId);
         if (act === "rename") renameRoute(routeId);
         if (act === "optimize") optimizeRoute(routeId);
         if (act === "lock") toggleLock(routeId);
         if (act === "delete") deleteRoute(routeId);
         if (act === "export") {
           const route = state.routes.find((r) => r.id === routeId);
-          if (route) window.KHRouteExport.exportSingleRouteCsv(ordersById(), route, state.deliveryDate);
+          if (route)
+            window.KHRouteExport.exportSingleRouteCsv(ordersById(), route, state.deliveryDate);
         }
         if (act === "print") printRoute(routeId);
-        if (act === "edit-address") editAddress(orderId);
+        if (act === "research") researchAddress(orderId);
+        if (act === "accept-suggest") acceptSuggestedLocation(orderId);
+        if (act === "toggle-edit") {
+          const wrap = $(`[data-edit-wrap="${CSS.escape(orderId)}"]`);
+          if (wrap) wrap.hidden = !wrap.hidden;
+        }
+        if (act === "toggle-detail") {
+          if (state.expandedIds.has(orderId)) state.expandedIds.delete(orderId);
+          else state.expandedIds.add(orderId);
+          renderAll();
+        }
         return;
       }
       const card = e.target.closest(".dr-card[data-order-id]");
-      if (card) {
+      if (card && !e.target.closest("input,button,label")) {
         state.selectedId = card.dataset.orderId;
         mapProvider?.highlight(state.selectedId);
         renderAll();
       }
     });
 
-    $("#btn-edit-start")?.addEventListener("click", () => {
-      const label = prompt("출발지 이름", state.start?.label || "");
+    $("#btn-edit-start")?.addEventListener("click", async () => {
+      const label = prompt("출발지 이름", state.start?.label || "김치하우스 출발지");
       if (label == null) return;
-      const address = prompt("출발지 주소/Suburb", state.start?.address || "");
+      const address = prompt(
+        "출발지 주소",
+        state.start?.address || "36 Mid Dural Rd, Galston NSW 2159"
+      );
       if (address == null) return;
-      const geo = window.KHGeocode.lookupLocal({ suburb: address, address, id: "start" });
+      let lat = state.start?.lat;
+      let lng = state.start?.lng;
+      try {
+        const tmp = { originalAddress: address.trim(), address: address.trim() };
+        await geocodeOrder(tmp, { force: true });
+        if (hasCoords(tmp)) {
+          lat = tmp.lat;
+          lng = tmp.lng;
+        }
+      } catch (_) {
+        /* keep */
+      }
       state.start = {
         label: label.trim() || "출발지",
         address: address.trim(),
-        lat: geo?.lat ?? state.start?.lat ?? -33.79,
-        lng: geo?.lng ?? state.start?.lng ?? 151.082,
+        lat: lat ?? -33.649215,
+        lng: lng ?? 151.034199,
       };
       refreshRouteStats();
       persist();
@@ -992,7 +1549,11 @@
 
   async function initApp() {
     if (document.body.dataset.drInited === "1") {
-      // already initialized — just refresh orders
+      // 탭 재진입/부모 sync — 예약표·업로드 작업은 절대 덮어쓰지 않음
+      if (shouldSkipLiveReload()) {
+        renderAll();
+        return;
+      }
       try {
         await loadLiveOrders({ quiet: true });
         renderAll();
@@ -1003,7 +1564,7 @@
     }
     document.body.dataset.drInited = "1";
 
-    geocoder = new window.KHGeocode.LocalGeocodeProvider({ useNominatim: false });
+    ensureGeocodeService();
     router = new window.KHRouting.LocalRoutingProvider();
     state.start = state.start || { ...window.KHDeliverySample.DEFAULT_START };
 
@@ -1012,66 +1573,130 @@
 
     bindEvents();
     document.body.dataset.drView = "split";
+    document.body.classList.add("dr-app-active");
 
     try {
       const mapEl = $("#dr-map");
+      const start = state.start || window.KHDeliverySample.DEFAULT_START;
       mapProvider = new window.KHMap.LeafletMapProvider(mapEl, {
+        center: { lat: start.lat, lng: start.lng },
+        zoom: 11,
         onPinClick: (id) => {
           state.selectedId = id;
           renderAll();
           const el = document.querySelector(`.dr-card[data-order-id="${CSS.escape(id)}"]`);
           el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         },
+        onLegendClick: (routeIndex) => {
+          const route = state.routes[routeIndex];
+          if (!route) return;
+          focusRoute(route.id);
+        },
       });
       mapProvider.init();
     } catch (err) {
       console.error("map init failed", err);
-      alert("지도 초기화에 실패했습니다. 목록 기능은 계속 사용할 수 있습니다.\n" + (err.message || ""));
+      alert("지도 초기화에 실패했습니다.\n" + (err.message || ""));
     }
 
     renderAll();
     requestAnimationFrame(() => mapProvider?.invalidate());
 
+    // 저장된 예약표/업로드가 있으면 API로 덮어쓰지 않음
+    if (shouldSkipLiveReload() && state.orders.length) {
+      updateAutoGroupButton();
+      const need = state.orders.some(
+        (o) =>
+          !o.geocodingStatus ||
+          o.geocodingStatus === "pending" ||
+          (!hasCoords(o) && o.status === "ok")
+      );
+      if (need) {
+        await geocodeAll(state.orders, { reusePrev: false });
+        const assigned = new Set(state.routes.flatMap((r) => r.stopIds));
+        state.unassignedIds = state.orders
+          .filter((o) => isVerifiedOrder(o) && !assigned.has(o.id))
+          .map((o) => o.id);
+        persist();
+        renderAll();
+        if (state.routes.length === 0 && state.unassignedIds.length > 0) {
+          await autoGroup();
+        }
+      } else if (state.routes.length === 0 && state.unassignedIds.length > 0) {
+        await autoGroup();
+      }
+      return;
+    }
+
     try {
-      const n = await loadLiveOrders({ quiet: true });
+      await loadLiveOrders({ quiet: true });
       renderAll();
       requestAnimationFrame(() => mapProvider?.invalidate());
-      const bar = $("#dr-upload-progress");
-      if (bar && n >= 0) {
-        bar.hidden = false;
-        bar.textContent = `이번 차수 주문 ${n}건을 불러왔습니다.`;
-        setTimeout(() => {
-          bar.hidden = true;
-        }, 2500);
-      }
     } catch (err) {
       console.warn("live orders load failed", err);
       if (!state.orders.length) {
         loadDemo();
+        state.dataSource = "demo";
+        await geocodeAll(state.orders, { reusePrev: false });
+        state.unassignedIds = state.orders
+          .filter((o) => isVerifiedOrder(o))
+          .map((o) => o.id);
+        persist();
         renderAll();
         alert("주문 DB를 불러오지 못해 데모 데이터로 시작합니다.\n" + (err.message || ""));
       } else {
-        alert("주문 새로고침 실패: " + (err.message || "오류"));
+        const need = state.orders.some(
+          (o) =>
+            !o.geocodingStatus ||
+            o.geocodingStatus === "pending" ||
+            (!hasCoords(o) && o.status === "ok")
+        );
+        if (need) {
+          await geocodeAll(state.orders, { reusePrev: false });
+          const assigned = new Set(state.routes.flatMap((r) => r.stopIds));
+          state.unassignedIds = state.orders
+            .filter((o) => isVerifiedOrder(o) && !assigned.has(o.id))
+            .map((o) => o.id);
+          persist();
+          renderAll();
+        }
+        updateAutoGroupButton();
       }
     }
   }
 
   function boot() {
-    const key = sessionStorage.getItem("kh_admin_key");
+    const isEmbed = applyEmbedMode();
+    listenParentSync();
+    const key = getAdminKey();
+    if (key) setAdminKey(key);
     const login = $("#dr-login");
     const app = $("#dr-app");
     if (key) {
       if (login) login.hidden = true;
       if (app) app.hidden = false;
       showApp();
-    } else {
-      if (login) login.hidden = false;
-      if (app) app.hidden = true;
-      $("#dr-login-btn")?.addEventListener("click", tryLogin);
-      $("#dr-password")?.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") tryLogin();
-      });
+      return;
     }
+    if (isEmbed) {
+      if (login) login.hidden = true;
+      if (app) app.hidden = true;
+      setTimeout(() => {
+        if (getAdminKey()) return;
+        if (login) login.hidden = false;
+        $("#dr-login-btn")?.addEventListener("click", tryLogin);
+        $("#dr-password")?.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") tryLogin();
+        });
+      }, 1200);
+      return;
+    }
+    if (login) login.hidden = false;
+    if (app) app.hidden = true;
+    $("#dr-login-btn")?.addEventListener("click", tryLogin);
+    $("#dr-password")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") tryLogin();
+    });
   }
 
   if (document.readyState === "loading") {

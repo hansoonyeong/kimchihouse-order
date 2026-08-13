@@ -73,7 +73,7 @@
         <div class="admin-view-tabs" role="tablist">
           <button type="button" class="admin-view-tab active" data-admin-view="orders">주문 관리</button>
           <button type="button" class="admin-view-tab" data-admin-view="delivery">배송 관련</button>
-          <a class="admin-view-tab" href="/admin/delivery-routes" style="text-decoration:none;display:inline-flex;align-items:center">배송루트</a>
+          <button type="button" class="admin-view-tab" data-admin-view="routes">배송루트</button>
           <button type="button" class="admin-view-tab" data-admin-view="stock">재고 관리</button>
           <button type="button" class="admin-view-tab" data-admin-view="sales">판매 품목 관리</button>
         </div>
@@ -222,6 +222,17 @@
               <div id="stock-log-list"></div>
             </div>
           </div>
+        </section>
+      </div>
+
+      <div id="routes-view" hidden>
+        <section class="shop-section" style="padding:0;overflow:hidden">
+          <iframe
+            id="routes-frame"
+            title="배송루트"
+            data-src="/admin/delivery-routes?embed=1"
+            style="display:block;width:100%;min-height:calc(100vh - 160px);border:0;background:#f7f5f1"
+          ></iframe>
         </section>
       </div>
 
@@ -377,7 +388,40 @@
       "배송 완료": "done",
     };
 
-    let adminKey = sessionStorage.getItem("kh_admin_key") || "";
+    function getStoredAdminKey() {
+      return sessionStorage.getItem("kh_admin_key") || localStorage.getItem("kh_admin_key") || "";
+    }
+    function setStoredAdminKey(key) {
+      sessionStorage.setItem("kh_admin_key", key);
+      localStorage.setItem("kh_admin_key", key);
+    }
+    function clearStoredAdminKey() {
+      sessionStorage.removeItem("kh_admin_key");
+      localStorage.removeItem("kh_admin_key");
+    }
+    let adminKey = getStoredAdminKey();
+    if (adminKey) setStoredAdminKey(adminKey);
+
+    function syncRoutesFrame() {
+      const frame = document.getElementById("routes-frame");
+      if (!frame?.contentWindow || !adminKey) return;
+      frame.contentWindow.postMessage(
+        { type: "kh-delivery-routes-sync", adminKey },
+        location.origin
+      );
+    }
+
+    function ensureRoutesFrame() {
+      const frame = document.getElementById("routes-frame");
+      if (!frame) return;
+      const src = frame.getAttribute("data-src") || "/admin/delivery-routes?embed=1";
+      if (!frame.getAttribute("src")) {
+        frame.addEventListener("load", () => syncRoutesFrame(), { once: false });
+        frame.setAttribute("src", src);
+      } else {
+        syncRoutesFrame();
+      }
+    }
     let orders = [];
     let stockRows = [];
     let stockDraftPrepared = {};
@@ -1230,11 +1274,13 @@
       });
       document.getElementById("orders-view").hidden = view !== "orders";
       document.getElementById("delivery-view").hidden = view !== "delivery";
+      document.getElementById("routes-view").hidden = view !== "routes";
       document.getElementById("stock-view").hidden = view !== "stock";
       document.getElementById("sales-view").hidden = view !== "sales";
       if (view === "stock") renderStock();
       if (view === "sales") salesAdmin.render();
       if (view === "orders" || view === "delivery") renderOrders();
+      if (view === "routes") ensureRoutesFrame();
       if (view === "delivery") {
         loadDeliveryExportSummary().catch((err) => {
           renderDeliveryExportError(err.message || "Export 분석 실패");
@@ -1468,7 +1514,7 @@
         await fetchConfig();
         await fetchStock();
         await salesAdmin.fetchSales();
-        sessionStorage.setItem("kh_admin_key", adminKey);
+        setStoredAdminKey(adminKey);
         showPanel();
         renderOrders();
         renderStock();
@@ -2009,7 +2055,7 @@
       document.getElementById("delivery-export-preview-dialog").close();
     });
     document.getElementById("logout-btn").addEventListener("click", () => {
-      sessionStorage.removeItem("kh_admin_key");
+      clearStoredAdminKey();
       location.reload();
     });
     document.getElementById("route-btn").addEventListener("click", () => {
@@ -2217,7 +2263,7 @@
           salesAdmin.render();
         })
         .catch(() => {
-          sessionStorage.removeItem("kh_admin_key");
+          clearStoredAdminKey();
         });
     }
   </script>

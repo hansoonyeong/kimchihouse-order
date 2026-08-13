@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/dev-server.js",
-    "dev": "node scripts/dev-server.js"
+    "dev": "node scripts/dev-server.js",
+    "test:geocode": "node scripts/test-au-address-geocode.mjs",
+    "test:geocode:live": "node scripts/test-au-address-geocode.mjs --live"
   },
   "dependencies": {
     "@upstash/redis": "^1.34.3",
