@@ -945,36 +945,62 @@
   }
 
   async function initApp() {
+    if (document.body.dataset.drInited === "1") {
+      // already initialized — just refresh orders
+      try {
+        await loadLiveOrders({ quiet: true });
+        renderAll();
+      } catch (err) {
+        console.warn(err);
+      }
+      return;
+    }
+    document.body.dataset.drInited = "1";
+
     geocoder = new window.KHGeocode.LocalGeocodeProvider({ useNominatim: false });
     router = new window.KHRouting.LocalRoutingProvider();
     state.start = state.start || { ...window.KHDeliverySample.DEFAULT_START };
 
-    // Restore previous route planning shell first (start point etc.)
     loadPersisted();
     if (!state.start) state.start = { ...window.KHDeliverySample.DEFAULT_START };
 
-    const mapEl = $("#dr-map");
-    mapProvider = new window.KHMap.LeafletMapProvider(mapEl, {
-      onPinClick: (id) => {
-        state.selectedId = id;
-        renderAll();
-        const el = document.querySelector(`.dr-card[data-order-id="${CSS.escape(id)}"]`);
-        el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      },
-    });
-    mapProvider.init();
     bindEvents();
     document.body.dataset.drView = "split";
-    renderAll();
 
-    // Always pull latest live orders after open
     try {
-      await loadLiveOrders({ quiet: true });
+      const mapEl = $("#dr-map");
+      mapProvider = new window.KHMap.LeafletMapProvider(mapEl, {
+        onPinClick: (id) => {
+          state.selectedId = id;
+          renderAll();
+          const el = document.querySelector(`.dr-card[data-order-id="${CSS.escape(id)}"]`);
+          el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        },
+      });
+      mapProvider.init();
+    } catch (err) {
+      console.error("map init failed", err);
+      alert("지도 초기화에 실패했습니다. 목록 기능은 계속 사용할 수 있습니다.\n" + (err.message || ""));
+    }
+
+    renderAll();
+    requestAnimationFrame(() => mapProvider?.invalidate());
+
+    try {
+      const n = await loadLiveOrders({ quiet: true });
       renderAll();
+      requestAnimationFrame(() => mapProvider?.invalidate());
+      const bar = $("#dr-upload-progress");
+      if (bar && n >= 0) {
+        bar.hidden = false;
+        bar.textContent = `이번 차수 주문 ${n}건을 불러왔습니다.`;
+        setTimeout(() => {
+          bar.hidden = true;
+        }, 2500);
+      }
     } catch (err) {
       console.warn("live orders load failed", err);
       if (!state.orders.length) {
-        // fallback demo only if nothing else available
         loadDemo();
         renderAll();
         alert("주문 DB를 불러오지 못해 데모 데이터로 시작합니다.\n" + (err.message || ""));
@@ -986,11 +1012,15 @@
 
   function boot() {
     const key = sessionStorage.getItem("kh_admin_key");
+    const login = $("#dr-login");
+    const app = $("#dr-app");
     if (key) {
+      if (login) login.hidden = true;
+      if (app) app.hidden = false;
       showApp();
     } else {
-      $("#dr-login").hidden = false;
-      $("#dr-app").hidden = true;
+      if (login) login.hidden = false;
+      if (app) app.hidden = true;
       $("#dr-login-btn")?.addEventListener("click", tryLogin);
       $("#dr-password")?.addEventListener("keydown", (e) => {
         if (e.key === "Enter") tryLogin();
