@@ -98,10 +98,14 @@
         this.markers.set(pin.id, marker);
         if (!pin.dimmed) bounds.push([pin.lat, pin.lng]);
       }
+
+      this.map.invalidateSize();
       if (bounds.length >= 2) {
         this.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
       } else if (bounds.length === 1) {
         this.map.setView(bounds[0], 13);
+      } else {
+        this.map.setView([this.center.lat, this.center.lng], this.zoom);
       }
     }
 

@@ -85,8 +85,28 @@
   }
 
   async function prepareOrderGeo(order) {
+    // suburb가 비어 있으면 주소에서 추정
+    if (!order.suburb && order.address) {
+      const parts = String(order.address).split(",");
+      if (parts.length >= 2) {
+        order.suburb = window.KHOrderSource.cleanSuburb(parts[parts.length - 1]);
+      }
+    }
+    if (!order.postcode) {
+      order.postcode = window.KHOrderSource.extractPostcode(order.address, order.suburb) || "";
+    }
+
     const reasons = window.KHSpreadsheet.validateOrder(order);
     if (reasons.length) {
+      // 주소만 있고 suburb 추정 실패해도 로컬 geocode 한 번 더 시도
+      const geoTry = await geocoder.geocode(order);
+      if (geoTry) {
+        order.lat = geoTry.lat;
+        order.lng = geoTry.lng;
+        order.status = "ok";
+        order.reviewReason = null;
+        return order;
+      }
       order.status = "needs_review";
       order.reviewReason = reasons.join(" · ");
       order.lat = null;
@@ -118,6 +138,9 @@
     if (!geocoder) {
       geocoder = new window.KHGeocode.LocalGeocodeProvider({ useNominatim: false });
     }
+    if (!window.KHOrderSource?.KimchiHouseApiOrderSource) {
+      throw new Error("주문 연동 모듈을 불러오지 못했습니다. 새로고침 해주세요.");
+    }
 
     const progress = $("#dr-upload-progress");
     if (progress) {
@@ -126,29 +149,47 @@
     }
 
     const source = new window.KHOrderSource.KimchiHouseApiOrderSource({ adminKey: key });
-    let live = await source.getCurrentRoundOrders();
+    const fetched = await source.getOrdersForPlanner();
+    let live = fetched.orders || [];
+
+    if (!live.length) {
+      if (progress) progress.hidden = true;
+      throw new Error(
+        `불러온 주문이 0건입니다. (API 전체 ${fetched.rawCount || 0}건 / 이번 차수 ${fetched.currentCount || 0}건)`
+      );
+    }
 
     for (let i = 0; i < live.length; i++) {
       if (progress) progress.textContent = `주소 확인 중… ${i + 1}/${live.length}`;
-      // Keep previous coords if same id already geocoded
-      const prev = orderOf(live[i].id);
-      if (prev?.lat != null && prev?.lng != null && prev.address === live[i].address && prev.suburb === live[i].suburb) {
-        live[i].lat = prev.lat;
-        live[i].lng = prev.lng;
-        live[i].status = prev.status === "needs_review" ? "needs_review" : "ok";
-        live[i].reviewReason = prev.reviewReason;
-      } else {
-        await prepareOrderGeo(live[i]);
+      try {
+        const prev = orderOf(live[i].id);
+        if (
+          prev?.lat != null &&
+          prev?.lng != null &&
+          prev.address === live[i].address &&
+          prev.suburb === live[i].suburb
+        ) {
+          live[i].lat = prev.lat;
+          live[i].lng = prev.lng;
+          live[i].status = prev.status === "needs_review" ? "needs_review" : "ok";
+          live[i].reviewReason = prev.reviewReason;
+        } else {
+          await prepareOrderGeo(live[i]);
+        }
+      } catch (err) {
+        live[i].status = "needs_review";
+        live[i].reviewReason = "주소 처리 중 오류: " + (err.message || "unknown");
+        live[i].lat = null;
+        live[i].lng = null;
       }
     }
 
-    const prevRoutes = state.routes.map((r) => ({
+    const prevRoutes = (state.routes || []).map((r) => ({
       ...r,
-      stopIds: r.stopIds.slice(),
+      stopIds: (r.stopIds || []).slice(),
     }));
     const liveIds = new Set(live.map((o) => o.id));
 
-    // Drop cancelled/old orders from routes; keep assignments for remaining
     const nextRoutes = prevRoutes
       .map((r) => ({
         ...r,
@@ -161,7 +202,6 @@
       .filter((o) => o.status === "ok" && !assigned.has(o.id))
       .map((o) => o.id);
 
-    // Delivery date from canonical default / most common
     const D = window.KH_DELIVERY;
     const dates = live.map((o) => o.sourceDeliveryDate).filter(Boolean);
     const dateCounts = {};
@@ -171,7 +211,8 @@
     const topDate =
       Object.entries(dateCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
       D?.DEFAULT_DELIVERY_DATE ||
-      state.deliveryDate;
+      state.deliveryDate ||
+      "2026-08-29";
 
     state.orders = live;
     state.routes = nextRoutes;
@@ -182,18 +223,21 @@
     refreshRouteStats();
     persist();
 
-    if (progress) progress.hidden = true;
-    if (!quiet) {
-      const reviewN = live.filter((o) => o.status === "needs_review").length;
-      const msg = `이번 차수 주문 ${live.length}건을 불러왔습니다.` + (reviewN ? ` (확인 필요 ${reviewN}건)` : "");
-      // toast-like: non-blocking if already rendered
-      try {
-        console.info(msg);
-      } catch (_) {}
-      if (!quiet) {
-        /* soft notice in progress bar briefly */
-      }
+    const reviewN = live.filter((o) => o.status === "needs_review").length;
+    const okN = live.filter((o) => o.status === "ok").length;
+    const msg =
+      `주문 ${live.length}건 로드` +
+      (fetched.scope === "all" ? ` (이번 차수 필터 0건 → 전체 ${fetched.rawCount}건 사용)` : "") +
+      ` · 지도가능 ${okN} · 확인필요 ${reviewN}`;
+
+    if (progress) {
+      progress.hidden = false;
+      progress.textContent = msg;
+      setTimeout(() => {
+        if (progress.textContent === msg) progress.hidden = true;
+      }, 4000);
     }
+    if (!quiet) alert(msg);
     return live.length;
   }
 
@@ -213,8 +257,10 @@
   }
 
   function showApp() {
-    $("#dr-login").hidden = true;
-    $("#dr-app").hidden = false;
+    const login = $("#dr-login");
+    const app = $("#dr-app");
+    if (login) login.hidden = true;
+    if (app) app.hidden = false;
     initApp();
   }
 

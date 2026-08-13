@@ -24,9 +24,17 @@
     const c = o.customer || {};
     const address = String(c.address || "").trim();
     const suburbRaw = String(c.suburb || "").trim();
-    const suburb = cleanSuburb(suburbRaw) || cleanSuburb(address.split(",").slice(-1)[0] || "");
+    let suburb = cleanSuburb(suburbRaw);
+    // suburb 필드에 "Eastwood NSW 2122" 형태가 오는 경우
+    if (!suburb && suburbRaw) suburb = cleanSuburb(suburbRaw);
+    // address 마지막 토큰이 suburb인 경우
+    if (!suburb && address.includes(",")) {
+      suburb = cleanSuburb(address.split(",").slice(-1)[0] || "");
+    }
     const postcode = extractPostcode(address, suburbRaw) || extractPostcode(suburbRaw, "");
     const items = o.items || [];
+    const D = global.KH_DELIVERY;
+    const resolved = D?.resolveDeliveryDate?.(o) || o.deliveryDate || o.delivery?.date || null;
     return {
       id: o.id,
       name: c.name || "",
@@ -43,7 +51,7 @@
       isDemo: false,
       status: "pending",
       reviewReason: null,
-      sourceDeliveryDate: null,
+      sourceDeliveryDate: D?.canonicalDeliveryDate?.(resolved) || resolved || null,
       etaStart: null,
       etaEnd: null,
       actualDeliveredAt: null,
@@ -71,26 +79,40 @@
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "주문 조회 실패");
-      return data.orders || [];
+      if (!Array.isArray(data.orders)) throw new Error("주문 목록 형식이 올바르지 않습니다.");
+      return data.orders;
     }
 
-    /** 이번 차수(일괄 배송) 주문만 DeliveryOrder로 변환 */
-    async getCurrentRoundOrders() {
+    /**
+     * 이번 차수 우선. 0건이면 전체 주문으로 폴백 (필터 오판 방지).
+     * @returns {{ orders: object[], scope: 'current'|'all', rawCount: number, currentCount: number }}
+     */
+    async getOrdersForPlanner() {
       const D = global.KH_DELIVERY;
       const raw = await this.fetchRaw();
-      const filtered = D?.isCurrentRoundOrder
-        ? raw.filter((o) => D.isCurrentRoundOrder(o))
-        : raw;
+      const current = D?.isCurrentRoundOrder
+        ? raw.filter((o) => {
+            try {
+              return D.isCurrentRoundOrder(o);
+            } catch {
+              return true;
+            }
+          })
+        : raw.slice();
 
-      return filtered.map((o) => {
-        const mapped = mapApiOrder(o);
-        if (D) {
-          const resolved = D.resolveDeliveryDate?.(o);
-          mapped.sourceDeliveryDate =
-            D.canonicalDeliveryDate?.(resolved) || resolved || null;
-        }
-        return mapped;
-      });
+      const chosen = current.length ? current : raw;
+      return {
+        orders: chosen.map(mapApiOrder),
+        scope: current.length ? "current" : "all",
+        rawCount: raw.length,
+        currentCount: current.length,
+      };
+    }
+
+    /** @deprecated use getOrdersForPlanner */
+    async getCurrentRoundOrders() {
+      const result = await this.getOrdersForPlanner();
+      return result.orders;
     }
   }
 

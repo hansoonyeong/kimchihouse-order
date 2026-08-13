@@ -65,6 +65,16 @@
       const byPc = POSTCODE_TO_SUBURB[String(order.postcode).trim()];
       if (byPc) hit = SUBURB_COORDS[byPc];
     }
+    // 주소 문자열 안에 suburb 이름이 포함된 경우
+    if (!hit) {
+      const hay = `${order.suburb || ""} ${order.address || ""}`.toLowerCase();
+      for (const [name, info] of Object.entries(SUBURB_COORDS)) {
+        if (hay.includes(name)) {
+          hit = info;
+          break;
+        }
+      }
+    }
     if (!hit) return null;
     const j = jitter(order.id || order.address || suburbKey);
     return {
