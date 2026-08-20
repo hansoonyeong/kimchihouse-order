@@ -5477,6 +5477,8 @@ button.shop-product-cta {
 .shop-admin-page .admin-panel.show {
   display: flex;
   min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: #f4f5f7;
 }
 
@@ -5574,8 +5576,10 @@ button.shop-product-cta {
 .shop-admin-page .admin-workspace {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .shop-admin-page .admin-top-header {
@@ -5605,7 +5609,24 @@ button.shop-product-cta {
 }
 
 .shop-admin-page .shop-admin-main {
+  flex: 1;
+  min-height: 0;
   background: #f4f5f7;
+  overflow: auto;
+}
+
+/* 배송루트: 쇼핑몰 max-width/패딩 없이 워크스페이스 전체 사용 */
+.shop-admin-page[data-admin-view="routes"] .shop-admin-main {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.shop-admin-page[data-admin-view="routes"] .admin-top-header {
+  flex: 0 0 auto;
 }
 
 .shop-admin-page .shop-section {
@@ -7319,5 +7340,84 @@ body[data-brand="kimchi-house"] .brand-walkerhill-only {
 
   .shop-faq-groups {
     gap: 24px 28px;
+  }
+}
+
+/* Delivery routes tab: fill remaining workspace height */
+.shop-admin-page .admin-routes-view {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  height: 100%;
+  background: #f4f5f7;
+}
+
+.shop-admin-page .admin-routes-view[hidden] {
+  display: none !important;
+}
+
+.shop-admin-page .admin-routes-view iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #f4f5f7;
+}
+
+@media (max-width: 900px) {
+  .shop-admin-page .admin-panel.show {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .shop-admin-page .admin-workspace {
+    overflow: visible;
+  }
+
+  /* 배송루트: 관리자 헤더 중복 제거 + iframe이 화면을 채움 */
+  .shop-admin-page[data-admin-view="routes"] .admin-panel.show {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    flex-direction: column;
+  }
+
+  .shop-admin-page[data-admin-view="routes"] .admin-sidebar {
+    flex: 0 0 auto;
+    padding: 8px 10px;
+  }
+
+  .shop-admin-page[data-admin-view="routes"] .admin-sidebar-brand,
+  .shop-admin-page[data-admin-view="routes"] .admin-sidebar-foot {
+    display: none;
+  }
+
+  .shop-admin-page[data-admin-view="routes"] .admin-top-header {
+    display: none;
+  }
+
+  .shop-admin-page[data-admin-view="routes"] .admin-workspace {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .shop-admin-page[data-admin-view="routes"] .shop-admin-main {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .shop-admin-page[data-admin-view="routes"] .admin-routes-view {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
   }
 }

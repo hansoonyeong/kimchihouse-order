@@ -1008,7 +1008,7 @@
     }
 
     function renderDeliveryNote() {
-      return "Kimchi House · 8월 29일~30일경 배송 예정 · 해운 사정에 따라 변동 가능";
+      return "Kimchi House · 9월 3일~6일 배송 예정 · 태풍·해운 사정에 따라 변동 가능";
     }
 
     function renderCatalog() {
@@ -1638,11 +1638,17 @@
       const phone = document.getElementById("customer-phone").value.trim();
       const address = document.getElementById("customer-address").value.trim();
       const suburb = document.getElementById("customer-suburb").value.trim();
+      const postcode = document.getElementById("customer-postcode").value.trim().replace(/\D/g, "");
       const kakao = document.getElementById("customer-kakao").value.trim();
       const note = document.getElementById("customer-note").value.trim();
 
-      if (!name || !phone || !address || !suburb) {
-        alert("필수 정보를 모두 입력해 주세요.");
+      if (!name || !phone || !address || !suburb || !postcode) {
+        alert("필수 정보를 모두 입력해 주세요. (우편번호 포함)");
+        return;
+      }
+      if (!/^\d{4}$/.test(postcode)) {
+        alert("우편번호는 숫자 4자리로 입력해 주세요.");
+        document.getElementById("customer-postcode")?.focus();
         return;
       }
 
@@ -1666,12 +1672,12 @@
         window.KH_DELIVERY?.defaultDeliveryDateFromProducts?.() ||
         window.KH_DELIVERY?.parseDeliveryDate?.(Object.values(breakdown)[0]?.delivery) ||
         window.KH_DELIVERY?.DEFAULT_DELIVERY_DATE ||
-        "2026-08-29";
+        "2026-09-03";
 
       const payload = {
         secret: cfg.orderSecret,
         type: orderType,
-        customer: { name, phone, address, suburb, kakao },
+        customer: { name, phone, address, suburb, postcode, kakao },
         items,
         subtotal: subtotal(),
         shippingFee: shippingFee(),

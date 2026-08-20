@@ -202,7 +202,7 @@
           });
           const marker = L.marker([pin.lat, pin.lng], {
             icon,
-            opacity: dimmed ? 0.32 : 1,
+            opacity: dimmed ? 0.2 : 1,
             zIndexOffset: focused ? 300 : 0,
           }).bindPopup(pin.popupHtml || label || "stop", { maxWidth: 280 });
           marker.on("click", () => this.onPinClick(pin.id));
@@ -213,23 +213,24 @@
           if (focused) bounds.push([pin.lat, pin.lng]);
         }
 
-        // Polyline for this route (overview: all routes soft; focus: selected strong)
+        // Polyline: overview soft lines; focused strong; others at 20% opacity
         const pathEntry = (this._routePaths || []).find((p) => p.routeIndex === rIdx);
         let line = null;
         if (pathEntry?.path?.length >= 2) {
-          const showLine = this.focusRouteIndex == null || focused;
-          if (showLine) {
-            line = L.polyline(
-              pathEntry.path.map((p) => [p.lat, p.lng]),
-              {
-                color,
-                weight: focused && this.focusRouteIndex != null ? 5 : 3.5,
-                opacity: dimmed ? 0.18 : this.focusRouteIndex == null ? 0.72 : 0.9,
-                lineJoin: "round",
-                lineCap: "round",
-              }
-            ).addTo(this.map);
-          }
+          line = L.polyline(
+            pathEntry.path.map((p) => [p.lat, p.lng]),
+            {
+              color,
+              weight: focused && this.focusRouteIndex != null ? 5 : 3.5,
+              opacity: dimmed
+                ? 0.2
+                : this.focusRouteIndex == null
+                  ? 0.62
+                  : 0.95,
+              lineJoin: "round",
+              lineCap: "round",
+            }
+          ).addTo(this.map);
         }
 
         this.routeLayers.set(rIdx, { cluster, line, color, markers });
@@ -318,6 +319,7 @@
               this.focusRouteIndex == null || this.focusRouteIndex === it.routeIndex;
             const meta = [
               `${it.stops} stops`,
+              it.departureTime ? `출발 ${it.departureTime}` : null,
               it.distanceKm != null ? `~${it.distanceKm} km` : null,
             ]
               .filter(Boolean)
@@ -341,6 +343,13 @@
       const ll = m.getLatLng();
       this.map.setView(ll, Math.max(this.map.getZoom(), 15), { animate: true });
       m.openPopup();
+    }
+
+    flyTo(lat, lng, zoom = 16) {
+      const la = Number(lat);
+      const ln = Number(lng);
+      if (!this.map || !Number.isFinite(la) || !Number.isFinite(ln)) return;
+      this.map.setView([la, ln], zoom, { animate: true });
     }
 
     invalidate() {

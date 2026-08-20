@@ -7,15 +7,19 @@
     "배송 완료",
   ];
   const DEFAULT_DELIVERY_STATUS = "예약 접수";
-  const DEFAULT_DELIVERY_DATE = "2026-08-29";
+  const DEFAULT_DELIVERY_DATE = "2026-09-03";
   const CURRENT_ROUND_MIN_DATE = "2026-08-23";
   /**
    * 일괄 배송 회차에서 저장된 날짜가 달라도 같은 배치로 본다.
-   * (기존 8/23 예약 → 해운 조정 후 8/29~30 일괄)
+   * (기존 8/23·8/29~30 예약 → 태풍·해운 지연으로 9/3~6 일괄)
    */
   const DELIVERY_BATCH_CANONICAL = {
-    "2026-08-23": "2026-08-29",
-    "2026-08-30": "2026-08-29",
+    "2026-08-23": "2026-09-03",
+    "2026-08-29": "2026-09-03",
+    "2026-08-30": "2026-09-03",
+    "2026-09-04": "2026-09-03",
+    "2026-09-05": "2026-09-03",
+    "2026-09-06": "2026-09-03",
   };
   const CATEGORY_LABELS = {
     kimchi: "김치",
@@ -84,7 +88,8 @@
     const parsed = parseDeliveryDate(isoDate);
     if (!parsed) return "-";
     const canon = canonicalDeliveryDate(parsed) || parsed;
-    if (canon === "2026-08-29") return "8월 29일~30일";
+    if (canon === "2026-09-03") return "9월 3일~6일";
+    if (canon === "2026-08-29") return "9월 3일~6일";
     const parts = canon.split("-");
     return `${Number(parts[1])}월 ${Number(parts[2])}일`;
   }
@@ -162,7 +167,7 @@
 
   function resolveDeliveryDate(order) {
     const explicit = explicitDeliveryDate(order);
-    if (explicit) return explicit;
+    if (explicit) return canonicalDeliveryDate(explicit) || explicit;
     return DEFAULT_DELIVERY_DATE;
   }
 

@@ -11,8 +11,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/shop.css" />
   <link rel="stylesheet" href="assets/app.css" />
+  <link rel="stylesheet" href="assets/admin/admin-ui.css?v=20260813a3" />
 </head>
-<body class="shop-page shop-admin-page" data-brand="kimchi-house">
+<body class="shop-page shop-admin-page ad-shell" data-brand="kimchi-house">
 
   <div class="admin-login" id="login-screen">
     <header class="shop-site-header">
@@ -52,14 +53,24 @@
         </div>
       </div>
       <nav class="admin-sidebar-nav" role="tablist">
-        <button type="button" class="admin-side-link active" data-admin-view="orders">주문 관리</button>
-        <button type="button" class="admin-side-link" data-admin-view="delivery">배송 관련</button>
-        <button type="button" class="admin-side-link" data-admin-view="routes">배송루트</button>
-        <button type="button" class="admin-side-link" data-admin-view="stock">재고 관리</button>
-        <button type="button" class="admin-side-link" data-admin-view="sales">판매 품목</button>
+        <button type="button" class="admin-side-link active" data-admin-view="dashboard"><span class="ad-nav-ico" aria-hidden="true">▦</span>대시보드</button>
+        <button type="button" class="admin-side-link" data-admin-view="orders"><span class="ad-nav-ico" aria-hidden="true">☰</span>주문 관리</button>
+        <button type="button" class="admin-side-link" data-admin-view="routes"><span class="ad-nav-ico" aria-hidden="true">↗</span>배송루트</button>
+        <button type="button" class="admin-side-link" data-admin-view="customers"><span class="ad-nav-ico" aria-hidden="true">👤</span>고객 관리</button>
+        <button type="button" class="admin-side-link" data-admin-view="products"><span class="ad-nav-ico" aria-hidden="true">▣</span>제품 관리</button>
+        <button type="button" class="admin-side-link" data-admin-view="reports"><span class="ad-nav-ico" aria-hidden="true">▤</span>보고서</button>
+        <button type="button" class="admin-side-link" data-admin-view="notices"><span class="ad-nav-ico" aria-hidden="true">◎</span>공지사항</button>
+        <button type="button" class="admin-side-link" data-admin-view="settings"><span class="ad-nav-ico" aria-hidden="true">⚙</span>설정</button>
+        <button type="button" class="admin-side-link is-quiet" data-admin-view="delivery" style="margin-top:8px"><span class="ad-nav-ico" aria-hidden="true">🚚</span>배송 작업(Export)</button>
       </nav>
       <div class="admin-sidebar-foot">
-        <span class="admin-sidebar-user">Staff</span>
+        <div class="admin-sidebar-user-block">
+          <span class="ad-avatar" aria-hidden="true">관</span>
+          <div>
+            <strong>관리자</strong>
+            <span>Staff</span>
+          </div>
+        </div>
         <button type="button" class="admin-side-link is-quiet" id="logout-btn-side">로그아웃</button>
       </div>
     </aside>
@@ -68,8 +79,8 @@
     <header class="shop-site-header admin-top-header">
       <div class="shop-header-row shop-header-row-simple">
         <div class="admin-page-heading">
-          <h1 class="admin-page-title" id="admin-page-title">주문 관리</h1>
-          <p class="admin-page-sub">김치하우스 온라인 주문 · 배송 · 재고</p>
+          <h1 class="admin-page-title" id="admin-page-title">대시보드</h1>
+          <p class="admin-page-sub">오늘 운영 현황을 한눈에 확인합니다</p>
         </div>
         <div class="shop-header-actions admin-header-actions">
           <span class="admin-store-badge" id="store-badge">저장소 확인 중…</span>
@@ -97,33 +108,27 @@
         </div>
       </section>
 
-      <div id="orders-view">
+      <div id="dashboard-view" hidden></div>
+
+      <div id="orders-view" hidden>
         <section class="shop-section">
           <div class="admin-search-wrap">
-            <input type="search" id="order-search" class="admin-search shop-lookup-input" placeholder="이름, 연락처, 카톡, 주문번호, 주소 검색..." autocomplete="off" />
+            <input type="search" id="order-search" class="admin-search shop-lookup-input" placeholder="주문번호, 고객명, 주소 검색" autocomplete="off" />
             <p class="admin-search-meta" id="search-meta"></p>
           </div>
 
-          <div class="admin-filters" id="orders-filters">
-            <div class="admin-filter-group">
-              <div class="admin-filter-label">결제</div>
-              <div class="filter-tabs">
-                <button type="button" class="filter-tab active" data-filter-group="pay" data-filter-value="all">전체</button>
-                <button type="button" class="filter-tab" data-filter-group="pay" data-filter-value="cash">현금</button>
-                <button type="button" class="filter-tab" data-filter-group="pay" data-filter-value="transfer">계좌이체</button>
-              </div>
-            </div>
-          </div>
-
           <div class="admin-toolbar">
+            <button type="button" class="shop-btn shop-btn-primary shop-btn-sm" id="manual-order-btn">주문 추가</button>
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="refresh-btn">새로고침</button>
-            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="export-btn">주문 CSV</button>
+            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="export-btn">주문 내보내기</button>
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="export-pivot-btn">이번 차수 Excel</button>
+            <a class="shop-btn shop-btn-outline shop-btn-sm" href="/admin/delivery-routes">배송루트로 이동</a>
             <div class="filter-tabs admin-round-scope" id="round-scope-tabs-orders" style="margin-left:auto">
               <button type="button" class="filter-tab active" data-round-scope="current">이번 차수 <span class="admin-round-count" id="round-count-current-orders"></span></button>
               <button type="button" class="filter-tab" data-round-scope="previous">이전 차수 <span class="admin-round-count" id="round-count-previous-orders"></span></button>
             </div>
           </div>
+          <div id="manual-order-panel" class="ad-panel-card admin-manual-order-panel" hidden></div>
           <p class="admin-stock-note" id="previous-rounds-hint-orders"></p>
 
           <div id="order-list"></div>
@@ -199,7 +204,18 @@
         </section>
       </div>
 
-      <div id="stock-view" hidden>
+      <div id="customers-view" hidden></div>
+      <div id="reports-view" hidden></div>
+      <div id="notices-view" hidden></div>
+      <div id="settings-view" hidden></div>
+
+      <div id="products-view" hidden>
+        <div class="ad-tabs" id="product-subtabs" role="tablist">
+          <button type="button" class="ad-tab active" data-product-tab="stock">재고 관리</button>
+          <button type="button" class="ad-tab" data-product-tab="sales">판매 상태</button>
+        </div>
+
+      <div id="stock-view">
         <section class="shop-section">
           <div class="admin-stock-panel">
             <div class="admin-round-head">
@@ -240,17 +256,6 @@
               <div id="stock-log-list"></div>
             </div>
           </div>
-        </section>
-      </div>
-
-      <div id="routes-view" hidden>
-        <section class="shop-section" style="padding:0;overflow:hidden">
-          <iframe
-            id="routes-frame"
-            title="배송루트"
-            data-src="/admin/delivery-routes?embed=1"
-            style="display:block;width:100%;min-height:calc(100vh - 160px);border:0;background:#f7f5f1"
-          ></iframe>
         </section>
       </div>
 
@@ -331,11 +336,22 @@
           </div>
         </section>
       </div>
+      </div>
+
+      <div id="routes-view" hidden class="admin-routes-view">
+        <iframe
+          id="routes-frame"
+          title="배송루트"
+          data-src="/admin/delivery-routes?embed=1"
+        ></iframe>
+      </div>
 
       <a class="shop-lookup-back" href="index.html">← 홈으로</a>
     </main>
 
     <div class="admin-toast" id="admin-toast" role="status" aria-live="polite"></div>
+    <div class="ad-drawer-backdrop" id="ad-drawer-backdrop" hidden></div>
+    <aside class="ad-drawer" id="ad-drawer" hidden aria-label="상세"></aside>
     </div>
   </div>
 
@@ -389,8 +405,9 @@
   </dialog>
 
   <script src="assets/products.js"></script>
-  <script src="assets/delivery-utils.js"></script>
+  <script src="assets/delivery-utils.js?v=20260814d"></script>
   <script src="assets/admin-sales.js"></script>
+  <script src="assets/admin/admin-features.js?v=20260814r"></script>
   <script>
     const API = "/api/orders";
     const STOCK_API = "/api/stock";
@@ -447,7 +464,8 @@
     let stockDraftRemaining = {};
     let stockLogs = [];
     let stockCatFilter = "all";
-    let adminView = "orders";
+    let adminView = "dashboard";
+    let productSubTab = "stock";
     let roundFilter = "all";
     let payFilter = "all";
     let statusFilter = "all";
@@ -549,15 +567,17 @@
 
     function orderAddress(o) {
       const c = o.customer || {};
-      return [c.address, c.suburb].filter(Boolean).join(", ") || "-";
+      return [c.address, c.suburb, c.postcode].filter(Boolean).join(", ") || "-";
     }
 
     function itemsSummaryHtml(o) {
       const items = o.items || [];
       if (!items.length) return '<span class="admin-items-empty">-</span>';
-      return `<ul class="admin-items-inline">${items
-        .map((i) => `<li><span class="admin-item-name">${i.name}</span><span class="admin-item-qty">${i.qty}</span></li>`)
-        .join("")}</ul>`;
+      const first = items[0]?.name || "상품";
+      if (items.length === 1) {
+        return `<span class="ad-item-compact">${escHtml(first)} <span class="admin-item-qty">×${items[0].qty}</span></span>`;
+      }
+      return `<span class="ad-item-compact">${escHtml(first)} 외 ${items.length - 1}개</span>`;
     }
 
     function orderSearchText(o) {
@@ -597,9 +617,6 @@
       if (adminView === "delivery") {
         if (roundFilter !== "all") labels.push(D.formatDeliveryDateLabel(roundFilter) + " 배송");
         if (statusFilter !== "all") labels.push(statusFilter);
-      } else {
-        if (payFilter === "cash") labels.push("현금");
-        if (payFilter === "transfer") labels.push("계좌이체");
       }
       return labels;
     }
@@ -625,21 +642,22 @@
       if (!list.length) {
         const query = searchQuery.trim();
         const emptyScope = roundScope === "previous" ? "이전 차수 주문이 없습니다." : "이번 차수 주문이 없습니다.";
-        const msg = query || activeFilterLabels().length ? "조건에 맞는 주문이 없습니다." : emptyScope;
-        return `<p class="admin-empty">${msg}</p>`;
+        const msg = query || activeFilterLabels().length > 1 ? "선택한 조건에 해당하는 주문이 없습니다." : emptyScope;
+        return `<div class="ad-empty"><strong>주문 없음</strong>${msg}</div>`;
       }
 
       const renderBlock = (blockList) => `
-        <div class="admin-table-wrap">
-          <table class="admin-table admin-orders-table">
+        <div class="admin-table-wrap ad-table-wrap">
+          <table class="admin-table admin-orders-table ad-table">
             <thead>
               <tr>
                 <th>주문번호</th>
-                <th>주문자명</th>
-                <th>연락처</th>
-                <th>배송 주소</th>
-                <th>주문 상품</th>
-                <th>결제방법</th>
+                <th>고객명</th>
+                <th>전화번호</th>
+                <th>배송주소</th>
+                <th>주문상품</th>
+                <th>금액</th>
+                <th>결제방식</th>
                 <th>주문상태</th>
                 <th>상세</th>
               </tr>
@@ -862,6 +880,10 @@
             <input type="text" data-edit-customer="suburb" value="${escAttr(c.suburb || "")}" />
           </label>
           <label class="admin-order-edit-field">
+            <span>Postcode</span>
+            <input type="text" data-edit-customer="postcode" inputmode="numeric" maxlength="4" value="${escAttr(c.postcode || "")}" placeholder="2159" />
+          </label>
+          <label class="admin-order-edit-field">
             <span>카톡</span>
             <input type="text" data-edit-customer="kakao" value="${escAttr(c.kakao || "")}" />
           </label>
@@ -968,13 +990,15 @@
         .map((o) => {
           const expanded = expandedIds.has(o.id);
           const c = o.customer || {};
+          const paymentLabel = payLabel(o.payment);
           return `<tr class="admin-table-row">
-            <td class="col-id">${o.id}</td>
-            <td class="col-name">${c.name || "-"}</td>
-            <td class="col-phone">${c.phone || "-"}</td>
-            <td class="col-address">${orderAddress(o)}</td>
+            <td class="col-id ad-mono">${o.id}</td>
+            <td class="col-name">${escHtml(c.name || "-")}</td>
+            <td class="col-phone">${escHtml(c.phone || "-")}</td>
+            <td class="col-address">${escHtml(orderAddress(o))}</td>
             <td class="col-items">${itemsSummaryHtml(o)}</td>
-            <td class="col-pay">${payLabel(o.payment)}</td>
+            <td class="col-total ad-mono">$${Number(o.total) || 0}</td>
+            <td class="col-pay">${escHtml(paymentLabel)}</td>
             <td class="col-status">${renderStatusSelect(o)}</td>
             <td class="col-action">
               <button type="button" class="admin-detail-btn${expanded ? " open" : ""}" data-toggle-detail="${o.id}" aria-expanded="${expanded}">
@@ -983,7 +1007,7 @@
             </td>
           </tr>
           <tr class="admin-detail-row${expanded ? " open" : ""}" data-detail-for="${o.id}">
-            <td colspan="8">${renderDetailContent(o, mode)}</td>
+            <td colspan="9">${renderDetailContent(o, mode)}</td>
           </tr>`;
         })
         .join("");
@@ -1191,6 +1215,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "조회 실패");
       orders = data.orders || [];
+      syncFeatureOrders();
       if (data.store) dataStore = data.store;
       renderStoreBadge();
     }
@@ -1286,33 +1311,151 @@
       }
     }
 
+    function syncFeatureOrders() {
+      if (window.KHAdminFeatures?.setOrders) window.KHAdminFeatures.setOrders(orders);
+    }
+
+    function closeAdminDrawer() {
+      const drawer = document.getElementById("ad-drawer");
+      const backdrop = document.getElementById("ad-drawer-backdrop");
+      if (drawer) {
+        drawer.hidden = true;
+        drawer.innerHTML = "";
+      }
+      if (backdrop) backdrop.hidden = true;
+    }
+
+    function openAdminDrawer(html) {
+      const drawer = document.getElementById("ad-drawer");
+      const backdrop = document.getElementById("ad-drawer-backdrop");
+      if (!drawer || !backdrop) return;
+      drawer.innerHTML = html;
+      drawer.hidden = false;
+      backdrop.hidden = false;
+      drawer.querySelectorAll("[data-ad-drawer-close]").forEach((btn) => {
+        btn.addEventListener("click", closeAdminDrawer);
+      });
+    }
+
+    function setProductSubTab(tab) {
+      productSubTab = tab === "sales" ? "sales" : "stock";
+      document.querySelectorAll("#product-subtabs [data-product-tab]").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.productTab === productSubTab);
+      });
+      const stockEl = document.getElementById("stock-view");
+      const salesEl = document.getElementById("sales-view");
+      if (stockEl) stockEl.hidden = productSubTab !== "stock";
+      if (salesEl) salesEl.hidden = productSubTab !== "sales";
+      if (productSubTab === "stock") renderStock();
+      if (productSubTab === "sales") salesAdmin.render();
+    }
+
+    function renderFeatureView(view) {
+      const F = window.KHAdminFeatures;
+      if (!F) return;
+      syncFeatureOrders();
+      const nav = (v) => setAdminView(v);
+      if (view === "dashboard") {
+        F.renderDashboard(document.getElementById("dashboard-view"), { onNavigate: nav });
+      } else if (view === "customers") {
+        F.renderCustomers(document.getElementById("customers-view"), {
+          onOpenCustomer: (c) => openAdminDrawer(F.customerDrawerHtml(c)),
+        });
+      } else if (view === "reports") {
+        F.renderReports(document.getElementById("reports-view"));
+      } else if (view === "notices") {
+        F.renderNotices(document.getElementById("notices-view"));
+      } else if (view === "settings") {
+        F.renderSettings(document.getElementById("settings-view"), { preorderOpen });
+      }
+    }
+
     function setAdminView(view) {
+      const allowed = new Set([
+        "dashboard",
+        "orders",
+        "delivery",
+        "routes",
+        "customers",
+        "products",
+        "reports",
+        "notices",
+        "settings",
+        "stock",
+        "sales",
+      ]);
+      if (!allowed.has(view)) view = "dashboard";
+
+      // legacy aliases
+      if (view === "stock" || view === "sales") {
+        productSubTab = view;
+        view = "products";
+      }
+
+      if (view === "routes") {
+        window.location.href = "/admin/delivery-routes";
+        return;
+      }
+
       adminView = view;
+      document.body.dataset.adminView = view;
+      try {
+        history.replaceState(null, "", `#${view}`);
+      } catch (_) {}
+
       document.querySelectorAll("[data-admin-view]").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.adminView === view);
       });
+
       const titles = {
+        dashboard: "대시보드",
         orders: "주문 관리",
-        delivery: "배송 관련",
+        delivery: "배송 작업",
         routes: "배송루트",
-        stock: "재고 관리",
-        sales: "판매 품목",
+        customers: "고객 관리",
+        products: "제품 관리",
+        reports: "보고서",
+        notices: "공지사항",
+        settings: "설정",
+      };
+      const subs = {
+        dashboard: "오늘 운영 현황을 한눈에 확인합니다",
+        orders: "주문 조회 · 상태 변경 · 내보내기",
+        delivery: "회차 현황 · 배송 예약표 Export",
+        customers: "주문 기반 고객 집계",
+        products: "재고 · 판매 상태 관리",
+        reports: "이번 차수 매출 · 상품 · 지역",
+        notices: "안내문 · 메시지 템플릿",
+        settings: "사업장 · 배송 · 지도 · SMS 준비",
       };
       const titleEl = document.getElementById("admin-page-title");
       if (titleEl) titleEl.textContent = titles[view] || "관리자";
-      document.getElementById("orders-view").hidden = view !== "orders";
-      document.getElementById("delivery-view").hidden = view !== "delivery";
-      document.getElementById("routes-view").hidden = view !== "routes";
-      document.getElementById("stock-view").hidden = view !== "stock";
-      document.getElementById("sales-view").hidden = view !== "sales";
-      if (view === "stock") renderStock();
-      if (view === "sales") salesAdmin.render();
+      const subEl = document.querySelector(".admin-page-sub");
+      if (subEl) subEl.textContent = subs[view] || "김치하우스 온라인 주문 · 배송 · 재고";
+
+      const show = (id, on) => {
+        const el = document.getElementById(id);
+        if (el) el.hidden = !on;
+      };
+      show("dashboard-view", view === "dashboard");
+      show("orders-view", view === "orders");
+      show("delivery-view", view === "delivery");
+      show("customers-view", view === "customers");
+      show("products-view", view === "products");
+      show("reports-view", view === "reports");
+      show("notices-view", view === "notices");
+      show("settings-view", view === "settings");
+      show("routes-view", false);
+
+      if (view === "products") setProductSubTab(productSubTab);
       if (view === "orders" || view === "delivery") renderOrders();
-      if (view === "routes") ensureRoutesFrame();
       if (view === "delivery") {
         loadDeliveryExportSummary().catch((err) => {
           renderDeliveryExportError(err.message || "Export 분석 실패");
         });
+      }
+      if (["dashboard", "customers", "reports", "notices", "settings"].includes(view)) {
+        renderFeatureView(view);
       }
     }
 
@@ -1532,6 +1675,7 @@
     function showPanel() {
       document.getElementById("login-screen").style.display = "none";
       document.getElementById("admin-panel").classList.add("show");
+      document.body.dataset.adminView = adminView || "orders";
     }
 
     async function login() {
@@ -1544,6 +1688,8 @@
         await salesAdmin.fetchSales();
         setStoredAdminKey(adminKey);
         showPanel();
+        const hashView = (location.hash || "").replace(/^#/, "");
+        setAdminView(hashView || "dashboard");
         renderOrders();
         renderStock();
         salesAdmin.render();
@@ -1561,8 +1707,10 @@
         renderOrders();
         deliveryExportSummary = null;
         if (adminView === "delivery") await loadDeliveryExportSummary({ force: true });
-        if (adminView === "stock") renderStock();
-        if (adminView === "sales") salesAdmin.render();
+        if (adminView === "products") setProductSubTab(productSubTab);
+        if (["dashboard", "customers", "reports", "notices", "settings"].includes(adminView)) {
+          renderFeatureView(adminView);
+        }
       } catch (err) {
         alert(err.message || "새로고침 실패");
       }
@@ -1677,6 +1825,7 @@
     }
 
     function startOrderEdit(orderId) {
+      closeAdminDrawer();
       editingIds.add(orderId);
       expandedIds.add(orderId);
       renderOrders();
@@ -1697,6 +1846,10 @@
         phone: form.querySelector('[data-edit-customer="phone"]')?.value.trim() || "",
         address: form.querySelector('[data-edit-customer="address"]')?.value.trim() || "",
         suburb: form.querySelector('[data-edit-customer="suburb"]')?.value.trim() || "",
+        postcode: (form.querySelector('[data-edit-customer="postcode"]')?.value || "")
+          .trim()
+          .replace(/\D/g, "")
+          .slice(0, 4),
         kakao: form.querySelector('[data-edit-customer="kakao"]')?.value.trim() || "",
       };
       const items = Array.from(form.querySelectorAll("[data-edit-item]")).map((row) => {
@@ -1717,6 +1870,7 @@
       });
       const shippingFee = Math.max(0, Number(form.querySelector("[data-edit-shipping]")?.value) || 0);
       const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0), 0);
+      const deliveryDate = form.querySelector("[data-edit-delivery-date]")?.value?.trim() || "";
       return {
         customer,
         items,
@@ -1725,6 +1879,7 @@
         shippingFee,
         subtotal,
         total: subtotal + shippingFee,
+        ...(deliveryDate ? { deliveryDate } : {}),
       };
     }
 
@@ -1749,6 +1904,124 @@
 
     function syncAllEditTotals() {
       document.querySelectorAll("[data-order-edit-form]").forEach((form) => updateEditTotals(form));
+    }
+
+    function renderManualOrderForm() {
+      const defaultDate = D.DEFAULT_DELIVERY_DATE || "";
+      return `<form class="admin-order-edit admin-manual-order-form" data-order-edit-form="__new__" id="manual-order-form">
+        <div class="admin-detail-title">외부 주문 수동 등록</div>
+        <p class="admin-stock-note" style="margin:0 0 12px">카톡·전화·문자로 받은 주문을 직접 등록합니다. 재고가 차감됩니다.</p>
+        <div class="admin-order-edit-grid">
+          <label class="admin-order-edit-field">
+            <span>주문자</span>
+            <input type="text" data-edit-customer="name" required placeholder="이름" />
+          </label>
+          <label class="admin-order-edit-field">
+            <span>연락처</span>
+            <input type="text" data-edit-customer="phone" required placeholder="04xx xxx xxx" />
+          </label>
+          <label class="admin-order-edit-field admin-order-edit-wide">
+            <span>주소</span>
+            <input type="text" data-edit-customer="address" required placeholder="Street address" />
+          </label>
+          <label class="admin-order-edit-field">
+            <span>Suburb</span>
+            <input type="text" data-edit-customer="suburb" placeholder="Suburb" />
+          </label>
+          <label class="admin-order-edit-field">
+            <span>Postcode</span>
+            <input type="text" data-edit-customer="postcode" inputmode="numeric" maxlength="4" placeholder="2159" />
+          </label>
+          <label class="admin-order-edit-field">
+            <span>카톡</span>
+            <input type="text" data-edit-customer="kakao" placeholder="카카오톡 ID" />
+          </label>
+          <label class="admin-order-edit-field">
+            <span>결제</span>
+            <select data-edit-payment>
+              <option value="transfer">계좌이체</option>
+              <option value="cash">현금</option>
+            </select>
+          </label>
+          <label class="admin-order-edit-field">
+            <span>배송일</span>
+            <input type="date" data-edit-delivery-date value="${escAttr(defaultDate)}" />
+          </label>
+          <label class="admin-order-edit-field">
+            <span>배송비($)</span>
+            <input type="number" min="0" step="0.01" data-edit-shipping value="10" />
+          </label>
+          <label class="admin-order-edit-field admin-order-edit-wide">
+            <span>요청사항 / 메모</span>
+            <textarea data-edit-note rows="2" placeholder="Gate code, 문앞 배송 등"></textarea>
+          </label>
+        </div>
+        <div class="admin-order-edit-items-head">
+          <div class="admin-detail-title">품목</div>
+          <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" data-edit-item-add="__new__">품목 추가</button>
+        </div>
+        ${renderEditProductPicker("__new__")}
+        <div class="admin-order-edit-items" data-edit-items="__new__"></div>
+        <div class="admin-order-edit-foot">
+          <strong data-edit-totals="__new__">소계 $0 + 배송 $10 = $10</strong>
+          <div class="admin-order-edit-actions">
+            <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="manual-order-cancel">취소</button>
+            <button type="submit" class="shop-btn shop-btn-primary shop-btn-sm">주문 등록</button>
+          </div>
+        </div>
+      </form>`;
+    }
+
+    function showManualOrderPanel(show) {
+      const panel = document.getElementById("manual-order-panel");
+      if (!panel) return;
+      if (!show) {
+        panel.hidden = true;
+        panel.innerHTML = "";
+        return;
+      }
+      panel.hidden = false;
+      panel.innerHTML = renderManualOrderForm();
+      updateEditTotals(panel.querySelector("#manual-order-form"));
+      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    async function createManualOrder(form) {
+      const payload = collectOrderEditPayload(form);
+      if (!payload.customer.name || !payload.customer.phone || !payload.customer.address) {
+        alert("주문자 이름·연락처·주소는 필수입니다.");
+        return;
+      }
+      if (!payload.items.length || payload.items.some((item) => !item.name || item.qty <= 0)) {
+        alert("품목을 1개 이상 추가하고 수량·금액을 확인해 주세요.");
+        return;
+      }
+      try {
+        const res = await fetch(API, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${adminKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...payload,
+            source: "admin-manual",
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "주문 등록 실패");
+        showManualOrderPanel(false);
+        await fetchOrders();
+        await fetchStock();
+        renderOrders();
+        if (data.orderId) {
+          expandedIds.add(data.orderId);
+          renderOrders();
+        }
+        showToast(`수동 주문이 등록되었습니다. (${data.orderId || ""})`);
+      } catch (err) {
+        alert(err.message || "수동 주문 등록 중 오류가 발생했습니다.");
+      }
     }
 
     async function saveOrderEdit(orderId, form) {
@@ -1966,7 +2239,7 @@
       const list = filteredOrders({ useRound: false, useStatus: false, usePay: true });
       if (!list.length) return alert("내보낼 주문이 없습니다.");
       const rows = [
-        ["주문번호", "배송예정일", "일시", "성함", "연락처", "주소", "Suburb", "카톡", "품목", "소계", "배송비", "합계", "결제", "배송상태", "예약확인발송", "배송안내발송", "요청"],
+        ["주문번호", "배송예정일", "일시", "성함", "연락처", "주소", "Suburb", "Postcode", "카톡", "품목", "소계", "배송비", "합계", "결제", "배송상태", "예약확인발송", "배송안내발송", "요청"],
       ];
       for (const o of list) {
         rows.push([
@@ -1977,6 +2250,7 @@
           o.customer.phone,
           o.customer.address,
           o.customer.suburb || "",
+          o.customer.postcode || "",
           o.customer.kakao || "",
           (o.items || []).map((i) => `${i.name}x${i.qty}`).join(" / "),
           o.subtotal,
@@ -2011,6 +2285,13 @@
     });
     document.getElementById("refresh-btn").addEventListener("click", refresh);
     document.getElementById("delivery-refresh-btn").addEventListener("click", refresh);
+    document.getElementById("manual-order-btn")?.addEventListener("click", () => {
+      const panel = document.getElementById("manual-order-panel");
+      showManualOrderPanel(!!panel?.hidden);
+    });
+    document.getElementById("manual-order-panel")?.addEventListener("click", (e) => {
+      if (e.target.closest("#manual-order-cancel")) showManualOrderPanel(false);
+    });
 
     function syncRoundScopeTabs() {
       document.querySelectorAll("[data-round-scope]").forEach((btn) => {
@@ -2105,6 +2386,12 @@
     document.getElementById("logout-btn-side")?.addEventListener("click", () => {
       document.getElementById("logout-btn")?.click();
     });
+    document.getElementById("product-subtabs")?.addEventListener("click", (e) => {
+      const tab = e.target.closest("[data-product-tab]");
+      if (!tab) return;
+      setProductSubTab(tab.dataset.productTab);
+    });
+    document.getElementById("ad-drawer-backdrop")?.addEventListener("click", closeAdminDrawer);
 
     document.getElementById("stock-cat-tabs").addEventListener("click", (e) => {
       const tab = e.target.closest("[data-stock-cat]");
@@ -2149,7 +2436,6 @@
       renderOrders();
     }
 
-    document.getElementById("orders-filters").addEventListener("click", onAdminFilterClick);
     document.getElementById("delivery-filters").addEventListener("click", onAdminFilterClick);
 
     document.getElementById("round-stats").addEventListener("click", (e) => {
@@ -2255,7 +2541,12 @@
         const form = e.target.closest("[data-order-edit-form]");
         if (!form) return;
         e.preventDefault();
-        saveOrderEdit(form.dataset.orderEditForm, form);
+        const orderId = form.dataset.orderEditForm;
+        if (orderId === "__new__") {
+          createManualOrder(form);
+          return;
+        }
+        saveOrderEdit(orderId, form);
       });
       root.addEventListener("input", (e) => {
         const form = e.target.closest("[data-order-edit-form]");
@@ -2278,6 +2569,8 @@
 
     bindOrderListEvents(document.getElementById("order-list"));
     bindOrderListEvents(document.getElementById("delivery-order-list"));
+    bindOrderListEvents(document.getElementById("manual-order-panel"));
+    bindOrderListEvents(document.getElementById("ad-drawer"));
 
     document.getElementById("route-panel").addEventListener("click", async (e) => {
       if (!e.target.closest("#copy-route-btn")) return;
@@ -2294,6 +2587,8 @@
       Promise.all([fetchOrders(), fetchConfig(), fetchStock(), salesAdmin.fetchSales()])
         .then(() => {
           showPanel();
+          const hashView = (location.hash || "").replace(/^#/, "");
+          setAdminView(hashView || "dashboard");
           renderOrders();
           renderStock();
           salesAdmin.render();

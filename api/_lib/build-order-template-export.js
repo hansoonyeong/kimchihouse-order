@@ -10,6 +10,7 @@ import {
   PRODUCT_COLUMN_MAP,
   TEMPLATE_SHEET_NAME,
 } from "./order-export-config.js";
+import { readOrders } from "./orders-store.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH = path.join(__dirname, "../_templates/kimchi-house-august-order-template.xlsx");
@@ -723,6 +724,174 @@ async function createPreservedTemplateBuffer(sheet, writtenRows, unclassified) {
   zip.file("xl/workbook.xml", workbookXml);
 
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+}
+
+function writeReservationExportToRow(sheet, row, exportData, noteOverride) {
+  sheet.getCell(`${CUSTOMER_COLUMNS.region}${row}`).value = text(exportData.region);
+  sheet.getCell(`${CUSTOMER_COLUMNS.name}${row}`).value = text(exportData.name);
+  sheet.getCell(`${CUSTOMER_COLUMNS.address}${row}`).value = text(exportData.address);
+  sheet.getCell(`${CUSTOMER_COLUMNS.phone}${row}`).value = text(exportData.phone);
+  sheet.getCell(`${CUSTOMER_COLUMNS.paidAmount}${row}`).value = null;
+  for (const { col, qty } of exportData.productCols || []) {
+    if (col == null || !qty) continue;
+    const letter = columnLetter(Number(col) + 1);
+    sheet.getCell(`${letter}${row}`).value = qty;
+  }
+  const note = text(noteOverride || exportData.note);
+  if (note) sheet.getCell(`${CUSTOMER_COLUMNS.note}${row}`).value = note;
+}
+
+function mergeRouteNote(route, isFirstStop, baseNote) {
+  const parts = [];
+  if (isFirstStop && route?.departureTime) {
+    parts.push(`[${text(route.name) || "Route"} 출발 ${text(route.departureTime)}]`);
+  }
+  const note = text(baseNote);
+  if (note) parts.push(note);
+  return parts.join(" ");
+}
+
+export async function buildRouteOrderTemplateExport(body, { preview = false } = {}) {
+  const routes = Array.isArray(body?.routes) ? body.routes : [];
+  const reservationOrders = body?.reservationOrders || {};
+  const dbOrders = await readOrders();
+  const dbMap = new Map(dbOrders.map((o) => [text(o.id), o]));
+
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(TEMPLATE_PATH);
+  const sheet = workbook.getWorksheet(TEMPLATE_SHEET_NAME);
+  if (!sheet) throw new Error(`템플릿 시트 「${TEMPLATE_SHEET_NAME}」를 찾을 수 없습니다.`);
+
+  const referenceFormula = sheet.getCell(`${CUSTOMER_COLUMNS.productTotal}9`).formula;
+  if (!referenceFormula) throw new Error("템플릿 주문 금액 기준 수식을 찾을 수 없습니다.");
+
+  const exportSequence = [];
+  for (const route of routes) {
+    const orderIds = Array.isArray(route.orderIds) ? route.orderIds : [];
+    orderIds.forEach((id, index) => {
+      const orderId = text(id);
+      if (!orderId) return;
+      exportSequence.push({
+        route,
+        orderId,
+        isFirstStop: index === 0,
+        reservation: reservationOrders[orderId] || null,
+        dbOrder: dbMap.get(orderId) || null,
+      });
+    });
+  }
+
+  const warnings = [];
+  const unclassified = [];
+  const previewRows = [];
+  const writtenRows = [];
+  let placedOrders = 0;
+  let mappingErrorCount = 0;
+
+  for (const [index, entry] of exportSequence.entries()) {
+    const { route, orderId, isFirstStop, reservation, dbOrder } = entry;
+    let status = "Route 배치 예정";
+
+    if (reservation) {
+      const note = mergeRouteNote(route, isFirstStop, reservation.note);
+      previewRows.push({
+        orderId,
+        region: reservation.region || "-",
+        customerName: reservation.name || "-",
+        address: reservation.address || "-",
+        phone: reservation.phone || "-",
+        products: (reservation.productCols || [])
+          .map(({ col, qty }) => `열${col + 1} × ${qty}`)
+          .join(" / "),
+        note,
+        status: `${text(route.name) || "Route"} · 예약표`,
+      });
+      if (!preview) {
+        const row = 9 + index;
+        prepareContinuousOrderRow(sheet, row, reservation.region || "", referenceFormula);
+        writeReservationExportToRow(sheet, row, reservation, note);
+        writtenRows.push(row);
+      }
+      placedOrders += 1;
+      continue;
+    }
+
+    if (!dbOrder) {
+      const reason = "주문 DB에서 찾을 수 없습니다.";
+      warnings.push({ type: "missing", orderId, message: reason });
+      status = `누락 · ${reason}`;
+      previewRows.push({
+        orderId,
+        region: "-",
+        customerName: "-",
+        address: "-",
+        phone: "-",
+        products: "-",
+        note: "",
+        status,
+      });
+      continue;
+    }
+
+    const { region, postcode } = resolveOrderRegion(dbOrder);
+    const expanded = expandOrderItems(dbOrder);
+    mappingErrorCount += expanded.unmapped.length;
+    for (const issue of expanded.unmapped) {
+      warnings.push({
+        type: "product_mapping",
+        orderId,
+        message: `${issue.name} × ${issue.qty}: ${issue.reason}`,
+      });
+    }
+
+    const placement = {
+      normalized: normalizeRegion(region),
+      displayRegion: region,
+      rawSuburb: region,
+      postcode,
+    };
+    const note = mergeRouteNote(route, isFirstStop, requestNotes(dbOrder, expanded.unmapped));
+
+    if (!region) {
+      const reason = "suburb, postcode, 전체 주소에서 지역을 확인하지 못했습니다.";
+      unclassified.push(unclassifiedRecord(dbOrder, placement, expanded, reason));
+      warnings.push({ type: "region", orderId, message: reason });
+      status = `미분류 · ${reason}`;
+    } else {
+      placedOrders += 1;
+      status = `${text(route.name) || "Route"} · ${status}`;
+    }
+    if (expanded.unmapped.length) {
+      status += ` · 상품 매핑 오류 ${expanded.unmapped.length}건`;
+    }
+
+    previewRows.push(previewRecord(dbOrder, placement, expanded, status));
+    if (!preview && region) {
+      const row = 9 + index;
+      prepareContinuousOrderRow(sheet, row, region, referenceFormula);
+      writeOrderToRow(sheet, row, dbOrder, placement, expanded);
+      if (note) sheet.getCell(`${CUSTOMER_COLUMNS.note}${row}`).value = note;
+      writtenRows.push(row);
+    }
+  }
+
+  const summary = {
+    targetOrders: exportSequence.length,
+    placedOrders,
+    unclassifiedOrders: unclassified.length,
+    mappingErrorCount,
+    warnings,
+    unclassified,
+    previewRows,
+    filename: body?.deliveryDate
+      ? `김치하우스_배송루트_${body.deliveryDate}.xlsx`
+      : `김치하우스_배송루트.xlsx`,
+  };
+
+  if (preview) return { summary, workbook: null, buffer: null };
+
+  const buffer = await createPreservedTemplateBuffer(sheet, writtenRows, unclassified);
+  return { summary, workbook, buffer: Buffer.from(buffer) };
 }
 
 export async function buildOrderTemplateExport(orders, { preview = false } = {}) {

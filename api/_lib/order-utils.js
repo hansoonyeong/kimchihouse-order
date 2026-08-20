@@ -9,10 +9,23 @@ export const DELIVERY_STATUSES = [
 export const DEFAULT_DELIVERY_STATUS = "예약 접수";
 
 /** 현재 회차 기본 배송일 (YYYY-MM-DD) — 고객 안내·새 주문 폴백 */
-export const DEFAULT_DELIVERY_DATE = "2026-08-29";
+export const DEFAULT_DELIVERY_DATE = "2026-09-03";
 
 /** 이번 차수 주문 판별 하한 (일정 변경 전 예약 포함) */
 export const CURRENT_ROUND_MIN_DATE = "2026-08-23";
+
+/**
+ * 일괄 배송 회차에서 저장된 날짜가 달라도 같은 배치로 본다.
+ * (기존 8/23·8/29~30 예약 → 태풍·해운 지연으로 9/3~6 일괄)
+ */
+export const DELIVERY_BATCH_CANONICAL = {
+  "2026-08-23": "2026-09-03",
+  "2026-08-29": "2026-09-03",
+  "2026-08-30": "2026-09-03",
+  "2026-09-04": "2026-09-03",
+  "2026-09-05": "2026-09-03",
+  "2026-09-06": "2026-09-03",
+};
 
 export const CATEGORY_LABELS = {
   kimchi: "김치",
@@ -106,11 +119,19 @@ export function parseDeliveryDate(value, fallbackYear = 2026) {
   return null;
 }
 
+export function canonicalDeliveryDate(value) {
+  const parsed = parseDeliveryDate(value);
+  if (!parsed) return value || null;
+  return DELIVERY_BATCH_CANONICAL[parsed] || parsed;
+}
+
 export function formatDeliveryDateLabel(isoDate) {
   const parsed = parseDeliveryDate(isoDate);
   if (!parsed) return "-";
-  const match = parsed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return parsed;
+  const canon = canonicalDeliveryDate(parsed) || parsed;
+  if (canon === "2026-09-03") return "9월 3일~6일";
+  const match = canon.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return canon;
   return `${Number(match[2])}월 ${Number(match[3])}일`;
 }
 
@@ -178,7 +199,7 @@ export function isCurrentRoundOrder(order, minDate = CURRENT_ROUND_MIN_DATE) {
 
 export function resolveDeliveryDate(order) {
   const explicit = explicitDeliveryDate(order);
-  if (explicit) return explicit;
+  if (explicit) return canonicalDeliveryDate(explicit) || explicit;
   return DEFAULT_DELIVERY_DATE;
 }
 

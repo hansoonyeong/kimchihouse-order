@@ -25,7 +25,10 @@
     if (!suburb && address.includes(",")) {
       suburb = cleanSuburb(address.split(",").slice(-1)[0] || "");
     }
-    const postcode = extractPostcode(address, suburbRaw) || extractPostcode(suburbRaw, "");
+    const postcode =
+      String(c.postcode || "").replace(/\D/g, "").slice(0, 4) ||
+      extractPostcode(address, suburbRaw) ||
+      extractPostcode(suburbRaw, "");
     const items = o.items || [];
     const D = global.KH_DELIVERY;
     const resolved = D?.resolveDeliveryDate?.(o) || o.deliveryDate || o.delivery?.date || null;
@@ -59,6 +62,7 @@
       smsStatus: "none",
       lastSmsAt: null,
       etaSmsStatus: "none",
+      sourceOrder: o,
     };
   }
 

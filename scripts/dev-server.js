@@ -43,6 +43,8 @@ import {
   EXPORT_FILENAME,
 } from "../api/_lib/build-order-template-export.js";
 import { loadEnvFiles } from "./load-env.js";
+import { getGnafStore } from "../api/_lib/gnaf/store.js";
+import { lookupGnaf } from "../api/_lib/gnaf/lookup.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
@@ -558,6 +560,59 @@ async function handleStock(req, res) {
   return sendJson(res, 405, { ok: false, error: "Method not allowed" });
 }
 
+async function handleGnafGeocode(req, res) {
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    });
+    return res.end();
+  }
+
+  const store = await getGnafStore();
+  const url = new URL(req.url, "http://localhost");
+
+  if (req.method === "GET" && url.searchParams.get("stats") === "1") {
+    return sendJson(res, 200, {
+      ok: true,
+      ready: store.isReady(),
+      ...store.stats(),
+    });
+  }
+
+  let parsed = {};
+  if (req.method === "POST") {
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      return sendJson(res, 400, { ok: false, error: "잘못된 요청입니다." });
+    }
+  } else if (req.method === "GET") {
+    parsed = {
+      houseNumber: url.searchParams.get("houseNumber") || "",
+      streetName: url.searchParams.get("streetName") || "",
+      streetType: url.searchParams.get("streetType") || "",
+      suburb: url.searchParams.get("suburb") || url.searchParams.get("locality") || "",
+      postcode: url.searchParams.get("postcode") || "",
+      state: url.searchParams.get("state") || "NSW",
+      unit: url.searchParams.get("unit") || "",
+      subpremise: url.searchParams.get("subpremise") || "",
+    };
+  } else {
+    return sendJson(res, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const result = lookupGnaf(store, parsed, {
+    limit: Number(url.searchParams.get("limit") || parsed.limit || 8),
+  });
+  return sendJson(res, 200, {
+    ok: true,
+    ...result,
+    store: store.stats(),
+  });
+}
+
 async function handleLookup(req, res) {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
@@ -1013,6 +1068,15 @@ const server = http.createServer(async (req, res) => {
       await handleDeliveryOps(req, res);
     } catch (err) {
       sendJson(res, 500, { ok: false, error: err.message || "Server error" });
+    }
+    return;
+  }
+
+  if (urlPath.startsWith("/api/gnaf-geocode")) {
+    try {
+      await handleGnafGeocode(req, res);
+    } catch (err) {
+      sendJson(res, 500, { ok: false, error: err.message || "G-NAF lookup failed" });
     }
     return;
   }

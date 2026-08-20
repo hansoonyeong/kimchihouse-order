@@ -93,12 +93,13 @@ export async function POST(request) {
       return json({ ok: false, error: "잘못된 요청입니다." }, 400);
     }
 
-    if (!body || body.secret !== env.orderSecret) {
+    const isAdmin = getAdminKey(request) === env.adminPassword;
+    if (!isAdmin && (!body || body.secret !== env.orderSecret)) {
       return json({ ok: false, error: "주문 요청이 유효하지 않습니다." }, 401);
     }
 
     const settings = await readSettings();
-    if (settings.preorderOpen === false) {
+    if (!isAdmin && settings.preorderOpen === false) {
       return json({ ok: false, error: "현재는 사전 주문 기간이 아닙니다." }, 403);
     }
 
@@ -113,9 +114,14 @@ export async function POST(request) {
       note,
       shippingBreakdown,
       deliveryDate,
+      source,
     } = body;
 
-    if (!type || !customer?.name || !customer?.phone || !customer?.address) {
+    if (!customer?.name || !customer?.phone || !customer?.address) {
+      return json({ ok: false, error: "필수 주문 정보가 누락되었습니다." }, 400);
+    }
+
+    if (!isAdmin && !type) {
       return json({ ok: false, error: "필수 주문 정보가 누락되었습니다." }, 400);
     }
 
@@ -123,9 +129,11 @@ export async function POST(request) {
       return json({ ok: false, error: "주문 품목을 1개 이상 선택해 주세요." }, 400);
     }
 
-    const salesDoc = await readSales();
-    const saleCheck = assertItemsPurchasable(items, salesDoc, sellableProductIndex());
-    if (!saleCheck.ok) return json(saleCheck, 409);
+    if (!isAdmin) {
+      const salesDoc = await readSales();
+      const saleCheck = assertItemsPurchasable(items, salesDoc, sellableProductIndex());
+      if (!saleCheck.ok) return json(saleCheck, 409);
+    }
 
     const stockCheck = await assertStockAvailable(items);
     if (!stockCheck.ok) return json(stockCheck, 409);
@@ -143,9 +151,22 @@ export async function POST(request) {
       parseDeliveryDate(shippingBreakdown?.walkerhill?.delivery) ||
       DEFAULT_DELIVERY_DATE;
 
+    const cats = new Set(
+      items.map((it) => String(it.category || "").trim()).filter(Boolean)
+    );
+    const resolvedType =
+      type ||
+      (cats.has("walkerhill") && (cats.has("kimchi") || cats.has("frozen") || cats.size > 1)
+        ? "combined"
+        : cats.has("walkerhill")
+          ? "walkerhill"
+          : cats.has("frozen") && !cats.has("kimchi")
+            ? "frozen"
+            : "kimchi");
+
     const order = {
       id: orderId,
-      type,
+      type: resolvedType,
       customer,
       items,
       subtotal: Number(subtotal) || 0,
@@ -163,6 +184,12 @@ export async function POST(request) {
       },
       confirmMessageSent: false,
       shipNoticeSent: false,
+      ...(isAdmin
+        ? {
+            source: source || "admin-manual",
+            createdBy: "admin",
+          }
+        : {}),
     };
 
     if (shippingBreakdown) order.shippingBreakdown = shippingBreakdown;
@@ -173,12 +200,12 @@ export async function POST(request) {
 
     const needed = unitsNeededFromItems(items);
     const { stock } = await applyRemainingDeltas(needed, {
-      admin: "system:order",
-      note: `온라인 주문 ${orderId}`,
+      admin: isAdmin ? "admin:manual" : "system:order",
+      note: isAdmin ? `수동 주문 ${orderId}` : `온라인 주문 ${orderId}`,
     });
     await applyAutoSoldOutFromStock(stock, orders);
 
-    return json({ ok: true, orderId: order.id }, 201);
+    return json({ ok: true, orderId: order.id, order }, 201);
   } catch (err) {
     console.error("orders POST error:", err);
     return json({ ok: false, error: err.message || "Server error" }, 500);
@@ -300,6 +327,10 @@ export async function PATCH(request) {
             phone: String(body.customer.phone || current.customer?.phone || "").trim(),
             address: String(body.customer.address || current.customer?.address || "").trim(),
             suburb: String(body.customer.suburb || current.customer?.suburb || "").trim(),
+            postcode: String(body.customer.postcode ?? current.customer?.postcode ?? "")
+              .trim()
+              .replace(/\D/g, "")
+              .slice(0, 4),
             kakao: String(body.customer.kakao ?? current.customer?.kakao ?? "").trim(),
           }
         : current.customer;

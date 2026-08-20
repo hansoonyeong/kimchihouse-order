@@ -89,6 +89,8 @@
       lastSmsAt: null,
       etaSmsStatus: "none",
       sourceSheet: "",
+      reservationExport: null,
+      sourceOrder: null,
       ...extra,
     };
   }
@@ -206,12 +208,14 @@
         const note = noteI >= 0 ? String(row[noteI] || "").trim() : "";
 
         const items = [];
+        const exportProductCols = [];
         let boxes = 0;
         productCols.forEach((c) => {
           const qty = Number(String(row[c] || "").replace(/[^0-9.]/g, ""));
           if (!qty || qty <= 0) return;
           const label = headers[c] || `품목${c}`;
           items.push(`${label} × ${qty}`);
+          exportProductCols.push({ col: c, qty, header: label });
           boxes += qty;
         });
 
@@ -231,6 +235,14 @@
             boxCount: boxes || 1,
             notes: note,
             sourceSheet: sheetName,
+            reservationExport: {
+              region: suburb,
+              name,
+              address,
+              phone,
+              productCols: exportProductCols,
+              note,
+            },
           })
         );
         sheetCount += 1;

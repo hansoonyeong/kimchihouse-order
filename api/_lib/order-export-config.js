@@ -126,3 +126,58 @@ export const HIDDEN_PRODUCT_COLUMNS = [
   "BC",
   "BE",
 ];
+
+/**
+ * 상차용 시트 품목 열 (이번 차수: 새벽팜4차 - 워커힐 3차 보이는 열 기준).
+ * sku는 PRODUCT_COLUMN_MAP 키와 동일.
+ */
+export const LOADING_SHEET_PRODUCTS = [
+  { sku: "w1", label: "워커힐\n포기" },
+  { sku: "w2", label: "워커힐\n총각" },
+  { sku: "b1:7kg", label: "서울\n7kg" },
+  { sku: "b2:7kg", label: "남도\n7kg" },
+  { sku: "b3:7kg", label: "자연\n7kg" },
+  { sku: "b1:3.5kg", label: "서울\n3.5kg" },
+  { sku: "b2:3.5kg", label: "남도\n3.5kg" },
+  { sku: "b3:3.5kg", label: "자연\n3.5kg" },
+  { sku: "b4", label: "총각" },
+  { sku: "b5", label: "열무" },
+  { sku: "b6", label: "쪽파" },
+  { sku: "b7", label: "갓" },
+  { sku: "a9", label: "간장게장" },
+  { sku: "a10", label: "백명란" },
+  { sku: "a3", label: "만두\n세트" },
+  { sku: "a4", label: "충무\n김밥" },
+  { sku: "extra-jaecheop", label: "재첩" },
+  { sku: "b10", label: "진미채" },
+  { sku: "extra-myeongtaecho", label: "명태\n커틀렛" },
+  { sku: "b11", label: "생\n청국장" },
+  { sku: "b12", label: "된장" },
+  { sku: "b8", label: "김\n24팩" },
+];
+
+/** 주문 상품명 → 상차용 sku (sku 없을 때 이름 매칭) */
+export const LOADING_PRODUCT_NAME_ALIASES = [
+  { sku: "w1", match: ["워커힐 포기", "워커힐포기", "워포", "포기김치 4kg", "워커힐 포기김치"] },
+  { sku: "w2", match: ["워커힐 총각", "워커힐총각", "워총", "총각김치 2kg", "워커힐 총각김치"] },
+  { sku: "b1:7kg", match: ["서울식 포기김치", "서울 7", "서7", "서울식", "이북식 7"] },
+  { sku: "b2:7kg", match: ["전통남도식", "남도 7", "남7", "남도식 7"] },
+  { sku: "b3:7kg", match: ["자연 포기", "자연식 7", "자7", "무설탕", "자연 7"] },
+  { sku: "b1:3.5kg", match: ["서울 3.5", "서3", "이북식 3.5", "서울식 3.5"] },
+  { sku: "b2:3.5kg", match: ["남도 3.5", "남3", "남도식 3.5"] },
+  { sku: "b3:3.5kg", match: ["자연 3.5", "자3", "자연식 3.5"] },
+  { sku: "b4", match: ["총각김치", "총각"] },
+  { sku: "b5", match: ["열무김치", "열무"] },
+  { sku: "b6", match: ["쪽파김치", "쪽파"] },
+  { sku: "b7", match: ["갓김치", "돌산 갓", "갓"] },
+  { sku: "a9", match: ["간장게장"] },
+  { sku: "a10", match: ["백명란", "명란"] },
+  { sku: "a3", match: ["만두세트", "만두 세트"] },
+  { sku: "a4", match: ["충무김밥", "충무 김밥"] },
+  { sku: "extra-jaecheop", match: ["재첩"] },
+  { sku: "b10", match: ["진미채"] },
+  { sku: "extra-myeongtaecho", match: ["명태커틀렛", "명태커트랫", "명태 커틀렛"] },
+  { sku: "b11", match: ["생청국장", "청국장"] },
+  { sku: "b12", match: ["된장", "전통된장"] },
+  { sku: "b8", match: ["김 24", "김24", "도시락김 — 실속", "72봉", "올리브유 도시락김 (72"] },
+];
