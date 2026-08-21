@@ -44,7 +44,7 @@ import {
 } from "../api/_lib/build-order-template-export.js";
 import { loadEnvFiles } from "./load-env.js";
 import { getGnafStore } from "../api/_lib/gnaf/store.js";
-import { lookupGnaf } from "../api/_lib/gnaf/lookup.js";
+import { lookupGnaf, lookupGnafBatch } from "../api/_lib/gnaf/lookup.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
@@ -581,15 +581,15 @@ async function handleGnafGeocode(req, res) {
     });
   }
 
-  let parsed = {};
+  let body = {};
   if (req.method === "POST") {
     try {
-      parsed = JSON.parse(await readBody(req));
+      body = JSON.parse(await readBody(req));
     } catch {
       return sendJson(res, 400, { ok: false, error: "잘못된 요청입니다." });
     }
   } else if (req.method === "GET") {
-    parsed = {
+    body = {
       houseNumber: url.searchParams.get("houseNumber") || "",
       streetName: url.searchParams.get("streetName") || "",
       streetType: url.searchParams.get("streetType") || "",
@@ -603,9 +603,50 @@ async function handleGnafGeocode(req, res) {
     return sendJson(res, 405, { ok: false, error: "Method not allowed" });
   }
 
-  const result = lookupGnaf(store, parsed, {
-    limit: Number(url.searchParams.get("limit") || parsed.limit || 8),
-  });
+  const limit = Number(url.searchParams.get("limit") || body.limit || 8);
+  const batchList = Array.isArray(body.addresses)
+    ? body.addresses
+    : Array.isArray(body.batch)
+      ? body.batch
+      : null;
+
+  if (batchList) {
+    const parsedList = batchList.map((p) => ({
+      houseNumber: p.houseNumber || "",
+      streetName: p.streetName || "",
+      streetType: p.streetType || "",
+      suburb: p.suburb || p.locality || "",
+      postcode: p.postcode || "",
+      state: p.state || "NSW",
+      unit: p.unit || "",
+      subpremise: p.subpremise || p.unit || "",
+      id: p.id,
+    }));
+    const { results, summary } = lookupGnafBatch(store, parsedList, { limit });
+    return sendJson(res, 200, {
+      ok: true,
+      batch: true,
+      results,
+      summary,
+      performance: {
+        totalAddresses: summary.total,
+        gnafExact: summary.exact + summary.postcodeStreet + summary.suburbStreet,
+        gnafExactStrict: summary.exact,
+        gnafPostcodeStreet: summary.postcodeStreet,
+        gnafSuburbStreet: summary.suburbStreet,
+        gnafFuzzy: summary.fuzzy,
+        gnafFuzzyRan: summary.fuzzyRan,
+        notFound: summary.notFound,
+        ambiguous: summary.ambiguous,
+        cacheHits: summary.cacheHits,
+        processingTimeSeconds: +(summary.timings.totalMs / 1000).toFixed(3),
+        timings: summary.timings,
+      },
+      store: store.stats(),
+    });
+  }
+
+  const result = lookupGnaf(store, body, { limit });
   return sendJson(res, 200, {
     ok: true,
     ...result,

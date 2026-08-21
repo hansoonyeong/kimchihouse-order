@@ -6,6 +6,7 @@
  *  3. Sample JSONL at data/gnaf-nsw.sample.jsonl
  *  4. Empty stub → Nominatim fallback only
  *
+ * Runtime NEVER reads Geoscape CSV/PSV — import scripts only.
  * Full Geoscape G-NAF must NEVER be shipped to the browser.
  */
 
@@ -27,6 +28,69 @@ export const DEFAULT_SQLITE = path.join(ROOT, "data", "gnaf-nsw.sqlite");
 export const DEFAULT_JSONL = path.join(ROOT, "data", "gnaf-nsw.jsonl");
 const SAMPLE_JSONL = path.join(ROOT, "scripts", "import-gnaf-nsw", "sample", "gnaf-nsw.sample.jsonl");
 
+const INDEX_DDL = [
+  `CREATE INDEX IF NOT EXISTS idx_gnaf_pc_loc_street_hn
+    ON gnaf_address (postcode, locality_norm, street_name_norm, house_number_norm)`,
+  `CREATE INDEX IF NOT EXISTS idx_gnaf_pc_street_hn
+    ON gnaf_address (postcode, street_name_norm, house_number_norm)`,
+  `CREATE INDEX IF NOT EXISTS idx_gnaf_loc_street_hn
+    ON gnaf_address (locality_norm, street_name_norm, house_number_norm)`,
+  `CREATE INDEX IF NOT EXISTS idx_gnaf_street_fuzzy
+    ON gnaf_address (street_name_norm, locality_norm)`,
+  `CREATE INDEX IF NOT EXISTS idx_gnaf_postcode
+    ON gnaf_address (postcode)`,
+  `CREATE INDEX IF NOT EXISTS idx_gnaf_locality
+    ON gnaf_address (locality_norm)`,
+  `CREATE INDEX IF NOT EXISTS idx_gnaf_street_name
+    ON gnaf_address (street_name_norm)`,
+  `CREATE INDEX IF NOT EXISTS idx_gnaf_pc_street
+    ON gnaf_address (postcode, street_name_norm)`,
+];
+
+function ensureSqliteIndexes(db) {
+  // Skip DDL when indexes already present (open path must stay milliseconds).
+  try {
+    const row = db
+      .prepare(
+        `SELECT 1 AS ok FROM sqlite_master WHERE type='index' AND name='idx_gnaf_pc_street' LIMIT 1`
+      )
+      .get();
+    if (row) return;
+  } catch {
+    /* continue */
+  }
+  for (const ddl of INDEX_DDL) {
+    try {
+      db.exec(ddl);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+function readMetaCount(db) {
+  try {
+    const row = db.prepare(`SELECT value FROM gnaf_meta WHERE key = 'count'`).get();
+    const n = Number(row?.value);
+    if (Number.isFinite(n) && n > 0) return n;
+  } catch {
+    /* no meta */
+  }
+  return null;
+}
+
+function writeMetaCount(db, n) {
+  try {
+    db.prepare(`INSERT OR REPLACE INTO gnaf_meta (key, value) VALUES ('count', ?)`).run(String(n));
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Open SQLite without full-table COUNT(*) on the hot path.
+ * Presence check: LIMIT 1. Row count: gnaf_meta, else one-time COUNT cached to meta.
+ */
 async function openSqliteAsync(dbPath) {
   if (!fs.existsSync(dbPath)) return null;
   try {
@@ -34,8 +98,23 @@ async function openSqliteAsync(dbPath) {
     const DatabaseSync = mod.DatabaseSync;
     if (!DatabaseSync) return null;
     const db = new DatabaseSync(dbPath);
-    const row = db.prepare("SELECT COUNT(*) AS n FROM gnaf_address").get();
-    if (!row || Number(row.n) === 0) return null;
+    try {
+      db.exec("PRAGMA cache_size = -64000"); // ~64MB page cache
+    } catch {
+      /* ignore */
+    }
+    const probe = db.prepare("SELECT 1 AS ok FROM gnaf_address LIMIT 1").get();
+    if (!probe) return null;
+    // Indexes / meta writes happen once at open (not per lookup).
+    ensureSqliteIndexes(db);
+    let count = readMetaCount(db);
+    if (count == null) {
+      // One-time only (expensive on 5M+ rows). Persist so runtime never rescans.
+      count = Number(db.prepare("SELECT COUNT(*) AS n FROM gnaf_address").get()?.n || 0);
+      if (count > 0) writeMetaCount(db, count);
+    }
+    if (!count) return null;
+    db.__gnafCachedCount = count;
     return db;
   } catch {
     return null;
@@ -88,6 +167,7 @@ export class JsonlGnafStore {
     this.rows = rows;
     this.sourcePath = sourcePath;
     this.backend = "jsonl";
+    this._cachedCount = rows.length;
   }
 
   isReady() {
@@ -95,7 +175,7 @@ export class JsonlGnafStore {
   }
 
   stats() {
-    return { backend: this.backend, count: this.rows.length, path: this.sourcePath };
+    return { backend: this.backend, count: this._cachedCount, path: this.sourcePath };
   }
 
   findExact({ postcode, localityKey, streetNameKey, streetType, houseNumber }) {
@@ -136,14 +216,13 @@ export class JsonlGnafStore {
   }
 
   findFuzzyStreet({ streetNameKey, localityKey, postcode, houseNumber, limit = 16 }) {
+    // Never full-scan: require locality or postcode scope.
+    if (!localityKey && !postcode) return [];
     const hn = houseNumber ? normalizeHouseNumber(houseNumber) : "";
     const out = [];
     for (const r of this.rows) {
-      if (localityKey && r.locality_norm !== localityKey) {
-        if (!postcode || r.postcode !== postcode) continue;
-      } else if (!localityKey && postcode && r.postcode !== postcode) {
-        continue;
-      }
+      if (localityKey && r.locality_norm !== localityKey) continue;
+      if (!localityKey && postcode && r.postcode !== postcode) continue;
       const sn = r.street_name_norm || "";
       if (!(sn === streetNameKey || sn.startsWith(streetNameKey) || streetNameKey.startsWith(sn))) {
         continue;
@@ -161,23 +240,26 @@ export class SqliteGnafStore {
     this.db = db;
     this.sourcePath = sourcePath;
     this.backend = "sqlite";
+    this._cachedCount = Number(db.__gnafCachedCount || 0) || readMetaCount(db) || 0;
+    this._stmts = Object.create(null);
   }
 
   isReady() {
     return !!this.db;
   }
 
+  /** Cached — never runs COUNT(*) on the hot path. */
   stats() {
-    try {
-      const row = this.db.prepare("SELECT COUNT(*) AS n FROM gnaf_address").get();
-      return { backend: this.backend, count: Number(row?.n || 0), path: this.sourcePath };
-    } catch {
-      return { backend: this.backend, count: 0, path: this.sourcePath };
-    }
+    return { backend: this.backend, count: this._cachedCount, path: this.sourcePath };
   }
 
-  _all(sql, params) {
-    return this.db.prepare(sql).all(...params);
+  _stmt(key, sql) {
+    if (!this._stmts[key]) this._stmts[key] = this.db.prepare(sql);
+    return this._stmts[key];
+  }
+
+  _all(key, sql, params) {
+    return this._stmt(key, sql).all(...params);
   }
 
   findExact({ postcode, localityKey, streetNameKey, streetType, houseNumber }) {
@@ -185,6 +267,7 @@ export class SqliteGnafStore {
     const st = streetType ? normalizeStreetType(streetType) : "";
     if (st) {
       return this._all(
+        "exact_st",
         `SELECT * FROM gnaf_address
          WHERE postcode = ? AND locality_norm = ? AND street_name_norm = ?
            AND house_number_norm = ?
@@ -194,6 +277,7 @@ export class SqliteGnafStore {
       );
     }
     return this._all(
+      "exact",
       `SELECT * FROM gnaf_address
        WHERE postcode = ? AND locality_norm = ? AND street_name_norm = ?
          AND house_number_norm = ?
@@ -207,6 +291,7 @@ export class SqliteGnafStore {
     const st = streetType ? normalizeStreetType(streetType) : "";
     if (st) {
       return this._all(
+        "pc_st",
         `SELECT * FROM gnaf_address
          WHERE postcode = ? AND street_name_norm = ? AND house_number_norm = ?
            AND (street_type_norm = '' OR street_type_norm = ?)
@@ -215,6 +300,7 @@ export class SqliteGnafStore {
       );
     }
     return this._all(
+      "pc",
       `SELECT * FROM gnaf_address
        WHERE postcode = ? AND street_name_norm = ? AND house_number_norm = ?
        LIMIT 20`,
@@ -227,6 +313,7 @@ export class SqliteGnafStore {
     const st = streetType ? normalizeStreetType(streetType) : "";
     if (st) {
       return this._all(
+        "loc_st",
         `SELECT * FROM gnaf_address
          WHERE locality_norm = ? AND street_name_norm = ? AND house_number_norm = ?
            AND (street_type_norm = '' OR street_type_norm = ?)
@@ -235,6 +322,7 @@ export class SqliteGnafStore {
       );
     }
     return this._all(
+      "loc",
       `SELECT * FROM gnaf_address
        WHERE locality_norm = ? AND street_name_norm = ? AND house_number_norm = ?
        LIMIT 20`,
@@ -242,33 +330,56 @@ export class SqliteGnafStore {
     );
   }
 
+  /**
+   * Prefix fuzzy within locality or postcode only.
+   * Uses range scan on street_name_norm (index-friendly) instead of LIKE when possible.
+   * NEVER runs without locality/postcode (would full-scan 5M+ rows).
+   */
   findFuzzyStreet({ streetNameKey, localityKey, postcode, houseNumber, limit = 16 }) {
+    if (!streetNameKey || (!localityKey && !postcode)) return [];
     const hn = houseNumber ? normalizeHouseNumber(houseNumber) : "";
-    const like = `${streetNameKey}%`;
+    const prefixEnd = streetNameKey + "\uffff";
+
     if (localityKey) {
+      if (hn) {
+        return this._all(
+          "fuzzy_loc_hn",
+          `SELECT * FROM gnaf_address
+           WHERE locality_norm = ?
+             AND street_name_norm >= ? AND street_name_norm < ?
+             AND house_number_norm = ?
+           LIMIT ?`,
+          [localityKey, streetNameKey, prefixEnd, hn, limit]
+        );
+      }
       return this._all(
+        "fuzzy_loc",
         `SELECT * FROM gnaf_address
-         WHERE locality_norm = ? AND street_name_norm LIKE ?
-           AND (? = '' OR house_number_norm = ?)
+         WHERE locality_norm = ?
+           AND street_name_norm >= ? AND street_name_norm < ?
          LIMIT ?`,
-        [localityKey, like, hn, hn, limit]
+        [localityKey, streetNameKey, prefixEnd, limit]
       );
     }
-    if (postcode) {
+
+    if (hn) {
       return this._all(
+        "fuzzy_pc_hn",
         `SELECT * FROM gnaf_address
-         WHERE postcode = ? AND street_name_norm LIKE ?
-           AND (? = '' OR house_number_norm = ?)
+         WHERE postcode = ?
+           AND street_name_norm >= ? AND street_name_norm < ?
+           AND house_number_norm = ?
          LIMIT ?`,
-        [postcode, like, hn, hn, limit]
+        [postcode, streetNameKey, prefixEnd, hn, limit]
       );
     }
     return this._all(
+      "fuzzy_pc",
       `SELECT * FROM gnaf_address
-       WHERE street_name_norm LIKE ?
-         AND (? = '' OR house_number_norm = ?)
+       WHERE postcode = ?
+         AND street_name_norm >= ? AND street_name_norm < ?
        LIMIT ?`,
-      [like, hn, hn, limit]
+      [postcode, streetNameKey, prefixEnd, limit]
     );
   }
 }
@@ -323,4 +434,12 @@ export async function getGnafStore() {
 
 export function resetGnafStoreCache() {
   _storePromise = null;
+}
+
+/** Ensure gnaf_meta.count exists (one-time repair for DBs imported before meta write). */
+export async function ensureGnafMetaCount() {
+  const store = await getGnafStore();
+  if (store.backend !== "sqlite" || !store.db) return store.stats();
+  if (store._cachedCount > 0 && readMetaCount(store.db) != null) return store.stats();
+  return store.stats();
 }

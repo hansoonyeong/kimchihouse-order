@@ -1,4 +1,10 @@
-export { lookupGnaf, scoreGnafAgainstParsed, MATCH_LEVEL } from "./lookup.js";
+export {
+  lookupGnaf,
+  lookupGnafBatch,
+  clearGnafLookupCache,
+  scoreGnafAgainstParsed,
+  MATCH_LEVEL,
+} from "./lookup.js";
 export {
   getGnafStore,
   resetGnafStoreCache,

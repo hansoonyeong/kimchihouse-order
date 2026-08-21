@@ -567,8 +567,9 @@
       this.endpoint = endpoint || "/api/gnaf-geocode";
     }
 
-    async geocode(parsed) {
-      const body = {
+    _bodyFromParsed(parsed) {
+      return {
+        id: parsed.id,
         houseNumber: parsed.houseNumber || "",
         streetName: parsed.streetName || "",
         streetType: parsed.streetType || "",
@@ -579,11 +580,14 @@
         subpremise: parsed.subpremise || parsed.unit || parsed.unitOrShop || "",
         limit: 8,
       };
+    }
+
+    async geocode(parsed) {
       try {
         const res = await fetch(this.endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify(this._bodyFromParsed(parsed)),
         });
         if (!res.ok) {
           return {
@@ -604,6 +608,7 @@
           best: data.best || null,
           keys: data.keys,
           message: data.message || "",
+          timings: data.timings,
           store: data.store,
         };
       } catch (err) {
@@ -614,6 +619,65 @@
           candidates: [],
           best: null,
           message: err.message || "G-NAF request failed",
+        };
+      }
+    }
+
+    /** Batch G-NAF lookup — one HTTP round-trip for N addresses. */
+    async geocodeBatch(parsedList) {
+      const addresses = (parsedList || []).map((p) => this._bodyFromParsed(p));
+      if (!addresses.length) {
+        return { results: [], performance: null, ready: false };
+      }
+      try {
+        const res = await fetch(this.endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ addresses, limit: 8 }),
+        });
+        if (!res.ok) {
+          return {
+            results: addresses.map(() => ({
+              provider: "gnaf",
+              status: "not_ready",
+              ready: false,
+              candidates: [],
+              best: null,
+              message: `G-NAF API ${res.status}`,
+            })),
+            performance: null,
+            ready: false,
+          };
+        }
+        const data = await res.json();
+        return {
+          results: (data.results || []).map((r) => ({
+            provider: "gnaf",
+            status: r.status || (r.best ? "ok" : "not_found"),
+            ready: r.ready !== false,
+            candidates: r.candidates || [],
+            best: r.best || null,
+            keys: r.keys,
+            message: r.message || "",
+            timings: r.timings,
+          })),
+          performance: data.performance || null,
+          summary: data.summary || null,
+          ready: true,
+          store: data.store,
+        };
+      } catch (err) {
+        return {
+          results: addresses.map(() => ({
+            provider: "gnaf",
+            status: "not_ready",
+            ready: false,
+            candidates: [],
+            best: null,
+            message: err.message || "G-NAF batch failed",
+          })),
+          performance: null,
+          ready: false,
         };
       }
     }
@@ -1348,6 +1412,217 @@
         confirmMode: "needs_review",
         confirmLog: `${original} → G-NAF 없음 → Nominatim 없음 → 수동 확인 필요`,
       });
+    }
+
+    /**
+     * Batch geocode many orders: one G-NAF HTTP round-trip, then Nominatim only for misses.
+     * @returns {{ orders: object[], performance: object }}
+     */
+    async geocodeOrdersBatch(orders, { force = false, onProgress } = {}) {
+      const N = global.KHAddressNormalize;
+      if (!N?.parseAustralianAddress) throw new Error("KHAddressNormalize missing");
+      const t0 =
+        typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+      const settings = getGeocodeSettings();
+      const perf = {
+        totalAddresses: orders.length,
+        cacheHits: 0,
+        gnafExact: 0,
+        gnafFuzzy: 0,
+        nominatimFallback: 0,
+        needsReview: 0,
+        gnafBatchMs: 0,
+        nominatimMs: 0,
+        processingTimeSeconds: 0,
+        gnafServer: null,
+      };
+
+      const pending = []; // { order, parsed, original, index }
+
+      for (let i = 0; i < orders.length; i++) {
+        const order = orders[i];
+        const original = order.originalAddress || order.address || "";
+        order.originalAddress = original;
+        order.address = original;
+
+        const parsed = N.parseAustralianAddress({
+          address: original,
+          suburb: order.suburb || "",
+          postcode: order.postcode || "",
+        });
+        order.normalizedAddress = parsed.normalizedAddress;
+        order.unitOrShop = parsed.unit || parsed.unitOrShop || "";
+        order.subpremise = parsed.subpremise || parsed.unit || "";
+        order.parsedAddress = {
+          unit: parsed.unit,
+          subpremise: parsed.subpremise || parsed.unit,
+          houseNumber: parsed.houseNumber,
+          streetName: parsed.streetName,
+          streetType: parsed.streetType,
+          street: parsed.street,
+          suburb: parsed.suburb,
+          state: parsed.state,
+          postcode: parsed.postcode,
+          country: parsed.country,
+        };
+        if (parsed.suburb) order.suburb = parsed.suburb;
+        if (parsed.postcode) order.postcode = parsed.postcode;
+
+        if (!parsed.valid) {
+          this._applyFailure(order, {
+            verificationStatus: VerificationStatus.INVALID,
+            reviewReason: parsed.invalidReason || STATUS_LABELS.invalid,
+            confirmMode: "needs_review",
+            confirmLog: `${original} → 정규화 실패 → 수동 확인 필요`,
+          });
+          perf.needsReview += 1;
+          continue;
+        }
+
+        const cacheKey = parsed.normalizedAddress;
+        if (!force && cacheKey) {
+          const cached = cacheGet(cacheKey);
+          if (cached && cached.verificationStatus === VerificationStatus.VERIFIED && cached.lat != null) {
+            this._applySuccess(order, {
+              lat: cached.lat,
+              lng: cached.lng,
+              verificationStatus: VerificationStatus.VERIFIED,
+              reviewReason: STATUS_LABELS.verified,
+              confidence: cached.confidence || 0.95,
+              source: "cache",
+              suggestedLabel: cached.suggestedLabel || parsed.normalizedAddress,
+              score: cached.score,
+              confirmMode: "auto",
+              confirmLog: `${original} → 캐시 히트 → 자동 확인 완료`,
+              lowConfidence: false,
+              placeId: cached.placeId || "",
+              provider: cached.provider || "cache",
+            });
+            perf.cacheHits += 1;
+            continue;
+          }
+        }
+
+        pending.push({ order, parsed, original, index: i });
+      }
+
+      const tGnaf =
+        typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+      const batch = await this.gnaf.geocodeBatch(pending.map((p) => p.parsed));
+      perf.gnafBatchMs = Math.round(
+        ((typeof performance !== "undefined" && performance.now ? performance.now() : Date.now()) -
+          tGnaf)
+      );
+      perf.gnafServer = batch.performance || null;
+
+      const nominatimQueue = [];
+
+      for (let j = 0; j < pending.length; j++) {
+        const { order, parsed, original } = pending[j];
+        const gnafResult = batch.results[j] || {
+          ready: false,
+          status: "not_ready",
+          best: null,
+          candidates: [],
+        };
+        const gnafDecision = decideGnafVerify(gnafResult, parsed, settings);
+
+        if (gnafDecision.action === "verify" && gnafDecision.best) {
+          const best = gnafDecision.best;
+          const label = best.displayName || parsed.normalizedAddress;
+          cacheSet(parsed.normalizedAddress, {
+            lat: best.lat,
+            lng: best.lng,
+            verificationStatus: VerificationStatus.VERIFIED,
+            confidence: 0.98,
+            suggestedLabel: label,
+            score: best.score,
+            placeId: best.gnafPid || "",
+            provider: "gnaf",
+          });
+          this._applySuccess(order, {
+            lat: best.lat,
+            lng: best.lng,
+            verificationStatus: VerificationStatus.VERIFIED,
+            reviewReason: STATUS_LABELS.verified,
+            confidence: 0.98,
+            source: "gnaf",
+            suggestedLabel: label,
+            score: best.score,
+            confirmMode: parsed.normalizedChanged ? "auto_corrected" : "auto",
+            confirmLog: `${original} → G-NAF (${best.matchLevel}) · score ${best.score} → 자동 확인 완료`,
+            lowConfidence: !!gnafDecision.lowConfidence,
+            placeId: best.gnafPid || "",
+            provider: "gnaf",
+            queryStep: best.matchLevel || "gnaf",
+          });
+          if (best.matchLevel === "fuzzy") perf.gnafFuzzy += 1;
+          else perf.gnafExact += 1;
+        } else if (gnafDecision.action === "needs_review") {
+          const best = gnafDecision.best;
+          this._applyFailure(order, {
+            verificationStatus: gnafDecision.verificationStatus || VerificationStatus.PARTIAL_MATCH,
+            reviewReason: gnafDecision.reason,
+            suggestedLabel: best?.displayName || parsed.normalizedAddress,
+            suggestedLat: best?.lat ?? null,
+            suggestedLng: best?.lng ?? null,
+            suggestedScore: best?.score ?? null,
+            confirmMode: "needs_review",
+            confirmLog: `${original} → G-NAF → 수동 확인 필요 (${gnafDecision.reason})`,
+          });
+          perf.needsReview += 1;
+        } else {
+          nominatimQueue.push({ order, parsed, original, gnafDecision });
+        }
+
+        if (typeof onProgress === "function") {
+          onProgress(perf.cacheHits + j + 1, orders.length);
+        }
+      }
+
+      const tNom =
+        typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+      for (const item of nominatimQueue) {
+        // Reuse single-order Nominatim path via geocodeOrder after marking force + skip gnaf
+        // by temporarily stubbing gnaf to return the miss we already know.
+        const prevGnaf = this.gnaf;
+        this.gnaf = {
+          geocode: async () => ({
+            provider: "gnaf",
+            status: "not_found",
+            ready: true,
+            candidates: [],
+            best: null,
+            message: "batch-miss",
+          }),
+        };
+        try {
+          await this.geocodeOrder(item.order, { force: true });
+        } finally {
+          this.gnaf = prevGnaf;
+        }
+        perf.nominatimFallback += 1;
+        if (item.order.status === "needs_review" || item.order.geocodingStatus === "needs_review") {
+          perf.needsReview += 1;
+        }
+        if (typeof onProgress === "function") {
+          onProgress(
+            perf.cacheHits + pending.length - nominatimQueue.length + perf.nominatimFallback,
+            orders.length
+          );
+        }
+      }
+      perf.nominatimMs = Math.round(
+        ((typeof performance !== "undefined" && performance.now ? performance.now() : Date.now()) -
+          tNom)
+      );
+
+      const elapsed =
+        ((typeof performance !== "undefined" && performance.now ? performance.now() : Date.now()) -
+          t0) / 1000;
+      perf.processingTimeSeconds = +elapsed.toFixed(3);
+
+      return { orders, performance: perf };
     }
 
     _applySuccess(order, result) {

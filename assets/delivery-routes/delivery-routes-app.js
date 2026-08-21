@@ -213,94 +213,136 @@
     }
   }
 
-  async function geocodeAll(orders, { reusePrev = true, concurrency } = {}) {
-    // G-NAF local index → parallel OK. Nominatim-only → sequential (~1req/s).
-    let workers = concurrency;
-    if (workers == null) {
-      const gnafReady = await probeGnafReady();
-      workers = gnafReady ? Math.min(12, Math.max(4, orders.length > 80 ? 10 : 6)) : 1;
+  function formatGeocodePerf(perf) {
+    if (!perf) return "";
+    const lines = [
+      `Total addresses: ${perf.totalAddresses}`,
+      `Cache hits: ${perf.cacheHits || 0}`,
+      `G-NAF exact: ${perf.gnafExact || 0}`,
+      `G-NAF fuzzy: ${perf.gnafFuzzy || 0}`,
+      `Nominatim fallback: ${perf.nominatimFallback || 0}`,
+      `Needs review: ${perf.needsReview || 0}`,
+      `Processing time: ${perf.processingTimeSeconds}s`,
+    ];
+    if (perf.gnafServer) {
+      lines.push(
+        `  (server G-NAF: ${perf.gnafServer.processingTimeSeconds}s · fuzzyRan ${perf.gnafServer.gnafFuzzyRan || 0})`
+      );
     }
+    return lines.join("\n");
+  }
+
+  async function geocodeAll(orders, { reusePrev = true, concurrency } = {}) {
     state.geocodingInProgress = true;
     state.geocodingTotal = orders.length;
     state.geocodingDone = 0;
     updateAutoGroupButton();
 
-    let done = 0;
-    let cursor = 0;
-    workers = Math.max(1, Math.min(workers, orders.length || 1));
-    setProgress(`주소 확인 중 0 / ${orders.length} (G-NAF${workers > 1 ? ` · ${workers}병렬` : ""})`);
+    const gnafReady = await probeGnafReady();
+    setProgress(`주소 확인 중 0 / ${orders.length}${gnafReady ? " (G-NAF batch)" : " (Nominatim)"}`);
 
-    async function processOne(live) {
-      try {
-        const prev = reusePrev ? orderOf(live.id) : null;
-        const sameAddr =
-          prev &&
-          (prev.originalAddress || prev.address) === (live.originalAddress || live.address) &&
-          prev.suburb === live.suburb &&
-          prev.postcode === live.postcode;
+    // Apply reusePrev shortcuts first
+    const toGeocode = [];
+    for (const live of orders) {
+      const prev = reusePrev ? orderOf(live.id) : null;
+      const sameAddr =
+        prev &&
+        (prev.originalAddress || prev.address) === (live.originalAddress || live.address) &&
+        prev.suburb === live.suburb &&
+        prev.postcode === live.postcode;
 
-        if (
-          sameAddr &&
-          isVerifiedOrder(prev) &&
-          (prev.geocodingConfidence || 0) >= 0.55
-        ) {
-          live.lat = prev.lat;
-          live.lng = prev.lng;
-          live.latitude = prev.latitude ?? prev.lat;
-          live.longitude = prev.longitude ?? prev.lng;
-          live.geocodingStatus = "ok";
-          live.verificationStatus = prev.verificationStatus || "verified";
-          live.geocodingConfidence = prev.geocodingConfidence;
-          live.normalizedAddress = prev.normalizedAddress;
-          live.unitOrShop = prev.unitOrShop;
-          live.suggestedAddress = prev.suggestedAddress;
-          live.parsedAddress = prev.parsedAddress;
-          live.status = "ok";
-          live.reviewReason = null;
-          live.addressConfirmMode = prev.addressConfirmMode || "auto";
-          live.addressConfirmLog = prev.addressConfirmLog || "";
-          live.geocodeLowConfidence = !!prev.geocodeLowConfidence;
-          live.geocodingProvider = prev.geocodingProvider || prev.geocodeSource || "";
-          live.placeId = prev.placeId || "";
-          live.geocodeScore = prev.geocodeScore ?? null;
-        } else {
-          await geocodeOrder(live, { force: true });
+      if (
+        sameAddr &&
+        isVerifiedOrder(prev) &&
+        (prev.geocodingConfidence || 0) >= 0.55
+      ) {
+        live.lat = prev.lat;
+        live.lng = prev.lng;
+        live.latitude = prev.latitude ?? prev.lat;
+        live.longitude = prev.longitude ?? prev.lng;
+        live.geocodingStatus = "ok";
+        live.verificationStatus = prev.verificationStatus || "verified";
+        live.geocodingConfidence = prev.geocodingConfidence;
+        live.normalizedAddress = prev.normalizedAddress;
+        live.unitOrShop = prev.unitOrShop;
+        live.suggestedAddress = prev.suggestedAddress;
+        live.parsedAddress = prev.parsedAddress;
+        live.status = "ok";
+        live.reviewReason = null;
+        live.addressConfirmMode = prev.addressConfirmMode || "auto";
+        live.addressConfirmLog = prev.addressConfirmLog || "";
+        live.geocodeLowConfidence = !!prev.geocodeLowConfidence;
+        live.geocodingProvider = prev.geocodingProvider || prev.geocodeSource || "";
+        live.placeId = prev.placeId || "";
+        live.geocodeScore = prev.geocodeScore ?? null;
+        state.geocodingDone += 1;
+      } else {
+        toGeocode.push(live);
+      }
+    }
+
+    try {
+      if (gnafReady && toGeocode.length && typeof ensureGeocodeService().geocodeOrdersBatch === "function") {
+        const { performance: perf } = await ensureGeocodeService().geocodeOrdersBatch(toGeocode, {
+          force: false,
+          onProgress: (done) => {
+            state.geocodingDone = orders.length - toGeocode.length + done;
+            setProgress(`주소 확인 중 ${state.geocodingDone} / ${orders.length} (G-NAF batch)`);
+          },
+        });
+        state.geocodingDone = orders.length;
+        const log = formatGeocodePerf(perf);
+        console.info("[geocode performance]\n" + log);
+        setProgress(
+          `주소 확인 완료 ${orders.length}건 · ${perf.processingTimeSeconds}s · G-NAF exact ${perf.gnafExact} · fuzzy ${perf.gnafFuzzy} · Nominatim ${perf.nominatimFallback} · review ${perf.needsReview}`
+        );
+        state.lastGeocodePerformance = perf;
+      } else {
+        // Nominatim-only or tiny fallback: sequential / limited workers
+        let workers = concurrency;
+        if (workers == null) workers = gnafReady ? 6 : 1;
+        workers = Math.max(1, Math.min(workers, toGeocode.length || 1));
+        let cursor = 0;
+        let done = orders.length - toGeocode.length;
+
+        async function processOne(live) {
+          try {
+            await geocodeOrder(live, { force: true });
+          } catch (err) {
+            live.status = "needs_review";
+            live.geocodingStatus = "needs_review";
+            live.verificationStatus = "not_found";
+            live.reviewReason = "주소 처리 중 오류: " + (err.message || "unknown");
+            live.addressConfirmMode = "needs_review";
+            live.addressConfirmLog = `${live.originalAddress || live.address || ""} → 오류 → 수동 확인 필요`;
+            live.lat = live.lng = live.latitude = live.longitude = null;
+          }
+          done += 1;
+          state.geocodingDone = done;
+          setProgress(`주소 확인 중 ${done} / ${orders.length}`);
         }
-      } catch (err) {
-        live.status = "needs_review";
-        live.geocodingStatus = "needs_review";
-        live.verificationStatus = "not_found";
-        live.reviewReason = "주소 처리 중 오류: " + (err.message || "unknown");
-        live.addressConfirmMode = "needs_review";
-        live.addressConfirmLog = `${live.originalAddress || live.address || ""} → 오류 → 수동 확인 필요`;
-        live.lat = live.lng = live.latitude = live.longitude = null;
+
+        async function worker() {
+          while (cursor < toGeocode.length) {
+            const i = cursor++;
+            await processOne(toGeocode[i]);
+          }
+        }
+        await Promise.all(Array.from({ length: workers }, () => worker()));
       }
-      done += 1;
-      state.geocodingDone = done;
-      setProgress(`주소 확인 중 ${done} / ${orders.length}`);
-      if (done % 5 === 0 || done === orders.length) {
-        state.unassignedIds = orders
-          .filter((o) => isVerifiedOrder(o))
-          .map((o) => o.id)
-          .filter((id) => !state.routes.some((r) => r.stopIds.includes(id)));
-        persist();
-        renderHeader();
-        renderSideLists();
-        renderMap();
-      }
+    } finally {
+      state.unassignedIds = orders
+        .filter((o) => isVerifiedOrder(o))
+        .map((o) => o.id)
+        .filter((id) => !state.routes.some((r) => r.stopIds.includes(id)));
+      persist();
+      renderHeader();
+      renderSideLists();
+      renderMap();
+      state.geocodingInProgress = false;
+      updateAutoGroupButton();
     }
 
-    async function worker() {
-      while (cursor < orders.length) {
-        const i = cursor++;
-        await processOne(orders[i]);
-      }
-    }
-
-    await Promise.all(Array.from({ length: workers }, () => worker()));
-
-    state.geocodingInProgress = false;
-    updateAutoGroupButton();
     return orders;
   }
 

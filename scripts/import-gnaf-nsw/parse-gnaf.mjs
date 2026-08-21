@@ -25,10 +25,13 @@ import {
 } from "../../api/_lib/gnaf/street-normalize.js";
 
 /** Exact table file match — avoids STREET_LOCALITY matching STREET_LOCALITY_POINT etc. */
-export function findTableFiles(dir, tableName) {
+export function findTableFiles(dir, tableName, opts = {}) {
   const out = [];
   if (!fs.existsSync(dir)) return out;
   const want = tableName.toUpperCase();
+  const prefix = String(opts.filePrefix || "")
+    .toUpperCase()
+    .trim();
   const walk = (d) => {
     for (const name of fs.readdirSync(d)) {
       const p = path.join(d, name);
@@ -39,6 +42,7 @@ export function findTableFiles(dir, tableName) {
       }
       const upper = name.toUpperCase();
       if (!/\.(PSV|CSV|TXT)$/.test(upper)) continue;
+      if (prefix && !upper.startsWith(`${prefix}_`) && !upper.startsWith(prefix)) continue;
       // Require table token as whole segment (underscores / start)
       const re = new RegExp(`(?:^|[_\\-])${want}(?:[_\\-.]|$)`);
       if (!re.test(upper)) continue;
@@ -47,6 +51,7 @@ export function findTableFiles(dir, tableName) {
       if (upper.includes(`${want}_POINT`)) continue;
       if (upper.includes(`${want}_AUT`)) continue;
       if (want === "LOCALITY" && upper.includes("STREET_LOCALITY")) continue;
+      if (want === "LOCALITY" && upper.includes("LOCALITY_NEIGHBOUR")) continue;
       if (want === "STATE" && upper.includes("STREET")) continue;
       out.push(p);
     }
@@ -198,12 +203,14 @@ export function describeExpectedFiles() {
  */
 export async function parseGnafNswExtract(inputDir, opts = {}) {
   const log = opts.onProgress || ((m) => console.log(m));
+  const onRow = typeof opts.onRow === "function" ? opts.onRow : null;
+  const filePrefix = opts.filePrefix || "NSW";
 
-  const stateFiles = findTableFiles(inputDir, "STATE");
-  const localityFiles = findTableFiles(inputDir, "LOCALITY");
-  const streetFiles = findTableFiles(inputDir, "STREET_LOCALITY");
-  const detailFiles = findTableFiles(inputDir, "ADDRESS_DETAIL");
-  const geoFiles = findTableFiles(inputDir, "ADDRESS_DEFAULT_GEOCODE");
+  const stateFiles = findTableFiles(inputDir, "STATE", { filePrefix });
+  const localityFiles = findTableFiles(inputDir, "LOCALITY", { filePrefix });
+  const streetFiles = findTableFiles(inputDir, "STREET_LOCALITY", { filePrefix });
+  const detailFiles = findTableFiles(inputDir, "ADDRESS_DETAIL", { filePrefix });
+  const geoFiles = findTableFiles(inputDir, "ADDRESS_DEFAULT_GEOCODE", { filePrefix });
 
   log("Discovered G-NAF tables:");
   log(`  STATE:                    ${stateFiles.length} → ${stateFiles.map((f) => path.basename(f)).join(", ") || "(none)"}`);
@@ -286,13 +293,19 @@ export async function parseGnafNswExtract(inputDir, opts = {}) {
   log(`  Geocodes loaded: ${geos.size}`);
 
   const rows = [];
+  let importedCount = 0;
   let detailSeen = 0;
+  let skippedRetired = 0;
   let skippedNoStreet = 0;
   let skippedNoLocality = 0;
   let skippedNoGeo = 0;
   for (const f of detailFiles) {
     await readDelimited(f, (row) => {
       detailSeen += 1;
+      if (pick(row, "DATE_RETIRED")) {
+        skippedRetired += 1;
+        return;
+      }
       const pid = pick(row, "ADDRESS_DETAIL_PID", "PID");
       if (!pid) return;
       const streetPid = pick(row, "STREET_LOCALITY_PID");
@@ -325,7 +338,7 @@ export async function parseGnafNswExtract(inputDir, opts = {}) {
       const streetType = street.type;
       const locality = loc.name;
 
-      rows.push({
+      const denorm = {
         address_detail_pid: pid,
         house_number: houseNumber,
         house_number_norm: normalizeHouseNumber(houseNumber),
@@ -354,18 +367,21 @@ export async function parseGnafNswExtract(inputDir, opts = {}) {
         ]
           .filter(Boolean)
           .join(", "),
-      });
-
-      if (rows.length % 100000 === 0) log(`  … denormalized ${rows.length} addresses`);
+      };
+      if (onRow) onRow(denorm);
+      else rows.push(denorm);
+      importedCount += 1;
+      if (importedCount % 100000 === 0) log(`  … denormalized ${importedCount.toLocaleString()} addresses`);
     });
   }
 
-  log(`  ADDRESS_DETAIL rows seen: ${detailSeen}`);
-  log(`  Skipped (no street join): ${skippedNoStreet}`);
-  log(`  Skipped (no locality join): ${skippedNoLocality}`);
-  log(`  Skipped (no geocode): ${skippedNoGeo}`);
-  log(`  Imported NSW addresses: ${rows.length}`);
-  return rows;
+  log(`  ADDRESS_DETAIL rows seen: ${detailSeen.toLocaleString()}`);
+  log(`  Skipped (retired): ${skippedRetired.toLocaleString()}`);
+  log(`  Skipped (no street join): ${skippedNoStreet.toLocaleString()}`);
+  log(`  Skipped (no locality join): ${skippedNoLocality.toLocaleString()}`);
+  log(`  Skipped (no geocode): ${skippedNoGeo.toLocaleString()}`);
+  log(`  Imported NSW addresses: ${importedCount.toLocaleString()}`);
+  return onRow ? { length: importedCount } : rows;
 }
 
 /** Load denormalized JSONL/CSV into the same row shape. */

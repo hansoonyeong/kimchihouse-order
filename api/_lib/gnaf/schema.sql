@@ -29,14 +29,30 @@ CREATE TABLE IF NOT EXISTS gnaf_address (
   address_label TEXT
 );
 
+-- Exact: postcode + locality + street + house
 CREATE INDEX IF NOT EXISTS idx_gnaf_pc_loc_street_hn
   ON gnaf_address (postcode, locality_norm, street_name_norm, house_number_norm);
 
+-- Exact / tier-2: (postcode, street_name_normalized, house_number)
 CREATE INDEX IF NOT EXISTS idx_gnaf_pc_street_hn
   ON gnaf_address (postcode, street_name_norm, house_number_norm);
 
+-- Tier-3: locality + street + house
 CREATE INDEX IF NOT EXISTS idx_gnaf_loc_street_hn
   ON gnaf_address (locality_norm, street_name_norm, house_number_norm);
 
+-- Fuzzy prefix within locality / street
 CREATE INDEX IF NOT EXISTS idx_gnaf_street_fuzzy
   ON gnaf_address (street_name_norm, locality_norm);
+
+CREATE INDEX IF NOT EXISTS idx_gnaf_postcode
+  ON gnaf_address (postcode);
+
+CREATE INDEX IF NOT EXISTS idx_gnaf_locality
+  ON gnaf_address (locality_norm);
+
+CREATE INDEX IF NOT EXISTS idx_gnaf_street_name
+  ON gnaf_address (street_name_norm);
+
+CREATE INDEX IF NOT EXISTS idx_gnaf_pc_street
+  ON gnaf_address (postcode, street_name_norm);

@@ -16,7 +16,7 @@ export const CURRENT_ROUND_MIN_DATE = "2026-08-23";
 
 /**
  * 일괄 배송 회차에서 저장된 날짜가 달라도 같은 배치로 본다.
- * (기존 8/23·8/29~30 예약 → 태풍·해운 지연으로 9/3~6 일괄)
+ * (기존 8/23·8/29~30 예약 → 태풍·해운 지연으로 9/6 전후 일괄)
  */
 export const DELIVERY_BATCH_CANONICAL = {
   "2026-08-23": "2026-09-03",
@@ -129,7 +129,7 @@ export function formatDeliveryDateLabel(isoDate) {
   const parsed = parseDeliveryDate(isoDate);
   if (!parsed) return "-";
   const canon = canonicalDeliveryDate(parsed) || parsed;
-  if (canon === "2026-09-03") return "9월 3일~6일";
+  if (canon === "2026-09-03") return "9월 6일 전후";
   const match = canon.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return canon;
   return `${Number(match[2])}월 ${Number(match[3])}일`;

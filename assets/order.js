@@ -1008,7 +1008,7 @@
     }
 
     function renderDeliveryNote() {
-      return "Kimchi House · 9월 3일~6일 배송 예정 · 태풍·해운 사정에 따라 변동 가능";
+      return "Kimchi House · 9월 6일 전후 배송 예정 · 태풍·해운 사정에 따라 변동 가능";
     }
 
     function renderCatalog() {
