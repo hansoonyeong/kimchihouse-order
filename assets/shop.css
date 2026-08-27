@@ -4095,7 +4095,8 @@ body.site-notice-open {
 
 .site-notice-dialog--image {
   position: relative;
-  width: min(100%, 860px);
+  width: min(100%, 520px);
+  max-height: min(92vh, 900px);
   margin: auto;
   padding: 0;
   border-radius: 14px;
@@ -4103,6 +4104,8 @@ body.site-notice-open {
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
   overflow: hidden;
   line-height: normal;
+  display: flex;
+  flex-direction: column;
 }
 
 .site-notice-x {
@@ -4134,6 +4137,9 @@ body.site-notice-open {
   border: 0;
   background: transparent;
   cursor: pointer;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 .site-notice-banner-img {
@@ -4154,6 +4160,7 @@ body.site-notice-open {
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  flex: 0 0 auto;
 }
 
 .site-notice-dismiss-input {

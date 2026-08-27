@@ -926,7 +926,7 @@
   }
 
   /* 공지 버전 바꾸면 다시 노출 (localStorage 키 변경) */
-  const SITE_NOTICE_KEY = "kh-notice-dismissed:typhoon-banner-img-2026";
+  const SITE_NOTICE_KEY = "kh-notice-dismissed:typhoon-banner-sep10-2026";
 
   function bindSiteNotice() {
     const overlay = document.getElementById("site-notice-overlay");
