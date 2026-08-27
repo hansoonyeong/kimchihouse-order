@@ -14,7 +14,7 @@ window.KH_CONFIG = {
 window.KH_PRODUCTS = {
   frozen: {
     label: "냉동·수산",
-    delivery: "9월 6일 전후 배송 예정 (태풍·해운 사정에 따라 변동 가능)",
+    delivery: "9월 10일~13일 순차 배송 예정 (태풍·해운 사정에 따라 변동 가능)",
     sections: [
       {
         id: "mandu",
@@ -232,7 +232,7 @@ window.KH_PRODUCTS = {
   },
   kimchi: {
     label: "김치·장류",
-    delivery: "9월 6일 전후 배송 예정 (태풍·해운 사정에 따라 변동 가능)",
+    delivery: "9월 10일~13일 순차 배송 예정 (태풍·해운 사정에 따라 변동 가능)",
     sections: [
       {
         id: "pogi",
@@ -383,7 +383,7 @@ window.KH_PRODUCTS = {
   },
   walkerhill: {
     label: "워커힐 프리미엄",
-    delivery: "9월 6일 전후 배송 예정 (태풍·해운 사정에 따라 변동 가능)",
+    delivery: "9월 10일~13일 순차 배송 예정 (태풍·해운 사정에 따라 변동 가능)",
     sections: [
       {
         id: "pogi",

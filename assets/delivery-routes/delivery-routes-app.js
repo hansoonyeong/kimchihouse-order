@@ -7,7 +7,7 @@
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
   const state = {
-    deliveryDate: "2026-09-03",
+    deliveryDate: "2026-09-10",
     /** 'api' | 'reservation' | 'demo' | 'upload' | null */
     dataSource: null,
     orders: [],
@@ -351,7 +351,7 @@
     state.routes = [];
     state.unassignedIds = [];
     state.start = { ...window.KHDeliverySample.DEFAULT_START };
-    state.deliveryDate = "2026-09-03";
+    state.deliveryDate = "2026-09-10";
     persist();
   }
 
