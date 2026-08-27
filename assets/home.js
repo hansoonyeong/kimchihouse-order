@@ -926,7 +926,7 @@
   }
 
   /* 공지 버전 바꾸면 다시 노출 (localStorage 키 변경) */
-  const SITE_NOTICE_KEY = "kh-notice-dismissed:delivery-sep6-approx-2026";
+  const SITE_NOTICE_KEY = "kh-notice-dismissed:typhoon-banner-img-2026";
 
   function bindSiteNotice() {
     const overlay = document.getElementById("site-notice-overlay");
@@ -934,10 +934,14 @@
     overlay.dataset.bound = "1";
 
     const closeBtn = document.getElementById("site-notice-close");
+    const bannerBtn = document.getElementById("site-notice-banner");
+    const force =
+      typeof location !== "undefined" &&
+      /(?:\?|&)notice=1(?:&|$)/.test(location.search || "");
 
     const close = () => {
       overlay.classList.remove("open");
-      overlay.hidden = true;
+      overlay.setAttribute("hidden", "");
       document.body.classList.remove("site-notice-open");
       try {
         localStorage.setItem(SITE_NOTICE_KEY, "1");
@@ -945,6 +949,7 @@
     };
 
     const open = () => {
+      overlay.removeAttribute("hidden");
       overlay.hidden = false;
       overlay.classList.add("open");
       document.body.classList.add("site-notice-open");
@@ -952,6 +957,7 @@
     };
 
     closeBtn?.addEventListener("click", close);
+    bannerBtn?.addEventListener("click", close);
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) close();
     });
@@ -960,9 +966,15 @@
     });
 
     let dismissed = false;
-    try {
-      dismissed = localStorage.getItem(SITE_NOTICE_KEY) === "1";
-    } catch (_) {}
+    if (!force) {
+      try {
+        dismissed = localStorage.getItem(SITE_NOTICE_KEY) === "1";
+      } catch (_) {}
+    } else {
+      try {
+        localStorage.removeItem(SITE_NOTICE_KEY);
+      } catch (_) {}
+    }
     if (!dismissed) {
       window.setTimeout(open, 400);
     }

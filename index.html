@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/shop.css" />
+  <link rel="stylesheet" href="assets/shop.css?v=20260827h" />
 </head>
 <body class="shop-page shop-unified shop-order-page" data-brand="kimchi-house">
 
@@ -625,15 +625,19 @@
   </div>
 
   <div class="site-notice-overlay" id="site-notice-overlay" role="dialog" aria-modal="true" aria-labelledby="site-notice-title" hidden>
-    <div class="site-notice-dialog">
-      <p class="site-notice-badge">배송 일정 안내</p>
-      <h2 class="site-notice-title" id="site-notice-title">태풍의 영향으로 해운 일정이<br>추가로 지연되었습니다.</h2>
-      <div class="site-notice-date-box">
-        <p class="site-notice-date-label">📦 변경된 배송 예정일</p>
-        <p class="site-notice-date-value">9월 6일 전후</p>
-      </div>
-      <p class="site-notice-body">기다려주시는 고객님들께 불편을 드려 죄송하며, 상품이 도착하는 대로 신선한 상태로 정성껏 배송해드리겠습니다.<br><br>※ 태풍 및 해운·항구 사정에 따라 일정에 변동이 생길 경우 다시 안내드리겠습니다.</p>
-      <button type="button" class="shop-btn shop-btn-primary shop-btn-block" id="site-notice-close">확인</button>
+    <div class="site-notice-dialog site-notice-dialog--image">
+      <button type="button" class="site-notice-x" id="site-notice-close" aria-label="닫기">×</button>
+      <h2 class="site-notice-title visually-hidden" id="site-notice-title">태풍 영향으로 배송이 늦어져 죄송합니다.</h2>
+      <button type="button" class="site-notice-banner-btn" id="site-notice-banner" aria-label="공지 확인 후 닫기">
+        <img
+          class="site-notice-banner-img"
+          src="assets/images/팝업공지.jpg?v=20260827h"
+          alt="중요 공지. 태풍 영향으로 배송이 늦어져 죄송합니다. 9월 6일 전후로 순차 배송될 예정입니다. 정확한 배송 일정이 확정되는 대로 개별 안내드리겠습니다. 기다려 주셔서 감사드립니다."
+          width="1774"
+          height="887"
+          decoding="async"
+        />
+      </button>
     </div>
   </div>
 
@@ -753,11 +757,11 @@
     ></div>
   </div>
 
-  <script src="assets/products.js?v=20260814d"></script>
+  <script src="assets/products.js?v=20260827a"></script>
   <script src="assets/sale-status.js"></script>
-  <script src="assets/delivery-utils.js?v=20260814d"></script>
-  <script src="assets/order.js?v=20260814d"></script>
-  <script src="assets/home.js?v=20260814d"></script>
+  <script src="assets/delivery-utils.js?v=20260827a"></script>
+  <script src="assets/order.js?v=20260827a"></script>
+  <script src="assets/home.js?v=20260827h"></script>
   <script>
     window.kakaoAsyncInit = function () {
       Kakao.Channel.createChatButton({
@@ -782,22 +786,26 @@
         document.getElementById("shop-server-hint")?.classList.remove("hidden");
         return;
       }
+      let preorderClosed = false;
       try {
         const res = await fetch("/api/config");
         const data = await res.json();
         if (data.ok) {
           if (data.orderSecret) window.KH_CONFIG.orderSecret = data.orderSecret;
           if (data.preorderOpen === false) {
+            preorderClosed = true;
             window.applyShopPreorderClosed?.(true);
-            return;
           }
         }
       } catch (_) {
         document.getElementById("shop-server-hint")?.classList.remove("hidden");
         return;
       }
-      window.shopApi = initOrderPage("combined");
+      // 배송 공지는 주문 UI 초기화와 독립적으로 먼저 노출
       initHomePage();
+      if (!preorderClosed) {
+        window.shopApi = initOrderPage("combined");
+      }
     })();
   </script>
 </body>
