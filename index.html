@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/shop.css?v=20260827h" />
+  <link rel="stylesheet" href="assets/shop.css?v=20260827j" />
 </head>
 <body class="shop-page shop-unified shop-order-page" data-brand="kimchi-house">
 
@@ -628,7 +628,7 @@
     <div class="site-notice-dialog site-notice-dialog--image">
       <button type="button" class="site-notice-x" id="site-notice-close" aria-label="닫기">×</button>
       <h2 class="site-notice-title visually-hidden" id="site-notice-title">태풍 영향으로 배송이 늦어져 죄송합니다.</h2>
-      <button type="button" class="site-notice-banner-btn" id="site-notice-banner" aria-label="공지 확인 후 닫기">
+      <button type="button" class="site-notice-banner-btn" id="site-notice-banner" aria-label="공지 닫기">
         <img
           class="site-notice-banner-img"
           src="assets/images/팝업공지.jpg?v=20260827h"
@@ -638,6 +638,11 @@
           decoding="async"
         />
       </button>
+      <label class="site-notice-dismiss" for="site-notice-dismiss">
+        <input type="checkbox" id="site-notice-dismiss" class="site-notice-dismiss-input" />
+        <span class="site-notice-dismiss-ui" aria-hidden="true"></span>
+        <span class="site-notice-dismiss-text">다시 표시하지 않음</span>
+      </label>
     </div>
   </div>
 
@@ -761,7 +766,7 @@
   <script src="assets/sale-status.js"></script>
   <script src="assets/delivery-utils.js?v=20260827a"></script>
   <script src="assets/order.js?v=20260827a"></script>
-  <script src="assets/home.js?v=20260827h"></script>
+  <script src="assets/home.js?v=20260827i"></script>
   <script>
     window.kakaoAsyncInit = function () {
       Kakao.Channel.createChatButton({

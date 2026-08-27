@@ -935,6 +935,7 @@
 
     const closeBtn = document.getElementById("site-notice-close");
     const bannerBtn = document.getElementById("site-notice-banner");
+    const dismissToggle = document.getElementById("site-notice-dismiss");
     const force =
       typeof location !== "undefined" &&
       /(?:\?|&)notice=1(?:&|$)/.test(location.search || "");
@@ -943,9 +944,11 @@
       overlay.classList.remove("open");
       overlay.setAttribute("hidden", "");
       document.body.classList.remove("site-notice-open");
-      try {
-        localStorage.setItem(SITE_NOTICE_KEY, "1");
-      } catch (_) {}
+      if (dismissToggle?.checked) {
+        try {
+          localStorage.setItem(SITE_NOTICE_KEY, "1");
+        } catch (_) {}
+      }
     };
 
     const open = () => {
@@ -953,11 +956,15 @@
       overlay.hidden = false;
       overlay.classList.add("open");
       document.body.classList.add("site-notice-open");
+      if (dismissToggle) dismissToggle.checked = false;
       closeBtn?.focus();
     };
 
     closeBtn?.addEventListener("click", close);
     bannerBtn?.addEventListener("click", close);
+    dismissToggle?.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) close();
     });
