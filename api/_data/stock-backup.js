@@ -21,5 +21,6 @@ export default {
   "b11": { "prepared": 65 },
   "b12": { "prepared": 68 },
   "b8": { "prepared": 39 },
-  "a2": { "prepared": 1 }
+  "a2": { "prepared": 1 },
+  "a19": { "prepared": 10 }
 };

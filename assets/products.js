@@ -213,6 +213,13 @@ window.KH_PRODUCTS = {
           },
           { id: "a11", name: "최고급 낙지젓", soldOut: true, image: "assets/images/products/a11.png" },
           { id: "a12", name: "씨앗비빔 오징어젓 (500g)", price: 20, image: "assets/images/products/a12.png" },
+          {
+            id: "a19",
+            name: "울외 장아찌 (나나쯔게) 1KG",
+            price: 30,
+            isNew: true,
+            image: "assets/images/products/a19.png",
+          },
         ],
       },
       {
