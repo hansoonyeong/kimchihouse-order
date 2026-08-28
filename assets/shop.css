@@ -1415,6 +1415,43 @@ body[data-brand="walkerhill"] .shop-product-cta {
   }
 }
 
+@media (hover: none) {
+  .kurly-card-thumb.has-hover-img img.thumb-hover,
+  .shop-product-thumb.has-hover-img img.thumb-hover {
+    opacity: 1;
+    animation: thumb-hover-fade 5s ease-in-out infinite;
+  }
+
+  .kurly-card-thumb.has-hover-img img.thumb-default,
+  .shop-product-thumb.has-hover-img img.thumb-default {
+    animation: thumb-default-fade 5s ease-in-out infinite;
+  }
+}
+
+@keyframes thumb-hover-fade {
+  0%, 45% { opacity: 0; }
+  55%, 100% { opacity: 1; }
+}
+
+@keyframes thumb-default-fade {
+  0%, 45% { opacity: 1; }
+  55%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kurly-card-thumb.has-hover-img img.thumb-hover,
+  .shop-product-thumb.has-hover-img img.thumb-hover {
+    animation: none;
+    opacity: 0;
+  }
+
+  .kurly-card-thumb.has-hover-img img.thumb-default,
+  .shop-product-thumb.has-hover-img img.thumb-default {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 .kurly-card-thumb .shop-badge {
   position: absolute;
   top: 0;
