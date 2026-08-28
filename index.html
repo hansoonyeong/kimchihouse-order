@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/shop.css?v=20260828q" />
+  <link rel="stylesheet" href="assets/shop.css?v=20260828s" />
 </head>
 <body class="shop-page shop-unified shop-order-page" data-brand="kimchi-house">
 
@@ -747,7 +747,12 @@
   <div class="shop-success" id="success-screen">
     <div class="check">✓</div>
     <h2>주문이 접수되었습니다</h2>
-    <p>주문번호: <strong id="order-id"></strong></p>
+    <p class="success-order-id">주문번호: <strong id="order-id"></strong></p>
+    <section class="success-items-wrap" aria-labelledby="success-items-title">
+      <h3 class="success-items-title" id="success-items-title">주문 품목</h3>
+      <ul class="success-items" id="success-items-list"></ul>
+      <div class="success-items-totals" id="success-items-totals"></div>
+    </section>
     <div class="success-pay-summary" id="success-pay-summary" aria-live="polite">
       <span class="success-pay-label">최종 결제금액</span>
       <strong class="success-pay-amount" id="success-total">$0</strong>
@@ -755,7 +760,7 @@
     </div>
     <div class="success-bank-box hidden" id="success-bank-box"></div>
     <p class="success-note">24시간 이내 확인 메시지를 보내드립니다.</p>
-    <a class="shop-btn shop-btn-primary" href="index.html">홈으로 가기</a>
+    <a class="shop-btn shop-btn-primary success-home-btn" href="index.html">홈으로 가기</a>
   </div>
 
   <footer class="shop-footer">
@@ -793,7 +798,7 @@
   <script src="assets/products.js?v=20260828b"></script>
   <script src="assets/sale-status.js"></script>
   <script src="assets/delivery-utils.js?v=20260828b"></script>
-  <script src="assets/order.js?v=20260828r"></script>
+  <script src="assets/order.js?v=20260828s"></script>
   <script src="assets/home.js?v=20260828r"></script>
   <script>
     window.kakaoAsyncInit = function () {

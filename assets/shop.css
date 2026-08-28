@@ -2425,11 +2425,22 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 }
 
 /* Success */
+body.order-success-open .shop-hero,
+body.order-success-open #shop-main,
+body.order-success-open .shop-footer,
+body.order-success-open .shop-fixed-cta,
+body.order-success-open .order-mobile-cart,
+body.order-success-open .kakao-talk-fab,
+body.order-success-open .cart-sheet-overlay,
+body.order-success-open .checkout-overlay {
+  display: none !important;
+}
+
 .shop-success {
   display: none;
   text-align: center;
-  padding: 60px var(--shop-pad);
-  max-width: 480px;
+  padding: 32px var(--shop-pad) 48px;
+  max-width: 520px;
   margin: 0 auto;
 }
 
@@ -2453,7 +2464,129 @@ body[data-brand="walkerhill"] .kurly-add-btn {
 .shop-success h2 {
   font-size: 22px;
   font-weight: 800;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+}
+
+.success-order-id {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: #555;
+}
+
+.success-order-id strong {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.success-items-wrap {
+  margin: 0 0 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fafafa;
+  text-align: left;
+}
+
+.success-items-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.success-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.success-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px 12px;
+  align-items: start;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e5e5;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.success-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.success-item:first-child {
+  padding-top: 0;
+}
+
+.success-item-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.success-item-qty {
+  font-weight: 600;
+  color: #666;
+  white-space: nowrap;
+}
+
+.success-item-price {
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.success-items-totals {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.success-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #555;
+}
+
+.success-total-row strong {
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.success-total-row.is-grand {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed #ddd;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.success-total-row.is-grand strong {
+  font-size: 17px;
+  color: var(--primary);
+}
+
+.success-note {
+  margin: 18px 0 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.success-home-btn {
+  display: inline-flex;
+  min-width: 200px;
+  justify-content: center;
 }
 
 /* Home-specific (hero, footer, etc.) — kept minimal */

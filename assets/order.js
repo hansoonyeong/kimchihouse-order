@@ -1412,6 +1412,8 @@
     }
 
     function goHome() {
+      document.body.classList.remove("order-success-open");
+      document.getElementById("success-screen")?.classList.remove("show");
       if (state.detail) {
         state.detail = null;
         renderProductModal();
@@ -1795,6 +1797,48 @@
       setQty(productId, qty(productId) + 1);
     }
 
+    function renderSuccessScreen(lines, summary) {
+      const list = document.getElementById("success-items-list");
+      const totals = document.getElementById("success-items-totals");
+      if (list) {
+        list.innerHTML = lines.length
+          ? lines.map((line) => `
+            <li class="success-item">
+              <span class="success-item-name">${line.name}</span>
+              <span class="success-item-qty">× ${line.qty}</span>
+              <span class="success-item-price">${money(line.price)}</span>
+            </li>`).join("")
+          : `<li class="success-item"><span class="success-item-name">주문 품목 정보를 불러올 수 없습니다.</span></li>`;
+      }
+      if (totals) {
+        const shipLabel = summary.shipping === 0 ? "무료" : money(summary.shipping);
+        totals.innerHTML = `
+          <div class="success-total-row">
+            <span>상품 금액</span>
+            <strong>${money(summary.subtotal)}</strong>
+          </div>
+          <div class="success-total-row">
+            <span>배송비</span>
+            <strong>${shipLabel}</strong>
+          </div>
+          <div class="success-total-row is-grand">
+            <span>합계</span>
+            <strong>${money(summary.total)}</strong>
+          </div>`;
+      }
+    }
+
+    function showOrderSuccessScreen(orderId, lines, summary) {
+      document.body.classList.add("order-success-open");
+      document.getElementById("order-form-wrap")?.classList.add("hidden");
+      document.getElementById("success-screen")?.classList.add("show");
+      document.getElementById("order-id").textContent = orderId;
+      renderSuccessScreen(lines, summary);
+      const successTotal = document.getElementById("success-total");
+      if (successTotal) successTotal.textContent = money(summary.total);
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+
     async function submitOrder() {
       const name = document.getElementById("customer-name").value.trim();
       const phone = document.getElementById("customer-phone").value.trim();
@@ -1859,6 +1903,12 @@
         submitBtn.textContent = "접수 중...";
       }
       const payTotal = total();
+      const orderedLines = buildBarLines();
+      const orderSummary = {
+        subtotal: subtotal(),
+        shipping: shippingFee(),
+        total: payTotal,
+      };
 
       try {
         const res = await fetch(cfg.orderEndpoint, {
@@ -1869,17 +1919,7 @@
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.error || "주문 접수 실패");
 
-        document.getElementById("order-form-wrap")?.classList.add("hidden");
-        document.getElementById("shop-main")?.classList.add("hidden");
-        document.querySelector(".shop-site-header")?.classList.add("hidden");
-        document.querySelector(".shop-footer")?.classList.add("hidden");
-        document.querySelector(".shop-fixed-cta")?.classList.add("hidden");
-        document.getElementById("order-mobile-cart")?.classList.add("hidden");
-        document.getElementById("success-screen")?.classList.add("show");
-        document.getElementById("order-id").textContent = data.orderId;
-
-        const successTotal = document.getElementById("success-total");
-        if (successTotal) successTotal.textContent = money(payTotal);
+        showOrderSuccessScreen(data.orderId, orderedLines, orderSummary);
 
         const successBank = document.getElementById("success-bank-box");
         if (successBank) {
