@@ -404,14 +404,24 @@
     return `<button type="button" class="shop-product-cta" data-home-add="${item.id}">담기</button>`;
   }
 
+  function productThumbHtml(item) {
+    if (!item.image) return "";
+    if (item.hoverImage) {
+      return `<img class="thumb-default" src="${item.image}" alt="${item.name}" loading="lazy" decoding="async" />
+        <img class="thumb-hover" src="${item.hoverImage}" alt="" loading="lazy" decoding="async" aria-hidden="true" />`;
+    }
+    return `<img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async" />`;
+  }
+
   function renderProductCard(item) {
     const badge = item.badge
       ? `<span class="shop-badge shop-badge-${item.badge.cls}">${item.badge.text}</span>`
       : "";
+    const thumbClass = item.hoverImage ? "shop-product-thumb has-hover-img" : "shop-product-thumb";
 
     return `<article class="shop-product">
-      <button type="button" class="shop-product-thumb" data-home-modal="${item.id}">
-        <img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async" />
+      <button type="button" class="${thumbClass}" data-home-modal="${item.id}">
+        ${productThumbHtml(item)}
         ${badge}
       </button>
       <div class="shop-product-body">

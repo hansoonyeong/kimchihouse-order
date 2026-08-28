@@ -659,6 +659,20 @@
       return item.id;
     }
 
+    function productThumbHtml(item, alt) {
+      if (!item.image) return "";
+      const name = alt || item.name;
+      if (item.hoverImage) {
+        return `<img class="thumb-default" src="${item.image}" alt="${name}" loading="lazy" decoding="async" />
+          <img class="thumb-hover" src="${item.hoverImage}" alt="" loading="lazy" decoding="async" aria-hidden="true" />`;
+      }
+      return `<img src="${item.image}" alt="${name}" loading="lazy" decoding="async" />`;
+    }
+
+    function productThumbClass(baseClass, item) {
+      return item.hoverImage ? `${baseClass} has-hover-img` : baseClass;
+    }
+
     function renderKurlyProduct(item, section, cat) {
       const saleStatus = saleStatusOf(item);
       if (saleStatus === "hidden") return "";
@@ -666,15 +680,13 @@
       const badge = itemBadgeHtml(item);
       const isSet = item.tier?.startsWith("set");
       const displayName = isSet && item.desc ? item.desc : item.name;
-      const thumbInner = item.image
-        ? `<img src="${item.image}" alt="${displayName}" loading="lazy" decoding="async" />`
-        : "";
+      const thumbInner = productThumbHtml(item, displayName);
       const unavailable = saleStatus === "sold_out" || saleStatus === "coming_soon";
       const statusLabel = saleStatus === "coming_soon" ? "판매 예정" : "품절";
 
       if (unavailable) {
         return `<article class="kurly-card sold-out" data-product-id="${item.id}" data-sale-status="${saleStatus}">
-          <button type="button" class="kurly-card-thumb" data-product-open="${item.id}">
+          <button type="button" class="${productThumbClass("kurly-card-thumb", item)}" data-product-open="${item.id}">
             ${badge || `<span class="shop-badge shop-badge-soldout">${statusLabel}</span>`}
             ${thumbInner}
           </button>
@@ -736,7 +748,7 @@
       }
 
       return `<article class="kurly-card" data-product-id="${item.id}" data-sale-status="${saleStatus}">
-        <button type="button" class="kurly-card-thumb" data-product-open="${item.id}">
+        <button type="button" class="${productThumbClass("kurly-card-thumb", item)}" data-product-open="${item.id}">
           ${badge}
           ${thumbInner}
         </button>
