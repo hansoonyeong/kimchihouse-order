@@ -45,6 +45,41 @@
     };
 
     let lockedScrollY = 0;
+    let uiHistDepth = 0;
+    let uiHistIgnorePop = false;
+
+    function uiHistPush() {
+      history.pushState({ khUi: 1 }, "");
+      uiHistDepth += 1;
+    }
+
+    function uiHistPop() {
+      if (uiHistDepth <= 0) return;
+      uiHistIgnorePop = true;
+      history.back();
+    }
+
+    function uiHistClear(count) {
+      const popCount = Math.min(count, uiHistDepth);
+      if (popCount <= 0) return;
+      uiHistIgnorePop = true;
+      history.go(-popCount);
+      uiHistDepth = Math.max(0, uiHistDepth - popCount);
+    }
+
+    function uiHistDismiss() {
+      if (document.getElementById("checkout-overlay")?.classList.contains("open")) {
+        closeCheckout(true);
+        return;
+      }
+      if (document.getElementById("cart-sheet-overlay")?.classList.contains("open")) {
+        closeCartSheet(true);
+        return;
+      }
+      if (state.detail) {
+        closeProductModal(true);
+      }
+    }
 
     function isAnyOverlayOpen() {
       return Boolean(
@@ -57,19 +92,23 @@
     }
 
     function onScrollLockTouchMove(e) {
-      if (e.target.closest?.(".product-modal-overlay, .product-modal, .cart-sheet, .checkout-panel, .product-search-panel, .shop-mobile-nav-panel, .product-search-results, .order-cart-items")) {
+      if (e.target.closest?.(".product-modal-overlay, .product-modal, .bag-page, .checkout-page, .product-search-panel, .shop-mobile-nav-panel, .product-search-results, .order-cart-items")) {
         return;
       }
       e.preventDefault();
     }
 
     function lockPageScroll() {
-      if (document.body.classList.contains("shop-scroll-lock")) return;
+      if (document.body.classList.contains("shop-scroll-lock")) {
+        syncShopHeaderOffset();
+        return;
+      }
       lockedScrollY = window.scrollY || window.pageYOffset || 0;
       document.documentElement.classList.add("shop-scroll-lock");
       document.body.classList.add("shop-scroll-lock");
       document.body.style.top = `-${lockedScrollY}px`;
       document.addEventListener("touchmove", onScrollLockTouchMove, { passive: false });
+      syncShopHeaderOffset();
     }
 
     function unlockPageScroll() {
@@ -1024,6 +1063,23 @@
       return ship === 0 ? "배송비 무료" : `배송비 ${money(ship)}`;
     }
 
+    function cartLineImage(line) {
+      const baseId = String(line.id).split(":")[0];
+      const found = findItemById(baseId);
+      if (!found) return "";
+      return searchItemImage(found.item, found.cat);
+    }
+
+    function bagLineMeta(line) {
+      if (line.qty <= 1) return "";
+      const unitPrice = line.price / line.qty;
+      return `${money(unitPrice)} × ${line.qty}`;
+    }
+
+  const BAG_TRASH_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M10 11v6M14 11v6M6 7l1 12h10l1-12"/></svg>`;
+  const BAG_MINUS_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 12h12"/></svg>`;
+  const BAG_PLUS_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg>`;
+
     function renderBarItems(lines) {
       const renderLine = (line) => {
         const baseId = String(line.id).split(":")[0];
@@ -1031,18 +1087,31 @@
         const allowed = found && !String(line.id).includes(":") ? allowedQtysFor(found.item) : null;
         const maxQty = allowed?.length ? allowed[allowed.length - 1] : null;
         const decDisabled = allowed ? false : line.qty <= 1;
-        return `<li class="cart-line" data-cart-id="${line.id}">
-        <div class="cart-line-top">
-          <span class="cart-line-name">${line.name}</span>
-          <button type="button" class="cart-line-delete" data-cart-delete="${line.id}" aria-label="삭제">삭제</button>
+        const decAction = decDisabled
+          ? `data-cart-delete="${line.id}" aria-label="삭제"`
+          : `data-cart-dec="${line.id}" aria-label="수량 줄이기"`;
+        const decIcon = decDisabled ? BAG_TRASH_SVG : BAG_MINUS_SVG;
+        const image = cartLineImage(line);
+        const thumb = image
+          ? `<img src="${image}" alt="" loading="lazy" decoding="async" />`
+          : `<span class="bag-item-thumb-fallback" aria-hidden="true">KH</span>`;
+        const metaHtml = bagLineMeta(line);
+
+        return `<li class="bag-item cart-line" data-cart-id="${line.id}">
+        <div class="bag-item-media">
+          <div class="bag-item-thumb">${thumb}</div>
         </div>
-        <div class="cart-line-bottom">
-          <div class="cart-qty">
-            <button type="button" data-cart-dec="${line.id}" ${decDisabled ? "disabled" : ""}>−</button>
-            <span>${line.qty}</span>
-            <button type="button" data-cart-inc="${line.id}" ${maxQty != null && line.qty >= maxQty ? "disabled" : ""}>+</button>
+        <div class="bag-item-body">
+          <p class="bag-item-name">${line.name}</p>
+          <p class="bag-item-price">${money(line.price)}</p>
+          ${metaHtml ? `<p class="bag-item-meta">${metaHtml}</p>` : ""}
+          <div class="bag-item-actions">
+            <div class="bag-qty cart-qty">
+              <button type="button" class="bag-qty-btn" ${decAction}>${decIcon}</button>
+              <span class="bag-qty-count">${line.qty}</span>
+              <button type="button" class="bag-qty-btn" data-cart-inc="${line.id}" aria-label="수량 늘리기" ${maxQty != null && line.qty >= maxQty ? "disabled" : ""}>${BAG_PLUS_SVG}</button>
+            </div>
           </div>
-          <span class="cart-line-price">${money(line.price)}</span>
         </div>
       </li>`;
       };
@@ -1055,7 +1124,7 @@
         .map((shopCat) => {
           const catLines = lines.filter((line) => line.shopCategory === shopCat);
           if (!catLines.length) return "";
-          const header = `<li class="bar-group-title">${shopCategoryLabel(shopCat)}</li>`;
+          const header = `<li class="bag-group-title bar-group-title">${shopCategoryLabel(shopCat)}</li>`;
           return header + catLines.map(renderLine).join("");
         })
         .join("");
@@ -1275,23 +1344,87 @@
     function openProductModal(itemId) {
       const found = findItemById(itemId);
       if (!found) return;
+      const wasOpen = Boolean(state.detail);
       state.detail = found;
       renderProductModal();
+      if (!wasOpen) uiHistPush();
     }
 
-    function closeProductModal() {
+    function closeProductModal(fromHistory = false) {
+      const wasOpen = Boolean(state.detail);
       state.detail = null;
       renderProductModal();
+      if (!fromHistory && wasOpen) uiHistPop();
+    }
+
+    function syncShopHeaderOffset() {
+      const header = document.getElementById("shop-site-header");
+      if (!header) return;
+      const height = Math.ceil(header.getBoundingClientRect().height);
+      document.documentElement.style.setProperty("--shop-header-offset", `${height}px`);
     }
 
     function openCartSheet() {
-      document.getElementById("cart-sheet-overlay")?.classList.add("open");
+      const overlay = document.getElementById("cart-sheet-overlay");
+      if (!overlay) return;
+      if (overlay.classList.contains("open")) {
+        closeCartSheet();
+        return;
+      }
+      if (state.detail) closeProductModal(true);
+      closeSearchOverlay(true);
+      syncShopHeaderOffset();
+      overlay.classList.add("open");
+      document.body.classList.add("bag-open");
+      document.getElementById("cart-sheet")?.scrollTo(0, 0);
+      lockPageScroll();
+      uiHistPush();
+    }
+
+    function closeCartSheet(fromHistory = false) {
+      const wasOpen = document.getElementById("cart-sheet-overlay")?.classList.contains("open");
+      document.getElementById("cart-sheet-overlay")?.classList.remove("open");
+      document.body.classList.remove("bag-open");
+      unlockPageScroll();
+      if (!fromHistory && wasOpen) uiHistPop();
+    }
+
+    function closeBagAndCheckout() {
+      const bagOpen = document.getElementById("cart-sheet-overlay")?.classList.contains("open");
+      const checkoutOpen = document.getElementById("checkout-overlay")?.classList.contains("open");
+      document.getElementById("cart-sheet-overlay")?.classList.remove("open");
+      document.getElementById("checkout-overlay")?.classList.remove("open");
+      document.body.classList.remove("bag-open", "checkout-open");
+      const layers = (checkoutOpen ? 1 : 0) + (bagOpen ? 1 : 0);
+      if (layers > 0) uiHistClear(layers);
+      if (!isAnyOverlayOpen()) unlockPageScroll();
+    }
+
+    function openMobileNav() {
+      closeBagAndCheckout();
+      document.getElementById("mobile-nav")?.classList.add("open");
       lockPageScroll();
     }
 
-    function closeCartSheet() {
-      document.getElementById("cart-sheet-overlay")?.classList.remove("open");
+    function closeMobileNav() {
+      document.getElementById("mobile-nav")?.classList.remove("open");
       unlockPageScroll();
+    }
+
+    function goHome() {
+      if (state.detail) {
+        state.detail = null;
+        renderProductModal();
+      }
+      closeSearchOverlay(true);
+      closeMobileNav();
+      document.getElementById("cart-sheet-overlay")?.classList.remove("open");
+      document.getElementById("checkout-overlay")?.classList.remove("open");
+      document.body.classList.remove("bag-open", "checkout-open");
+      if (uiHistDepth > 0) uiHistClear(uiHistDepth);
+      unlockPageScroll();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      history.replaceState(null, "", location.pathname + location.search);
     }
 
     function searchItemImage(item, cat) {
@@ -1413,9 +1546,11 @@
       }
     }
 
-    function closeSearchOverlay() {
-      document.getElementById("product-search-overlay")?.classList.remove("open");
-      unlockPageScroll();
+    function closeSearchOverlay(silent = false) {
+      const overlay = document.getElementById("product-search-overlay");
+      if (!overlay?.classList.contains("open")) return;
+      overlay.classList.remove("open");
+      if (!silent) unlockPageScroll();
     }
 
     function goToProductFromSearch(itemId) {
@@ -1436,16 +1571,32 @@
       requestAnimationFrame(() => openProductModal(itemId));
     }
 
-    function fillCartPanel(itemsEl, metaEl, totalEl, lines, totalStr, metaStr, hasItems) {
+    function fillCartPanel(itemsEl, totalEl, lines, totalStr, hasItems) {
       if (!itemsEl) return;
       if (!hasItems) {
-        itemsEl.innerHTML = `<li class="bar-empty"><strong>장바구니가 비어 있습니다.</strong><span>원하는 상품을 담아주세요.</span></li>`;
-        if (metaEl) metaEl.textContent = "";
+        itemsEl.innerHTML = `<li class="bar-empty bag-empty">
+          <strong>장바구니가 비어 있습니다</strong>
+          <span>원하는 상품을 담아 주세요.</span>
+          <button type="button" class="bag-empty-cta" data-bag-continue>쇼핑 계속하기</button>
+        </li>`;
       } else {
         itemsEl.innerHTML = renderBarItems(lines);
-        if (metaEl) metaEl.textContent = metaStr;
       }
       if (totalEl) totalEl.textContent = totalStr;
+    }
+
+    function updateBagSummary(lines, hasItems) {
+      const count = lines.reduce((sum, line) => sum + line.qty, 0);
+      const headMeta = document.getElementById("bag-head-meta");
+      if (headMeta) {
+        headMeta.textContent = hasItems ? `${count}개 · ${money(total())}` : "";
+      }
+
+      const subtotalEl = document.getElementById("bag-subtotal");
+      const shipEl = document.getElementById("bag-shipping");
+      if (subtotalEl) subtotalEl.textContent = money(subtotal());
+      if (shipEl) shipEl.textContent = shippingFee() === 0 ? "무료" : money(shippingFee());
+
     }
 
     function updateCheckoutButtons(hasItems) {
@@ -1516,28 +1667,24 @@
 
       const lines = buildBarLines();
       const totalStr = money(total());
-      const metaStr = renderBarMeta();
       const hasItems = lines.length > 0;
       const count = cartItemCount();
 
       fillCartPanel(
         document.getElementById("bar-items"),
-        document.getElementById("bar-meta"),
         document.getElementById("bar-total"),
         lines,
         totalStr,
-        metaStr,
         hasItems
       );
       fillCartPanel(
         document.getElementById("bar-items-sheet"),
-        document.getElementById("bar-meta-sheet"),
         document.getElementById("bar-total-sheet"),
         lines,
         totalStr,
-        metaStr,
         hasItems
       );
+      updateBagSummary(lines, hasItems);
 
       const barTotalMobile = document.getElementById("bar-total-mobile");
       if (barTotalMobile) barTotalMobile.textContent = totalStr;
@@ -1618,14 +1765,29 @@
         return;
       }
       updateCheckoutPaySummary();
+      syncShopHeaderOffset();
       document.getElementById("cart-sheet-overlay")?.classList.remove("open");
+      document.body.classList.remove("bag-open");
       document.getElementById("checkout-overlay").classList.add("open");
+      document.body.classList.add("checkout-open");
+      document.querySelector(".checkout-page")?.scrollTo(0, 0);
       lockPageScroll();
+      uiHistPush();
     }
 
-    function closeCheckout() {
+    function closeCheckout(fromHistory = false) {
+      const wasOpen = document.getElementById("checkout-overlay")?.classList.contains("open");
       document.getElementById("checkout-overlay").classList.remove("open");
-      unlockPageScroll();
+      document.body.classList.remove("checkout-open");
+      const overlay = document.getElementById("cart-sheet-overlay");
+      if (overlay && buildBarLines().length) {
+        overlay.classList.add("open");
+        document.body.classList.add("bag-open");
+        lockPageScroll();
+      } else {
+        unlockPageScroll();
+      }
+      if (!fromHistory && wasOpen) uiHistPop();
     }
 
     function addWalkerhillSet(productId) {
@@ -1691,9 +1853,11 @@
         payload.shippingBreakdown = breakdown;
       }
 
-      const btn = document.getElementById("submit-btn");
-      btn.disabled = true;
-      btn.textContent = "접수 중...";
+      const submitBtn = document.getElementById("submit-btn");
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "접수 중...";
+      }
       const payTotal = total();
 
       try {
@@ -1736,11 +1900,17 @@
 
         state.cart = {};
         clearPersistedCart();
-        closeCheckout();
+        if (uiHistDepth > 0) uiHistClear(uiHistDepth);
+        closeCheckout(true);
+        closeCartSheet(true);
+        document.body.classList.remove("bag-open", "checkout-open");
+        unlockPageScroll();
       } catch (err) {
         alert(err.message || "주문 접수 중 오류가 발생했습니다.");
-        btn.disabled = false;
-        btn.textContent = "주문 접수하기";
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "주문 접수하기";
+        }
       }
     }
 
@@ -1786,6 +1956,9 @@
 
     bindCartClicks(document.getElementById("bar-items"));
     bindCartClicks(document.getElementById("bar-items-sheet"));
+    document.getElementById("bar-items-sheet")?.addEventListener("click", (e) => {
+      if (e.target.closest("[data-bag-continue]")) closeCartSheet();
+    });
 
     const catTabsEl = document.getElementById("order-cat-tabs");
     if (catTabsEl) {
@@ -1806,10 +1979,11 @@
       const cat = link.dataset.orderCat;
       if (!cat) return;
       e.preventDefault();
+      closeBagAndCheckout();
       state.activeCategory = validCategory(state.brand, cat) || cat;
       render();
       persistCart();
-      document.getElementById("mobile-nav")?.classList.remove("open");
+      closeMobileNav();
       document.getElementById("shop")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 
@@ -1911,11 +2085,35 @@
     ["open-cart-sheet", "open-cart-sheet-mobile"].forEach((id) => {
       document.getElementById(id)?.addEventListener("click", openCartSheet);
     });
-    document.getElementById("cart-sheet-close")?.addEventListener("click", closeCartSheet);
     document.getElementById("cart-sheet-overlay")?.addEventListener("click", (e) => {
       if (e.target.id === "cart-sheet-overlay") closeCartSheet();
     });
 
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (document.getElementById("product-search-overlay")?.classList.contains("open")) {
+        closeSearchOverlay();
+      } else if (document.getElementById("checkout-overlay")?.classList.contains("open")) {
+        closeCheckout();
+      } else if (document.getElementById("cart-sheet-overlay")?.classList.contains("open")) {
+        closeCartSheet();
+      } else if (document.getElementById("mobile-nav")?.classList.contains("open")) {
+        closeMobileNav();
+      }
+    });
+
+    document.getElementById("menu-open")?.addEventListener("click", openMobileNav);
+    document.getElementById("menu-close")?.addEventListener("click", closeMobileNav);
+    document.getElementById("mobile-nav")?.addEventListener("click", (e) => {
+      if (e.target.id === "mobile-nav") {
+        closeMobileNav();
+        return;
+      }
+      if (e.target.closest("a")) {
+        closeBagAndCheckout();
+        closeMobileNav();
+      }
+    });
     document.getElementById("open-product-search")?.addEventListener("click", openSearchOverlay);
     document.getElementById("product-search-close")?.addEventListener("click", closeSearchOverlay);
     document.getElementById("product-search-clear")?.addEventListener("click", () => {
@@ -1932,22 +2130,6 @@
     document.getElementById("product-search-results")?.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-search-item]");
       if (btn) goToProductFromSearch(btn.dataset.searchItem);
-    });
-    document.addEventListener("keydown", (e) => {
-      if (e.key !== "Escape") return;
-      if (document.getElementById("product-search-overlay")?.classList.contains("open")) {
-        closeSearchOverlay();
-      }
-    });
-
-    document.getElementById("menu-open")?.addEventListener("click", () => {
-      document.getElementById("mobile-nav")?.classList.add("open");
-    });
-    document.getElementById("menu-close")?.addEventListener("click", () => {
-      document.getElementById("mobile-nav")?.classList.remove("open");
-    });
-    document.getElementById("mobile-nav")?.addEventListener("click", (e) => {
-      if (e.target.id === "mobile-nav") document.getElementById("mobile-nav").classList.remove("open");
     });
 
     document.querySelectorAll(".pay-opt-shop").forEach((el) => {
@@ -1970,6 +2152,27 @@
 
     document.getElementById("submit-btn")?.addEventListener("click", submitOrder);
 
+    window.KH_SHOP = {
+      openMobileNav,
+      closeMobileNav,
+      closeBagAndCheckout,
+      unlockPageScroll,
+      syncShopHeaderOffset,
+      goHome,
+    };
+
+    window.addEventListener("resize", syncShopHeaderOffset, { passive: true });
+    window.addEventListener("popstate", () => {
+      if (uiHistIgnorePop) {
+        uiHistIgnorePop = false;
+        uiHistDepth = Math.max(0, uiHistDepth - 1);
+        return;
+      }
+      if (uiHistDepth <= 0) return;
+      uiHistDepth = Math.max(0, uiHistDepth - 1);
+      uiHistDismiss();
+    });
+
     async function bootOrderApp() {
       if (window.KHSale) await window.KHSale.load();
       restoreCart();
@@ -1982,6 +2185,7 @@
       }
       persistCart();
       applyOrderParams();
+      syncShopHeaderOffset();
       render();
       scrollToPendingItem();
       scrollToShopIfNeeded();

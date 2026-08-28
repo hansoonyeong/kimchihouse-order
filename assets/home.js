@@ -790,14 +790,43 @@
     const nav = document.getElementById("mobile-nav");
     const openBtn = document.getElementById("menu-open");
     const closeBtn = document.getElementById("menu-close");
-    openBtn?.addEventListener("click", () => nav?.classList.add("open"));
-    closeBtn?.addEventListener("click", () => nav?.classList.remove("open"));
+
+    const dismissShopLayers = () => {
+      document.getElementById("cart-sheet-overlay")?.classList.remove("open");
+      document.getElementById("checkout-overlay")?.classList.remove("open");
+      document.body.classList.remove("bag-open", "checkout-open");
+    };
+
+    openBtn?.addEventListener("click", () => {
+      if (window.KH_SHOP?.openMobileNav) {
+        window.KH_SHOP.openMobileNav();
+        return;
+      }
+      dismissShopLayers();
+      nav?.classList.add("open");
+    });
+    closeBtn?.addEventListener("click", () => {
+      if (window.KH_SHOP?.closeMobileNav) {
+        window.KH_SHOP.closeMobileNav();
+        return;
+      }
+      nav?.classList.remove("open");
+    });
     nav?.addEventListener("click", (e) => {
-      if (e.target === nav) nav.classList.remove("open");
+      if (e.target === nav) {
+        window.KH_SHOP?.closeMobileNav?.() || nav.classList.remove("open");
+        return;
+      }
+      if (e.target.closest("a")) {
+        dismissShopLayers();
+        window.KH_SHOP?.closeMobileNav?.() || nav.classList.remove("open");
+      }
     });
     nav?.querySelectorAll("a").forEach((a) => {
       a.addEventListener("click", (e) => {
+        dismissShopLayers();
         nav.classList.remove("open");
+        window.KH_SHOP?.unlockPageScroll?.();
         if (a.dataset.orderCat) {
           e.preventDefault();
           goToBrandCategory(a.dataset.brand, a.dataset.orderCat);
@@ -1038,6 +1067,10 @@
         const id = hash.slice(1);
         if (id === "hero" || id === "top") {
           e.preventDefault();
+          if (window.KH_SHOP?.goHome) {
+            window.KH_SHOP.goHome();
+            return;
+          }
           window.scrollTo({ top: 0, behavior: "smooth" });
           history.replaceState(null, "", location.pathname + location.search);
           return;

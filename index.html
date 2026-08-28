@@ -9,13 +9,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/shop.css?v=20260828a" />
+  <link rel="stylesheet" href="assets/shop.css?v=20260828q" />
 </head>
 <body class="shop-page shop-unified shop-order-page" data-brand="kimchi-house">
 
   <header class="shop-site-header" id="shop-site-header">
     <div class="shop-header-row">
-      <a class="shop-logo" href="#hero">
+      <a class="shop-logo" href="#hero" aria-label="홈으로">
         <img src="assets/logo-white.jpg" alt="김치하우스 Kimchi House AU" class="shop-logo-mark" width="40" height="45" />
         <span class="shop-logo-text">Kimchi House</span>
       </a>
@@ -588,18 +588,36 @@
   </div>
 
   <div class="cart-sheet-overlay" id="cart-sheet-overlay">
-    <div class="cart-sheet" id="cart-sheet">
-      <div class="cart-sheet-head">
-        <h2>장바구니</h2>
-        <button type="button" class="cart-sheet-close" id="cart-sheet-close" aria-label="닫기">×</button>
+    <div class="bag-page" id="cart-sheet" role="dialog" aria-modal="true" aria-labelledby="bag-title">
+      <div class="bag-page-body">
+        <section class="bag-col bag-col-items" aria-labelledby="bag-title">
+          <div class="bag-page-intro">
+            <h2 id="bag-title">장바구니</h2>
+            <p class="bag-page-meta" id="bag-head-meta" aria-live="polite"></p>
+          </div>
+          <ul class="bag-items order-cart-items" id="bar-items-sheet"></ul>
+        </section>
+        <aside class="bag-col bag-col-summary" aria-labelledby="bag-summary-title">
+          <h3 class="bag-summary-title" id="bag-summary-title">주문 요약</h3>
+          <div class="bag-summary-rows">
+            <div class="bag-summary-row">
+              <span>상품 금액</span>
+              <strong id="bag-subtotal">$0</strong>
+            </div>
+            <div class="bag-summary-row">
+              <span>배송비</span>
+              <strong id="bag-shipping">$0</strong>
+            </div>
+          </div>
+          <div class="bag-summary-total">
+            <span>총 결제금액</span>
+            <strong id="bar-total-sheet">$0</strong>
+          </div>
+          <p class="bag-summary-gst">GST 포함 가격입니다.</p>
+          <button type="button" class="bag-checkout-btn" id="open-checkout-sheet" disabled>주문하기</button>
+          <p class="bag-summary-note">$100 이상 주문 시 무료배송 · 태풍·해운 사정에 따라 배송일이 변동될 수 있습니다.</p>
+        </aside>
       </div>
-      <ul class="order-cart-items" id="bar-items-sheet"></ul>
-      <div class="order-cart-shipping" id="bar-meta-sheet"></div>
-      <div class="order-cart-total-row">
-        <span>총 결제금액</span>
-        <span class="price" id="bar-total-sheet">$0</span>
-      </div>
-      <button type="button" class="shop-btn shop-btn-primary shop-btn-block" id="open-checkout-sheet" disabled>주문하기</button>
     </div>
   </div>
 
@@ -647,72 +665,82 @@
   </div>
 
   <div class="checkout-overlay" id="checkout-overlay">
-    <div class="checkout-panel">
-      <div class="checkout-panel-head">
-        <h2>주문자 정보</h2>
-        <button type="button" class="checkout-close" id="checkout-close" aria-label="닫기">×</button>
-      </div>
-      <div class="checkout-field">
-        <label for="customer-name">성함 <span class="req">*</span></label>
-        <input type="text" id="customer-name" required />
-      </div>
-      <div class="checkout-field">
-        <label for="customer-phone">연락처 <span class="req">*</span></label>
-        <input type="tel" id="customer-phone" placeholder="0433 938 909" required />
-        <p class="checkout-field-hint">예: 0433 938 909</p>
-      </div>
-      <div class="checkout-field">
-        <label for="customer-address">배송 주소 <span class="req">*</span></label>
-        <input type="text" id="customer-address" placeholder="Street address" required />
-      </div>
-      <div class="checkout-field">
-        <label for="customer-suburb">지역 (Suburb) <span class="req">*</span></label>
-        <input type="text" id="customer-suburb" placeholder="Suburb" required />
-      </div>
-      <div class="checkout-field">
-        <label for="customer-postcode">우편번호 (Postcode) <span class="req">*</span></label>
-        <input type="text" id="customer-postcode" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="예: 2159" required autocomplete="postal-code" />
-        <p class="checkout-field-hint">숫자 4자리 (예: 2159)</p>
-      </div>
-      <div class="checkout-field">
-        <label for="customer-kakao">카카오톡 이름</label>
-        <input type="text" id="customer-kakao" placeholder="카카오톡 프로필 이름" />
-      </div>
-      <div class="checkout-field">
-        <label>결제 방법</label>
-        <div class="pay-options-shop">
-          <div class="pay-opt-shop" data-pay="cash">
-            <strong>현장 결제</strong>
-            <span>수령 시 현금</span>
+    <div class="checkout-page">
+      <div class="checkout-page-body">
+        <div class="checkout-page-form">
+          <div class="checkout-page-intro">
+            <h2>주문하기</h2>
+            <p class="checkout-page-lead">배송 정보와 결제 방법을 입력해 주세요.</p>
           </div>
-          <div class="pay-opt-shop sel" data-pay="transfer">
-            <strong>계좌이체</strong>
-            <span>주문 후 선입금</span>
+          <div class="checkout-field">
+            <label for="customer-name">성함 <span class="req">*</span></label>
+            <input type="text" id="customer-name" required />
           </div>
+          <div class="checkout-field">
+            <label for="customer-phone">연락처 <span class="req">*</span></label>
+            <input type="tel" id="customer-phone" placeholder="0433 938 909" required />
+            <p class="checkout-field-hint">예: 0433 938 909</p>
+          </div>
+          <div class="checkout-field">
+            <label for="customer-address">배송 주소 <span class="req">*</span></label>
+            <input type="text" id="customer-address" placeholder="Street address" required />
+          </div>
+          <div class="checkout-field checkout-row2">
+            <div>
+              <label for="customer-suburb">지역 (Suburb) <span class="req">*</span></label>
+              <input type="text" id="customer-suburb" placeholder="Suburb" required />
+            </div>
+            <div>
+              <label for="customer-postcode">우편번호 <span class="req">*</span></label>
+              <input type="text" id="customer-postcode" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="2159" required autocomplete="postal-code" />
+            </div>
+          </div>
+          <div class="checkout-field">
+            <label for="customer-kakao">카카오톡 이름</label>
+            <input type="text" id="customer-kakao" placeholder="카카오톡 프로필 이름" />
+          </div>
+          <div class="checkout-field">
+            <label>결제 방법</label>
+            <div class="pay-options-shop">
+              <div class="pay-opt-shop" data-pay="cash">
+                <strong>현장 결제</strong>
+                <span>수령 시 현금</span>
+              </div>
+              <div class="pay-opt-shop sel" data-pay="transfer">
+                <strong>계좌이체</strong>
+                <span>주문 후 선입금</span>
+              </div>
+            </div>
+            <div class="bank-box-shop" id="bank-box">
+              <div id="bank-info"></div>
+            </div>
+          </div>
+          <div class="checkout-field">
+            <label for="customer-note">요청사항</label>
+            <textarea id="customer-note" placeholder="배송 시 요청사항"></textarea>
+          </div>
+          <button type="button" class="checkout-close-link" id="checkout-close">← 장바구니로 돌아가기</button>
         </div>
-        <div class="bank-box-shop" id="bank-box">
-          <div id="bank-info"></div>
-        </div>
+        <aside class="checkout-page-summary" aria-labelledby="checkout-summary-title">
+          <h3 class="bag-summary-title" id="checkout-summary-title">주문 요약</h3>
+          <div class="checkout-pay-summary" id="checkout-pay-summary" aria-live="polite">
+            <div class="checkout-pay-row">
+              <span>상품 금액</span>
+              <strong id="checkout-subtotal">$0</strong>
+            </div>
+            <div class="checkout-pay-row">
+              <span>배송비</span>
+              <strong id="checkout-shipping">$0</strong>
+            </div>
+            <div class="checkout-pay-total">
+              <span>총 결제금액</span>
+              <strong id="checkout-total">$0</strong>
+            </div>
+          </div>
+          <p class="bag-summary-gst">GST 포함 가격입니다.</p>
+          <button type="button" class="bag-checkout-btn" id="submit-btn">주문 접수하기</button>
+        </aside>
       </div>
-      <div class="checkout-field">
-        <label for="customer-note">요청사항</label>
-        <textarea id="customer-note" placeholder="배송 시 요청사항"></textarea>
-      </div>
-      <div class="checkout-pay-summary" id="checkout-pay-summary" aria-live="polite">
-        <div class="checkout-pay-row">
-          <span>상품 금액</span>
-          <strong id="checkout-subtotal">$0</strong>
-        </div>
-        <div class="checkout-pay-row">
-          <span>배송비</span>
-          <strong id="checkout-shipping">$0</strong>
-        </div>
-        <div class="checkout-pay-total">
-          <span>최종 결제금액</span>
-          <strong id="checkout-total">$0</strong>
-        </div>
-      </div>
-      <button type="button" class="shop-btn shop-btn-primary shop-btn-block" id="submit-btn">주문 접수하기</button>
     </div>
   </div>
 
@@ -765,8 +793,8 @@
   <script src="assets/products.js?v=20260828b"></script>
   <script src="assets/sale-status.js"></script>
   <script src="assets/delivery-utils.js?v=20260828b"></script>
-  <script src="assets/order.js?v=20260828b"></script>
-  <script src="assets/home.js?v=20260828a"></script>
+  <script src="assets/order.js?v=20260828r"></script>
+  <script src="assets/home.js?v=20260828r"></script>
   <script>
     window.kakaoAsyncInit = function () {
       Kakao.Channel.createChatButton({
