@@ -5047,6 +5047,13 @@ body.site-notice-open {
   margin: 0;
 }
 
+.product-modal-stock-note {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #c0392b;
+}
+
 .product-modal-card .modal-tier-picks {
   margin-bottom: 4px;
 }

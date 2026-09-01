@@ -2,6 +2,7 @@ import { getAdminKey, json, optionsResponse, requireEnv } from "./_lib/http.js";
 import {
   SALE_CATEGORIES,
   buildSalesRows,
+  buildStockRows,
   sellableProductIndex,
 } from "./_lib/catalog.js";
 import { hasRedisEnv, readOrders } from "./_lib/orders-store.js";
@@ -16,7 +17,7 @@ import {
   savePreset,
   updateSalesSettings,
 } from "./_lib/sales-store.js";
-import { patchStockFields, patchStockPrepared, readStock } from "./_lib/stock-store.js";
+import { patchStockFields, patchStockPrepared, ensureStockMigrated, readStock } from "./_lib/stock-store.js";
 
 function storeLabel() {
   try {
@@ -40,10 +41,18 @@ export async function GET(request) {
     const doc = await readSales();
 
     if (!admin) {
+      const orders = await readOrders();
+      const stock = await ensureStockMigrated(orders);
+      const rows = buildStockRows(stock, orders);
+      const remaining = {};
+      for (const row of rows) {
+        if (row.tracked) remaining[row.id] = Math.max(0, Math.floor(Number(row.remaining) || 0));
+      }
       return json({
         ok: true,
         statuses: publicSaleMap(doc),
         details: publicSaleDetails(doc),
+        remaining,
         settings: {
           autoSoldOutOnZero: doc.settings.autoSoldOutOnZero !== false,
         },

@@ -137,13 +137,40 @@
       return state.cart[id] || 0;
     }
 
-    function allowedQtysFor(item) {
-      if (!item?.packOnly) return null;
-      const tiers = getTierList(item);
-      if (!tiers?.length) return null;
-      return tiers.map(([n]) => Number(n)).filter((n) => n > 0).sort((a, b) => a - b);
+    function stockRemainingFor(item) {
+      const id = typeof item === "string" ? item : item?.id;
+      if (!id || !window.KHSale?.remaining) return null;
+      const rem = window.KHSale.remaining[id];
+      if (rem == null || rem === "") return null;
+      const n = Math.floor(Number(rem));
+      return Number.isFinite(n) ? Math.max(0, n) : null;
     }
 
+    function availableRemainingFor(item) {
+      const rem = stockRemainingFor(item);
+      if (rem == null) return null;
+      const id = typeof item === "string" ? item : item?.id;
+      const inCart = id ? qty(id) : 0;
+      return Math.max(0, rem - inCart);
+    }
+
+    function allowedQtysFor(item) {
+      const tiers = getTierList(item);
+      const stockRem = availableRemainingFor(item);
+
+      if (item?.packOnly && tiers?.length) {
+        let qtys = tiers.map(([n]) => Number(n)).filter((n) => n > 0);
+        if (stockRem != null) qtys = qtys.filter((n) => n <= stockRem);
+        return qtys.sort((a, b) => a - b);
+      }
+
+      if (stockRem != null && tiers?.length) {
+        const qtys = tiers.map(([n]) => Number(n)).filter((n) => n > 0 && n <= stockRem);
+        return qtys.sort((a, b) => a - b);
+      }
+
+      return null;
+    }
     function normalizePackQty(item, value) {
       const allowed = allowedQtysFor(item);
       if (!allowed?.length) return value;
@@ -239,7 +266,25 @@
           }
         }
         if (found && !variantKey) {
-          value = normalizePackQty(found.item, value);
+          const allowed = allowedQtysFor(found.item);
+          if (allowed?.length) {
+            value = normalizePackQty(found.item, value);
+            if (value <= 0) {
+              alert(`${found.item.name} 재고가 부족합니다.`);
+              return;
+            }
+          } else {
+            const stockRem = availableRemainingFor(found.item);
+            if (stockRem != null && value > stockRem) {
+              if (stockRem <= 0) {
+                alert(`${found.item.name} 재고가 부족합니다.`);
+                return;
+              }
+              alert(`${found.item.name}은(는) 최대 ${stockRem}개까지 주문 가능합니다.`);
+              value = stockRem;
+            }
+            value = normalizePackQty(found.item, value);
+          }
         }
       }
       if (value <= 0) delete state.cart[id];
@@ -629,17 +674,37 @@
       return `<div class="kurly-card-price">${money(price)}</div>`;
     }
 
-    function renderTierPicksHtml(item) {
-      const tiers = getTierList(item);
-      if (!tiers) return "";
-      return `<div class="kurly-tier-picks">${tiers.map(([n, p]) => {
+    function renderTierPickButtons(item, tiers, extraClass = "") {
+      const options = tiers.filter(([n]) => {
+        const allowed = allowedQtysFor(item);
+        if (!allowed) return true;
+        return allowed.includes(Number(n));
+      });
+      const stockRem = availableRemainingFor(item);
+      if (!options.length) {
+        return stockRem != null && stockRem <= 0
+          ? `<p class="product-modal-soldout">품절</p>`
+          : "";
+      }
+      const stockNote = stockRem != null && stockRem > 0 && stockRem <= 10
+        ? `<p class="product-modal-stock-note">남은 수량 ${stockRem}개</p>`
+        : "";
+      const buttons = options.map(([n, p]) => {
         const was = tierWasPrice(item, n);
         const wasHtml = was ? `<s class="tier-was">${money(was)}</s>` : "";
         return `<button type="button" class="kurly-tier-pick" data-tier-set="${item.id}" data-tier-qty="${n}">
           <span class="tier-qty">${n}개</span>
           <span class="tier-price">${wasHtml}<strong>${money(p)}</strong></span>
         </button>`;
-      }).join("")}</div>`;
+      }).join("");
+      const className = extraClass ? `kurly-tier-picks ${extraClass}` : "kurly-tier-picks";
+      return `${stockNote}<div class="${className}">${buttons}</div>`;
+    }
+
+    function renderTierPicksHtml(item) {
+      const tiers = getTierList(item);
+      if (!tiers) return "";
+      return renderTierPickButtons(item, tiers);
     }
 
     function displayPriceFor(item) {
@@ -1198,26 +1263,11 @@
       }
 
       if (item.tiers) {
-        tierHtml = `<div class="kurly-tier-picks modal-tier-picks">${item.tiers.map(([n, p]) => {
-          const was = tierWasPrice(item, n);
-          const wasHtml = was ? `<s class="tier-was">${money(was)}</s>` : "";
-          return `<button type="button" class="kurly-tier-pick" data-tier-set="${item.id}" data-tier-qty="${n}">
-            <span class="tier-qty">${n}개</span>
-            <span class="tier-price">${wasHtml}<strong>${money(p)}</strong></span>
-          </button>`;
-        }).join("")}</div>`;
+        tierHtml = renderTierPickButtons(item, item.tiers, "modal-tier-picks");
       } else if (item.group === "special") {
-        tierHtml = `<div class="kurly-tier-picks modal-tier-picks">${window.KH_SPECIAL_TIERS.map(([n, p]) =>
-          `<button type="button" class="kurly-tier-pick" data-tier-set="${item.id}" data-tier-qty="${n}">
-            <span class="tier-qty">${n}개</span><span class="tier-price"><strong>${money(p)}</strong></span>
-          </button>`
-        ).join("")}</div>`;
+        tierHtml = renderTierPickButtons(item, window.KH_SPECIAL_TIERS, "modal-tier-picks");
       } else if (item.group === "pa") {
-        tierHtml = `<div class="kurly-tier-picks modal-tier-picks">${window.KH_PA_TIERS.map(([n, p]) =>
-          `<button type="button" class="kurly-tier-pick" data-tier-set="${item.id}" data-tier-qty="${n}">
-            <span class="tier-qty">${n}개</span><span class="tier-price"><strong>${money(p)}</strong></span>
-          </button>`
-        ).join("")}</div>`;
+        tierHtml = renderTierPickButtons(item, window.KH_PA_TIERS, "modal-tier-picks");
       }
 
       const metaLines = [];
@@ -2233,6 +2283,14 @@
         const found = findItemById(baseId);
         if (found && window.KHSale && !window.KHSale.isPurchasable(found.item)) {
           delete state.cart[key];
+          continue;
+        }
+        if (found && !String(key).includes(":")) {
+          const rem = stockRemainingFor(found.item);
+          if (rem != null && state.cart[key] > rem) {
+            if (rem <= 0) delete state.cart[key];
+            else state.cart[key] = normalizePackQty(found.item, rem) || rem;
+          }
         }
       }
       persistCart();

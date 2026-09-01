@@ -13,6 +13,7 @@
     ready: false,
     statuses: {},
     details: {},
+    remaining: {},
     settings: { autoSoldOutOnZero: true },
 
     status(itemOrId, variantKey) {
@@ -68,6 +69,7 @@
       if (!data) return;
       this.statuses = data.saleStatuses || data.statuses || this.statuses || {};
       this.details = data.saleDetails || data.details || this.details || {};
+      this.remaining = data.remaining && typeof data.remaining === "object" ? data.remaining : this.remaining || {};
       if (data.salesSettings) this.settings = { ...this.settings, ...data.salesSettings };
       if (data.settings) this.settings = { ...this.settings, ...data.settings };
       this.applyToCatalog();
