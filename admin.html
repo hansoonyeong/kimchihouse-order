@@ -55,7 +55,6 @@
       <nav class="admin-sidebar-nav" role="tablist">
         <button type="button" class="admin-side-link active" data-admin-view="dashboard"><span class="ad-nav-ico" aria-hidden="true">▦</span>대시보드</button>
         <button type="button" class="admin-side-link" data-admin-view="orders"><span class="ad-nav-ico" aria-hidden="true">☰</span>주문 관리</button>
-        <button type="button" class="admin-side-link" data-admin-view="routes"><span class="ad-nav-ico" aria-hidden="true">↗</span>배송루트</button>
         <button type="button" class="admin-side-link" data-admin-view="customers"><span class="ad-nav-ico" aria-hidden="true">👤</span>고객 관리</button>
         <button type="button" class="admin-side-link" data-admin-view="products"><span class="ad-nav-ico" aria-hidden="true">▣</span>제품 관리</button>
         <button type="button" class="admin-side-link" data-admin-view="reports"><span class="ad-nav-ico" aria-hidden="true">▤</span>보고서</button>
@@ -102,7 +101,6 @@
         <div class="admin-view-tabs" role="tablist">
           <button type="button" class="admin-view-tab active" data-admin-view="orders">주문 관리</button>
           <button type="button" class="admin-view-tab" data-admin-view="delivery">배송 관련</button>
-          <button type="button" class="admin-view-tab" data-admin-view="routes">배송루트</button>
           <button type="button" class="admin-view-tab" data-admin-view="stock">재고 관리</button>
           <button type="button" class="admin-view-tab" data-admin-view="sales">판매 품목 관리</button>
         </div>
@@ -122,7 +120,6 @@
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="refresh-btn">새로고침</button>
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="export-btn">주문 내보내기</button>
             <button type="button" class="shop-btn shop-btn-outline shop-btn-sm" id="export-pivot-btn">이번 차수 Excel</button>
-            <a class="shop-btn shop-btn-outline shop-btn-sm" href="/admin/delivery-routes">배송루트로 이동</a>
             <div class="filter-tabs admin-round-scope" id="round-scope-tabs-orders" style="margin-left:auto">
               <button type="button" class="filter-tab active" data-round-scope="current">이번 차수 <span class="admin-round-count" id="round-count-current-orders"></span></button>
               <button type="button" class="filter-tab" data-round-scope="previous">이전 차수 <span class="admin-round-count" id="round-count-previous-orders"></span></button>
@@ -338,14 +335,6 @@
       </div>
       </div>
 
-      <div id="routes-view" hidden class="admin-routes-view">
-        <iframe
-          id="routes-frame"
-          title="배송루트"
-          data-src="/admin/delivery-routes?embed=1"
-        ></iframe>
-      </div>
-
       <a class="shop-lookup-back" href="index.html">← 홈으로</a>
     </main>
 
@@ -438,26 +427,6 @@
     let adminKey = getStoredAdminKey();
     if (adminKey) setStoredAdminKey(adminKey);
 
-    function syncRoutesFrame() {
-      const frame = document.getElementById("routes-frame");
-      if (!frame?.contentWindow || !adminKey) return;
-      frame.contentWindow.postMessage(
-        { type: "kh-delivery-routes-sync", adminKey },
-        location.origin
-      );
-    }
-
-    function ensureRoutesFrame() {
-      const frame = document.getElementById("routes-frame");
-      if (!frame) return;
-      const src = frame.getAttribute("data-src") || "/admin/delivery-routes?embed=1";
-      if (!frame.getAttribute("src")) {
-        frame.addEventListener("load", () => syncRoutesFrame(), { once: false });
-        frame.setAttribute("src", src);
-      } else {
-        syncRoutesFrame();
-      }
-    }
     let orders = [];
     let stockRows = [];
     let stockDraftPrepared = {};
@@ -1375,7 +1344,6 @@
         "dashboard",
         "orders",
         "delivery",
-        "routes",
         "customers",
         "products",
         "reports",
@@ -1392,11 +1360,6 @@
         view = "products";
       }
 
-      if (view === "routes") {
-        window.location.href = "/admin/delivery-routes";
-        return;
-      }
-
       adminView = view;
       document.body.dataset.adminView = view;
       try {
@@ -1411,7 +1374,6 @@
         dashboard: "대시보드",
         orders: "주문 관리",
         delivery: "배송 작업",
-        routes: "배송루트",
         customers: "고객 관리",
         products: "제품 관리",
         reports: "보고서",
@@ -1445,7 +1407,6 @@
       show("reports-view", view === "reports");
       show("notices-view", view === "notices");
       show("settings-view", view === "settings");
-      show("routes-view", false);
 
       if (view === "products") setProductSubTab(productSubTab);
       if (view === "orders" || view === "delivery") renderOrders();

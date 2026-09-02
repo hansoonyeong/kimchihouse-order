@@ -5,13 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/dev-server.js",
-    "dev": "node scripts/dev-server.js",
-    "test:geocode": "node scripts/test-au-address-geocode.mjs",
-    "test:geocode:live": "node scripts/test-au-address-geocode.mjs --live",
-    "test:gnaf": "node scripts/test-gnaf-sydney.mjs",
-    "import-gnaf": "node scripts/import-gnaf-nsw/import.mjs",
-    "import:gnaf-nsw": "node scripts/import-gnaf-nsw/import.mjs",
-    "import:gnaf-nsw:sample": "node scripts/import-gnaf-nsw/import.mjs --sample --out data/gnaf-nsw.jsonl"
+    "dev": "node scripts/dev-server.js"
   },
   "dependencies": {
     "@upstash/redis": "^1.34.3",

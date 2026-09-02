@@ -6,13 +6,6 @@
   const NOTICE_KEY = "kh_admin_notices_v1";
   const TEMPLATE_KEY = "kh_admin_msg_templates_v1";
   const SETTINGS_KEY = "kh_admin_settings_extra_v1";
-  const GEOCODE_SETTINGS_KEY = "kh-geocode-settings-v1";
-  const DEFAULT_GEOCODE_SETTINGS = {
-    autoVerifyMinScore: 90,
-    partialMatchMinScore: 75,
-    ambiguousGap: 10,
-  };
-
   const DEFAULT_TEMPLATES = [
     {
       id: "confirm",
@@ -217,7 +210,7 @@
           <section class="ad-panel-card">
             <div class="ad-panel-card-head">
               <h2>이번 배송 현황</h2>
-              <button type="button" class="shop-btn shop-btn-primary shop-btn-sm" data-ad-nav="routes">배송루트 보기</button>
+              <button type="button" class="shop-btn shop-btn-primary shop-btn-sm" data-ad-nav="delivery">배송 작업</button>
             </div>
             <div class="ad-kpi-row">
               <div class="ad-kpi"><div><label>총 주문</label><strong>${current.length}</strong></div></div>
@@ -489,7 +482,6 @@
             <div class="ad-kpi is-info"><div><label>신규 고객</label><strong>${newC}</strong></div></div>
             <div class="ad-kpi is-ok"><div><label>재주문 고객</label><strong>${returning}</strong></div></div>
           </div>
-          <p style="margin:8px 0 0;color:var(--ad-muted);font-size:12px;font-weight:600">Route별 stops/box 보고는 배송루트 화면의 CSV를 사용하세요.</p>
         </section>
       </div>`;
 
@@ -663,61 +655,14 @@
       origin: "36 Mid Dural Rd, Galston NSW 2159",
       shippingFee: "10",
       freeShippingFrom: "80",
-      maxStops: "30",
-      maxRouteSpreadKm: "14",
-      warnSpreadKm: "16",
-      startTime: "08:00",
-      minsPerStop: "8",
-      mapProvider: "Leaflet / OSM",
-      geoProvider: "Nominatim (structured)",
       smsProvider: "미연결",
       smsEnabled: false,
     });
   }
 
-  function getGroupingSettings() {
-    if (global.KHRouting?.getGroupingSettings) {
-      return global.KHRouting.getGroupingSettings();
-    }
-    const s = getExtraSettings();
-    return {
-      maxStopsPerRoute: Number(s.maxStops) || 30,
-      maxRouteSpreadKm: Number(s.maxRouteSpreadKm) || 14,
-      warnSpreadKm: Number(s.warnSpreadKm) || 16,
-    };
-  }
-
-  function saveGroupingSettings(partial) {
-    if (global.KHRouting?.setGroupingSettings) {
-      return global.KHRouting.setGroupingSettings(partial);
-    }
-    return partial;
-  }
-
-  function getGeocodeThresholds() {
-    if (global.KHGeocode?.getGeocodeSettings) {
-      return global.KHGeocode.getGeocodeSettings();
-    }
-    return {
-      ...DEFAULT_GEOCODE_SETTINGS,
-      ...loadJson(GEOCODE_SETTINGS_KEY, {}),
-    };
-  }
-
-  function saveGeocodeThresholds(partial) {
-    if (global.KHGeocode?.setGeocodeSettings) {
-      return global.KHGeocode.setGeocodeSettings(partial);
-    }
-    const next = { ...getGeocodeThresholds(), ...partial };
-    saveJson(GEOCODE_SETTINGS_KEY, next);
-    return next;
-  }
-
   function renderSettings(root, ctx = {}) {
     if (!root) return;
     const s = getExtraSettings();
-    const geo = getGeocodeThresholds();
-    const grouping = getGroupingSettings();
     const preorderOn = !!ctx.preorderOpen;
     root.innerHTML = `
       <div class="ad-settings-grid">
@@ -731,34 +676,6 @@
           <label>무료배송 기준 ($)<input id="ad-set-freeShippingFrom" value="${esc(s.freeShippingFrom)}" /></label>
         </section>
         <section class="ad-panel-card ad-settings-card">
-          <h2>배송 설정</h2>
-          <label>Route 최대 Stop 수<input id="ad-set-maxStops" type="number" min="1" max="50" value="${esc(s.maxStops)}" /></label>
-          <label>Route 최대 범위 (km)<input id="ad-set-maxRouteSpreadKm" type="number" min="5" max="40" step="0.5" value="${esc(
-            String(grouping.maxRouteSpreadKm ?? 14)
-          )}" /></label>
-          <label>범위 경고 기준 (km)<input id="ad-set-warnSpreadKm" type="number" min="5" max="50" step="0.5" value="${esc(
-            String(grouping.warnSpreadKm ?? 16)
-          )}" /></label>
-          <label>기본 배송 시작시간<input id="ad-set-startTime" value="${esc(s.startTime)}" /></label>
-          <label>Stop당 평균 소요(분)<input id="ad-set-minsPerStop" value="${esc(s.minsPerStop)}" /></label>
-          <p style="margin:0;color:var(--ad-muted);font-size:12px;font-weight:600">최대 Stop 수는 천장입니다. 가까운 지역끼리 묶는 것이 우선이며, 범위(km)를 넘기면 자동으로 분리합니다. 사전 주문 스위치는 상단 헤더에서 제어합니다. 현재: <strong>${preorderOn ? "ON" : "OFF"}</strong></p>
-        </section>
-        <section class="ad-panel-card ad-settings-card">
-          <h2>지도 설정</h2>
-          <label>Map Provider<input value="${esc(s.mapProvider)}" readonly /></label>
-          <label>Geocoding Provider<input value="${esc(s.geoProvider)}" readonly /></label>
-          <label>자동 확정 점수 (≥)<input id="ad-set-autoVerify" type="number" min="50" max="100" step="1" value="${esc(
-            String(geo.autoVerifyMinScore ?? 90)
-          )}" /></label>
-          <label>부분 일치 점수 (≥ → Needs Review)<input id="ad-set-partialMatch" type="number" min="40" max="99" step="1" value="${esc(
-            String(geo.partialMatchMinScore ?? geo.lowConfidenceMinScore ?? 75)
-          )}" /></label>
-          <label>애매 후보 점수 차이 (&lt;)<input id="ad-set-ambiguousGap" type="number" min="1" max="40" step="1" value="${esc(
-            String(geo.ambiguousGap ?? 10)
-          )}" /></label>
-          <p style="margin:0;color:var(--ad-muted);font-size:12px;font-weight:600">점수: postcode 40 · suburb 25 · street 20 · house 15. ≥90 자동 verified. 75~89는 OSM 번지 부재 시에도 불일치가 없으면 자동 반영(낮은 신뢰도). 우편번호/suburb 불일치·애매 후보만 Needs Review.</p>
-        </section>
-        <section class="ad-panel-card ad-settings-card">
           <h2>SMS 설정 (준비)</h2>
           <label>Provider
             <select id="ad-set-smsProvider">
@@ -770,6 +687,10 @@
           </label>
           <label>Sender ID<input id="ad-set-smsSender" value="${esc(s.smsSender || "")}" placeholder="예: KimchiHouse" /></label>
           <p style="margin:0;color:var(--ad-muted);font-size:12px;font-weight:600">실제 발송 연동은 추후 provider adapter로 연결합니다.</p>
+        </section>
+        <section class="ad-panel-card ad-settings-card">
+          <h2>운영</h2>
+          <p style="margin:0;color:var(--ad-muted);font-size:12px;font-weight:600">사전 주문 스위치는 상단 헤더에서 제어합니다. 현재: <strong>${preorderOn ? "ON" : "OFF"}</strong></p>
         </section>
         <section class="ad-panel-card ad-settings-card">
           <h2>관리자</h2>
@@ -790,34 +711,10 @@
         origin: root.querySelector("#ad-set-origin")?.value || "",
         shippingFee: root.querySelector("#ad-set-shippingFee")?.value || "10",
         freeShippingFrom: root.querySelector("#ad-set-freeShippingFrom")?.value || "80",
-        maxStops: root.querySelector("#ad-set-maxStops")?.value || "30",
-        maxRouteSpreadKm: root.querySelector("#ad-set-maxRouteSpreadKm")?.value || "14",
-        warnSpreadKm: root.querySelector("#ad-set-warnSpreadKm")?.value || "16",
-        startTime: root.querySelector("#ad-set-startTime")?.value || "08:00",
-        minsPerStop: root.querySelector("#ad-set-minsPerStop")?.value || "8",
-        mapProvider: s.mapProvider,
-        geoProvider: s.geoProvider,
         smsProvider: root.querySelector("#ad-set-smsProvider")?.value || "미연결",
         smsSender: root.querySelector("#ad-set-smsSender")?.value || "",
       };
       saveJson(SETTINGS_KEY, next);
-      const autoVerifyMinScore = Number(root.querySelector("#ad-set-autoVerify")?.value);
-      const partialMatchMinScore = Number(root.querySelector("#ad-set-partialMatch")?.value);
-      const ambiguousGap = Number(root.querySelector("#ad-set-ambiguousGap")?.value);
-      saveGeocodeThresholds({
-        autoVerifyMinScore: Number.isFinite(autoVerifyMinScore) ? autoVerifyMinScore : 90,
-        partialMatchMinScore: Number.isFinite(partialMatchMinScore) ? partialMatchMinScore : 75,
-        ambiguousGap: Number.isFinite(ambiguousGap) ? ambiguousGap : 10,
-      });
-      const maxStops = Number(root.querySelector("#ad-set-maxStops")?.value);
-      const maxRouteSpreadKm = Number(root.querySelector("#ad-set-maxRouteSpreadKm")?.value);
-      const warnSpreadKm = Number(root.querySelector("#ad-set-warnSpreadKm")?.value);
-      saveGroupingSettings({
-        maxStopsPerRoute: Number.isFinite(maxStops) && maxStops > 0 ? maxStops : 30,
-        maxRouteSpreadKm:
-          Number.isFinite(maxRouteSpreadKm) && maxRouteSpreadKm > 0 ? maxRouteSpreadKm : 14,
-        warnSpreadKm: Number.isFinite(warnSpreadKm) && warnSpreadKm > 0 ? warnSpreadKm : 16,
-      });
       alert("설정을 저장했습니다. (로컬 저장 · 서버 설정과 별도)");
     });
   }

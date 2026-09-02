@@ -2,7 +2,6 @@ import {
   buildOrderTemplateExport,
   EXPORT_FILENAME,
 } from "./_lib/build-order-template-export.js";
-import { buildLoadingSheetExport } from "./_lib/build-loading-sheet-export.js";
 import { getAdminKey, json, optionsResponse, requireEnv } from "./_lib/http.js";
 import { isCurrentRoundOrder } from "./_lib/order-utils.js";
 import { readOrders } from "./_lib/orders-store.js";
@@ -31,26 +30,6 @@ export async function POST(request) {
     }
 
     const preview = body?.preview === true;
-
-    if (body?.mode === "routes" || body?.mode === "loading") {
-      const result = await buildLoadingSheetExport(body, { preview });
-      if (preview) {
-        return json({ ok: true, scope: "loading", summary: result.summary });
-      }
-      const filename = result.summary?.filename || "김치하우스_상차용.xlsx";
-      const encodedFilename = encodeURIComponent(filename);
-      return new Response(result.buffer, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          "Content-Disposition": `attachment; filename="kimchi-house-loading.xlsx"; filename*=UTF-8''${encodedFilename}`,
-          "Cache-Control": "no-store",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Expose-Headers": "Content-Disposition",
-        },
-      });
-    }
-
     const orders = currentRoundOrders(await readOrders());
     const result = await buildOrderTemplateExport(orders, { preview });
 

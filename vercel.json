@@ -5,9 +5,7 @@
   "installCommand": "npm install",
   "rewrites": [
     { "source": "/walkerhill", "destination": "/index.html" },
-    { "source": "/walkerhill/", "destination": "/index.html" },
-    { "source": "/admin/delivery-routes", "destination": "/admin/delivery-routes.html" },
-    { "source": "/admin/delivery-routes/", "destination": "/admin/delivery-routes.html" }
+    { "source": "/walkerhill/", "destination": "/index.html" }
   ],
   "functions": {
     "api/**/*.js": {

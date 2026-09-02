@@ -24,7 +24,7 @@
   --ad-input-h: 38px;
 }
 
-/* —— Shell (shared with delivery-routes look) —— */
+/* —— Shell —— */
 .shop-admin-page.ad-shell {
   background: var(--ad-bg);
   color: var(--ad-text);
